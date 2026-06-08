@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 修正版</title>
+    <title>簡易SNS - メニュー追加版</title>
     <style>
         body { font-family: sans-serif; background-color: #f5f8fa; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; border-left: 1px solid #e1e8ed; border-right: 1px solid #e1e8ed; }
-        header { padding: 15px; border-bottom: 1px solid #e1e8ed; font-weight: bold; font-size: 20px; }
+        
+        /* 📱 追加：メニュー（タブ）の見た目 */
+        .tabs { display: flex; border-bottom: 1px solid #e1e8ed; background-color: rgba(255, 255, 255, 0.9); position: sticky; top: 0; backdrop-filter: blur(5px); }
+        .tab { flex: 1; text-align: center; padding: 15px; text-decoration: none; color: #657786; font-weight: bold; font-size: 16px; cursor: pointer; transition: background-color 0.2s; }
+        .tab:hover { background-color: #e8f5fe; }
+        .tab.active { color: black; border-bottom: 4px solid #1da1f2; }
+
         .post-box { padding: 15px; border-bottom: 10px solid #e1e8ed; display: flex; flex-direction: column; }
         textarea { width: 100%; border: none; resize: none; font-size: 18px; outline: none; margin-bottom: 10px; box-sizing: border-box; }
         button { align-self: flex-end; background-color: #1da1f2; color: white; border: none; border-radius: 20px; padding: 10px 20px; font-weight: bold; cursor: pointer; }
@@ -22,7 +28,10 @@
 <body>
 
     <div class="container">
-        <header>ホーム</header>
+        <div class="tabs">
+            <a href="javascript:void(0)" class="tab active" onclick="location.reload()">ホーム</a>
+            <a id="notificationLink" href="#" class="tab">通知</a>
+        </div>
         
         <div class="post-box">
             <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
@@ -35,6 +44,14 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+        // --- 🔗 ご要望の「最後が / にならない同じ場所のリンク」を作る処理 ---
+        let notifyUrl = window.location.origin + window.location.pathname;
+        if (notifyUrl.endsWith('/')) {
+            notifyUrl = notifyUrl.slice(0, -1); // 最後の / を切り取る
+        }
+        document.getElementById('notificationLink').href = notifyUrl;
+        // -------------------------------------------------------------
 
         const firebaseConfig = {
             apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
@@ -87,7 +104,6 @@
                     postDiv.className = 'post';
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
                     
-                    // 【修正箇所】データが無い（undefined）場合は空文字にする安全対策を追加
                     const rawContent = post.content || "（内容のないデータです）";
                     const safeContent = rawContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     
