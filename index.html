@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>簡易SNS - Firebase版</title>
+    <style>
+        /* 見た目（CSS）の設定は前回と同じです */
+        body { font-family: sans-serif; background-color: #f5f8fa; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; border-left: 1px solid #e1e8ed; border-right: 1px solid #e1e8ed; }
+        header { padding: 15px; border-bottom: 1px solid #e1e8ed; font-weight: bold; font-size: 20px; }
+        .post-box { padding: 15px; border-bottom: 10px solid #e1e8ed; display: flex; flex-direction: column; }
+        textarea { width: 100%; border: none; resize: none; font-size: 18px; outline: none; margin-bottom: 10px; box-sizing: border-box; }
+        button { align-self: flex-end; background-color: #1da1f2; color: white; border: none; border-radius: 20px; padding: 10px 20px; font-weight: bold; cursor: pointer; }
+        button:hover { background-color: #0c85d0; }
+        .post { padding: 15px; border-bottom: 1px solid #e1e8ed; }
+        .post-time { font-size: 12px; color: #657786; margin-bottom: 5px; }
+        .post-content { font-size: 15px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>ホーム</header>
+        
+        <div class="post-box">
+            <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
+            <button onclick="submitPost()">ポストする</button>
+        </div>
+
+        <div id="timeline">読み込み中...</div>
+    </div>
+
+    <script type="module">
+        // 必要なFirebaseの機能をインポート
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+        // いただいた設定情報
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
+            authDomain: "sabopennet.firebaseapp.com",
+            projectId: "sabopennet",
+            storageBucket: "sabopennet.firebasestorage.app",
+            messagingSenderId: "284308308452",
+            appId: "1:284308308452:web:e36dd991e55a0e60e4c7f1",
+            measurementId: "G-K17XRK5KRN"
+        };
+
+        // Firebaseとデータベース（Firestore）の準備
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 投稿する機能
+        window.submitPost = async function() {
+            const textInput = document.getElementById('postText');
+            const text = textInput.value.trim();
+            if (text === '') return;
+
+            try {
+                // 'posts'という名前の箱にデータを保存
+                await addDoc(collection(db, "posts"), {
+                    content: text,
+                    createdAt: new Date()
+                });
+                textInput.value = '';
+                loadPosts(); // 投稿後にタイムラインを更新
+            } catch (e) {
+                console.error("エラー:", e);
+                alert("投稿に失敗しました。データベースの設定を確認してください。");
+            }
+        }
+
+        // 投稿を読み込む機能
+        window.loadPosts = async function() {
+            const timeline = document.getElementById('timeline');
+            
+            try {
+                // 新しい順にデータを取得
+                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                timeline.innerHTML = '';
+                querySnapshot.forEach((doc) => {
+                    const post = doc.data();
+                    const postDiv = document.createElement('div');
+                    postDiv.className = 'post';
+                    
+                    // 日付の処理
+                    const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '';
+                    
+                    // セキュリティ対策
+                    const safeContent = post.content
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;");
+
+                    postDiv.innerHTML = `
+                        <div class="post-time">${date}</div>
+                        <div class="post-content">${safeContent}</div>
+                    `;
+                    timeline.appendChild(postDiv);
+                });
+            } catch (e) {
+                console.error("読み込みエラー:", e);
+                timeline.innerHTML = 'データの読み込みに失敗しました。';
+            }
+        }
+
+        // ページを開いた時に実行
+        loadPosts();
+    </script>
+</body>
+</html>
