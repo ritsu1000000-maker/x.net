@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - Firebase版</title>
+    <title>簡易SNS - エラー調査版</title>
     <style>
-        /* 見た目（CSS）の設定は前回と同じです */
         body { font-family: sans-serif; background-color: #f5f8fa; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; border-left: 1px solid #e1e8ed; border-right: 1px solid #e1e8ed; }
         header { padding: 15px; border-bottom: 1px solid #e1e8ed; font-weight: bold; font-size: 20px; }
@@ -16,6 +15,10 @@
         .post { padding: 15px; border-bottom: 1px solid #e1e8ed; }
         .post-time { font-size: 12px; color: #657786; margin-bottom: 5px; }
         .post-content { font-size: 15px; white-space: pre-wrap; }
+        
+        /* エラー表示用のスタイル */
+        .error-box { padding: 20px; margin: 15px; border: 2px solid #e0245e; background-color: #ffebee; color: #e0245e; font-weight: bold; border-radius: 10px; }
+        .error-reason { color: black; font-weight: normal; margin-top: 10px; font-family: monospace; background: white; padding: 10px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
@@ -28,15 +31,13 @@
             <button onclick="submitPost()">ポストする</button>
         </div>
 
-        <div id="timeline">読み込み中...</div>
+        <div id="timeline" style="padding: 15px;">読み込み中...</div>
     </div>
 
     <script type="module">
-        // 必要なFirebaseの機能をインポート
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-        // いただいた設定情報
         const firebaseConfig = {
             apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
             authDomain: "sabopennet.firebaseapp.com",
@@ -47,67 +48,61 @@
             measurementId: "G-K17XRK5KRN"
         };
 
-        // Firebaseとデータベース（Firestore）の準備
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 投稿する機能
         window.submitPost = async function() {
             const textInput = document.getElementById('postText');
             const text = textInput.value.trim();
             if (text === '') return;
 
             try {
-                // 'posts'という名前の箱にデータを保存
                 await addDoc(collection(db, "posts"), {
                     content: text,
                     createdAt: new Date()
                 });
                 textInput.value = '';
-                loadPosts(); // 投稿後にタイムラインを更新
+                loadPosts();
             } catch (e) {
-                console.error("エラー:", e);
-                alert("投稿に失敗しました。データベースの設定を確認してください。");
+                alert("投稿エラー: " + e.message);
             }
         }
 
-        // 投稿を読み込む機能
         window.loadPosts = async function() {
             const timeline = document.getElementById('timeline');
+            timeline.innerHTML = '通信中...';
             
             try {
-                // 新しい順にデータを取得
                 const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
                 
                 timeline.innerHTML = '';
+                
+                if (querySnapshot.empty) {
+                    timeline.innerHTML = 'まだ投稿がありません。最初の投稿をしてみましょう！';
+                    return;
+                }
+
                 querySnapshot.forEach((doc) => {
                     const post = doc.data();
                     const postDiv = document.createElement('div');
                     postDiv.className = 'post';
-                    
-                    // 日付の処理
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '';
-                    
-                    // セキュリティ対策
-                    const safeContent = post.content
-                        .replace(/&/g, "&amp;")
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;");
-
-                    postDiv.innerHTML = `
-                        <div class="post-time">${date}</div>
-                        <div class="post-content">${safeContent}</div>
-                    `;
+                    const safeContent = post.content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    postDiv.innerHTML = `<div class="post-time">${date}</div><div class="post-content">${safeContent}</div>`;
                     timeline.appendChild(postDiv);
                 });
             } catch (e) {
-                console.error("読み込みエラー:", e);
-                timeline.innerHTML = 'データの読み込みに失敗しました。';
+                // エラー内容を画面に大きく表示するように変更
+                timeline.innerHTML = `
+                    <div class="error-box">
+                        🚨 Firebaseとの通信に失敗しました！
+                        <div class="error-reason">エラー詳細：<br>${e.message}</div>
+                    </div>
+                `;
             }
         }
 
-        // ページを開いた時に実行
         loadPosts();
     </script>
 </body>
