@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - エラー調査版</title>
+    <title>簡易SNS - 修正版</title>
     <style>
         body { font-family: sans-serif; background-color: #f5f8fa; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; border-left: 1px solid #e1e8ed; border-right: 1px solid #e1e8ed; }
@@ -15,8 +15,6 @@
         .post { padding: 15px; border-bottom: 1px solid #e1e8ed; }
         .post-time { font-size: 12px; color: #657786; margin-bottom: 5px; }
         .post-content { font-size: 15px; white-space: pre-wrap; }
-        
-        /* エラー表示用のスタイル */
         .error-box { padding: 20px; margin: 15px; border: 2px solid #e0245e; background-color: #ffebee; color: #e0245e; font-weight: bold; border-radius: 10px; }
         .error-reason { color: black; font-weight: normal; margin-top: 10px; font-family: monospace; background: white; padding: 10px; border: 1px solid #ccc; }
     </style>
@@ -87,13 +85,16 @@
                     const post = doc.data();
                     const postDiv = document.createElement('div');
                     postDiv.className = 'post';
-                    const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '';
-                    const safeContent = post.content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
+                    
+                    // 【修正箇所】データが無い（undefined）場合は空文字にする安全対策を追加
+                    const rawContent = post.content || "（内容のないデータです）";
+                    const safeContent = rawContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    
                     postDiv.innerHTML = `<div class="post-time">${date}</div><div class="post-content">${safeContent}</div>`;
                     timeline.appendChild(postDiv);
                 });
             } catch (e) {
-                // エラー内容を画面に大きく表示するように変更
                 timeline.innerHTML = `
                     <div class="error-box">
                         🚨 Firebaseとの通信に失敗しました！
