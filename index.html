@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 返信修正版</title>
+    <title>簡易SNS - プロフィール機能版</title>
     <style>
         body { font-family: sans-serif; background-color: #f5f8fa; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; border-left: 1px solid #e1e8ed; border-right: 1px solid #e1e8ed; }
         
+        /* 📱 共通ヘッダー・タブ */
         .header-bar { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #e1e8ed; background-color: rgba(255, 255, 255, 0.9); position: sticky; top: 0; backdrop-filter: blur(5px); z-index: 10; font-weight: bold; font-size: 18px; }
         .back-btn { background: none; border: none; font-size: 18px; cursor: pointer; margin-right: 15px; padding: 5px 10px; border-radius: 50%; }
         .back-btn:hover { background-color: #e8f5fe; }
@@ -17,31 +18,56 @@
         .tab:hover { background-color: #e8f5fe; }
         .tab.active { color: black; border-bottom: 4px solid #1da1f2; }
 
-        .post-box { padding: 15px; border-bottom: 10px solid #e1e8ed; display: flex; flex-direction: column; }
+        /* 📱 投稿入力エリア（ホーム用） */
+        .post-box { padding: 15px; border-bottom: 10px solid #e1e8ed; display: flex; gap: 12px; }
+        .post-box-right { flex: 1; display: flex; flex-direction: column; }
         textarea { width: 100%; border: none; resize: none; font-size: 18px; outline: none; margin-bottom: 10px; box-sizing: border-box; }
         button.post-btn { align-self: flex-end; background-color: #1da1f2; color: white; border: none; border-radius: 20px; padding: 10px 20px; font-weight: bold; cursor: pointer; }
         button.post-btn:hover { background-color: #0c85d0; }
         
-        .post { padding: 15px; border-bottom: 1px solid #e1e8ed; display: flex; flex-direction: column; cursor: pointer; transition: background-color 0.2s; }
+        /* 📱 アイコン付き・投稿（ポスト）の見た目 */
+        .post { padding: 15px; border-bottom: 1px solid #e1e8ed; display: flex; cursor: pointer; transition: background-color 0.2s; }
         .post:hover { background-color: #f7f9fa; }
-        .post-time { font-size: 12px; color: #657786; margin-bottom: 5px; }
-        .post-content { font-size: 15px; white-space: pre-wrap; margin-bottom: 10px; }
+        .post-left { margin-right: 12px; }
+        .post-right { flex: 1; display: flex; flex-direction: column; }
+        
+        /* 丸型アイコンのスタイル */
+        .user-icon { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #e1e8ed; }
+        .post-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
+        .user-name { font-weight: bold; font-size: 15px; color: black; }
+        .post-time { font-size: 12px; color: #657786; }
+        .post-content { font-size: 15px; white-space: pre-wrap; margin-bottom: 10px; line-height: 1.4; }
         
         .post-actions { display: flex; gap: 20px; margin-top: 5px; }
         .action-btn { background: none; border: none; color: #657786; font-size: 13px; cursor: pointer; padding: 5px; display: flex; align-items: center; gap: 5px; }
         .action-btn:hover { color: #1da1f2; }
         .action-btn.share:hover { color: #17bf63; }
 
-        .detail-main-post { padding: 20px; border-bottom: 1px solid #e1e8ed; font-size: 22px; line-height: 1.4; }
-        .detail-main-time { padding: 0 20px 15px 20px; color: #657786; font-size: 14px; border-bottom: 1px solid #e1e8ed; }
+        /* 詳細画面専用スタイル */
+        .detail-main-user { display: flex; align-items: center; padding: 20px 20px 10px 20px; gap: 12px; }
+        .detail-main-post { padding: 10px 20px 20px 20px; border-bottom: 1px solid #e1e8ed; font-size: 22px; line-height: 1.4; }
+        .detail-main-time { padding: 15px 20px; color: #657786; font-size: 14px; border-bottom: 1px solid #e1e8ed; }
         
-        .detail-reply-box { padding: 15px; border-bottom: 1px solid #e1e8ed; background-color: #f8f9fa; display: flex; flex-direction: column; }
-        .detail-reply-box textarea { font-size: 16px; background: transparent; }
+        /* 詳細画面内の返信入力欄 */
+        .detail-reply-box { padding: 15px; border-bottom: 1px solid #e1e8ed; background-color: #f8f9fa; display: flex; gap: 12px; }
 
-        .reply-list { padding: 15px; }
-        .reply-item { padding: 15px 0; border-bottom: 1px solid #e1e8ed; font-size: 15px; }
-        .reply-item-time { font-size: 12px; color: #657786; margin-bottom: 5px; }
+        /* 返信一覧 */
+        .reply-list { padding: 0; }
+        .reply-item { padding: 15px; border-bottom: 1px solid #e1e8ed; display: flex; }
 
+        /* 📱 プロフィール設定画面専用スタイル */
+        .profile-form { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-weight: bold; font-size: 14px; color: #657786; }
+        .form-group input { padding: 12px; border: 1px solid #ccd6dd; border-radius: 8px; font-size: 16px; outline: none; }
+        .form-group input:focus { border-color: #1da1f2; }
+        
+        .preset-container { display: flex; gap: 15px; align-items: center; margin-top: 5px; }
+        .preset-btn { border: 3px solid #e1e8ed; border-radius: 50%; padding: 0; cursor: pointer; width: 55px; height: 55px; overflow: hidden; transition: transform 0.2s; }
+        .preset-btn:hover { transform: scale(1.1); }
+        .preset-btn img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* 画面切り替え用 */
         .view-section { display: none; }
         .error-box { padding: 20px; margin: 15px; border: 2px solid #e0245e; background-color: #ffebee; color: #e0245e; font-weight: bold; border-radius: 10px; }
     </style>
@@ -55,11 +81,15 @@
             <div class="tabs">
                 <div class="tab active" onclick="showHome()">タイムライン</div>
                 <a id="notificationLink" href="#" class="tab">通知</a>
+                <div class="tab" onclick="showProfile()">プロフィール設定</div>
             </div>
             
             <div class="post-box">
-                <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
-                <button class="post-btn" onclick="submitPost()">ポストする</button>
+                <div><img src="" class="user-icon my-current-icon"></div>
+                <div class="post-box-right">
+                    <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
+                    <button class="post-btn" onclick="submitPost()">ポストする</button>
+                </div>
             </div>
 
             <div id="timeline">読み込み中...</div>
@@ -71,16 +101,58 @@
                 <span>ポスト</span>
             </div>
             
+            <div class="detail-main-user">
+                <img src="" id="detailUserIcon" class="user-icon">
+                <div id="detailUserName" class="user-name" style="font-size: 16px;"></div>
+            </div>
             <div id="detailPostContent" class="detail-main-post"></div>
             <div id="detailPostTime" class="detail-main-time"></div>
-            <div style="padding: 10px 20px; border-bottom: 1px solid #e1e1e1;" id="detailPostActions"></div>
+            <div style="padding: 10px 20px; border-bottom: 1px solid #e1e8ed;" id="detailPostActions"></div>
 
             <div class="detail-reply-box">
-                <textarea id="detailReplyText" rows="2" placeholder="返信をポスト..."></textarea>
-                <button class="post-btn" id="submitReplyBtn">返信</button>
+                <div><img src="" class="user-icon my-current-icon"></div>
+                <div class="post-box-right">
+                    <textarea id="detailReplyText" rows="2" placeholder="返信をポスト..."></textarea>
+                    <button class="post-btn" id="submitReplyBtn">返信</button>
+                </div>
             </div>
 
             <div id="detailReplyList"></div>
+        </div>
+
+        <div id="profileView" class="view-section">
+            <div class="header-bar">
+                <button class="back-btn" onclick="showHome()">←</button>
+                <span>プロフィール設定</span>
+            </div>
+            
+            <div class="profile-form">
+                <div class="form-group" style="align-items: center;">
+                    <label>現在のアイコンプレビュー</label>
+                    <img src="" id="profileIconPreview" class="user-icon" style="width: 80px; height: 80px;">
+                </div>
+
+                <div class="form-group">
+                    <label>ニックネーム</label>
+                    <input type="text" id="profileName" placeholder="例: たなか">
+                </div>
+
+                <div class="form-group">
+                    <label>かんたんアイコン選択</label>
+                    <div class="preset-container">
+                        <button class="preset-btn" onclick="setPresetIcon('https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&h=150&fit=crop')"><img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&h=150&fit=crop" alt="いぬ"></button>
+                        <button class="preset-btn" onclick="setPresetIcon('https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=150&h=150&fit=crop')"><img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=150&h=150&fit=crop" alt="ねこ"></button>
+                        <button class="preset-btn" onclick="setPresetIcon('https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=150&h=150&fit=crop')"><img src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=150&h=150&fit=crop" alt="ロボ"></button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>アイコン画像のURL（カスタム用）</label>
+                    <input type="text" id="profileIcon" placeholder="https://example.com/image.png" oninput="document.getElementById('profileIconPreview').src = this.value">
+                </div>
+
+                <button class="post-btn" onclick="saveProfile()" style="width: 100%; padding: 12px; border-radius: 25px; font-size: 16px;">プロフィールを保存</button>
+            </div>
         </div>
 
     </div>
@@ -106,18 +178,42 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // ==========================================
+        // ⚙️ プロフィールデータの管理処理
+        // ==========================================
+        const defaultIcon = "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&h=150&fit=crop"; // 初期値はいぬ
+        let myProfile = JSON.parse(localStorage.getItem('mySNS_profile')) || {
+            name: "ゲストユーザー",
+            icon: defaultIcon
+        };
+        
+        // 自分のアイコンを画面の入力欄の横などに反映させる関数
+        function updateMyIconDisplays() {
+            document.querySelectorAll('.my-current-icon').forEach(img => {
+                img.src = myProfile.icon;
+            });
+        }
+
+        // 新規投稿
         window.submitPost = async function() {
             const textInput = document.getElementById('postText');
             const text = textInput.value.trim();
             if (text === '') return;
 
             try {
-                await addDoc(collection(db, "posts"), { content: text, createdAt: new Date() });
+                // 💡 投稿データに、自分の名前とアイコン情報を混ぜて保存する
+                await addDoc(collection(db, "posts"), { 
+                    content: text, 
+                    createdAt: new Date(),
+                    userName: myProfile.name,
+                    userIcon: myProfile.icon
+                });
                 textInput.value = '';
                 loadPosts();
             } catch (e) { alert("投稿エラー: " + e.message); }
         }
 
+        // タイムライン読み込み
         window.loadPosts = async function() {
             const timeline = document.getElementById('timeline');
             timeline.innerHTML = '<div style="padding:15px;">通信中...</div>';
@@ -140,16 +236,29 @@
                     const safeContent = rawContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     const encodedContent = encodeURIComponent(rawContent);
                     
+                    // 💡 データに名前やアイコンが無かった場合（過去の古いデータなど）の対策
+                    const uName = post.userName || "名無しさん";
+                    const uIcon = post.userIcon || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+
                     const postDiv = document.createElement('div');
                     postDiv.className = 'post';
                     postDiv.setAttribute('onclick', `showPostDetail('${postId}')`);
                     
+                    // 💡 X（Twitter）風のアイコンが左側に来るレイアウト構造に変更
                     postDiv.innerHTML = `
-                        <div class="post-time">${date}</div>
-                        <div class="post-content">${safeContent}</div>
-                        <div class="post-actions">
-                            <button class="action-btn">💬 返信画面を開く</button>
-                            <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">📤 共有</button>
+                        <div class="post-left">
+                            <img src="${uIcon}" class="user-icon">
+                        </div>
+                        <div class="post-right">
+                            <div class="post-header">
+                                <span class="user-name">${uName}</span>
+                                <span class="post-time">${date}</span>
+                            </div>
+                            <div class="post-content">${safeContent}</div>
+                            <div class="post-actions">
+                                <button class="action-btn">💬 返信</button>
+                                <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">📤 共有</button>
+                            </div>
                         </div>
                     `;
                     timeline.appendChild(postDiv);
@@ -159,20 +268,55 @@
             }
         }
 
+        // 各種画面の切り替え
         window.showHome = function() {
             document.getElementById('detailView').style.display = 'none';
+            document.getElementById('profileView').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
             window.history.replaceState({}, '', window.location.pathname);
+            updateMyIconDisplays();
             loadPosts();
         }
 
+        window.showProfile = function() {
+            document.getElementById('homeView').style.display = 'none';
+            document.getElementById('detailView').style.display = 'none';
+            document.getElementById('profileView').style.display = 'block';
+            
+            // 現在のプロフィールの状態を入力欄にセット
+            document.getElementById('profileName').value = myProfile.name;
+            document.getElementById('profileIcon').value = myProfile.icon;
+            document.getElementById('profileIconPreview').src = myProfile.icon;
+        }
+
+        window.setPresetIcon = function(url) {
+            document.getElementById('profileIcon').value = url;
+            document.getElementById('profileIconPreview').src = url;
+        }
+
+        window.saveProfile = function() {
+            const name = document.getElementById('profileName').value.trim();
+            const icon = document.getElementById('profileIcon').value.trim();
+            
+            if (name === '') { alert('ニックネームを入力してください。'); return; }
+            
+            myProfile = { name: name, icon: icon || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" };
+            localStorage.setItem('mySNS_profile', JSON.stringify(myProfile));
+            
+            alert('プロフィールを保存しました！');
+            showHome();
+        }
+
+        // ポスト詳細画面
         window.showPostDetail = async function(postId) {
             document.getElementById('homeView').style.display = 'none';
+            document.getElementById('profileView').style.display = 'none';
             document.getElementById('detailView').style.display = 'block';
             
             document.getElementById('detailPostContent').innerHTML = '読み込み中...';
             document.getElementById('detailPostTime').innerHTML = '';
             document.getElementById('detailReplyList').innerHTML = '';
+            updateMyIconDisplays();
 
             const newUrl = window.location.origin + window.location.pathname + `?id=${postId}`;
             window.history.replaceState({}, '', newUrl);
@@ -188,6 +332,11 @@
                     const safeContent = rawContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     const encodedContent = encodeURIComponent(rawContent);
 
+                    const uName = post.userName || "名無しさん";
+                    const uIcon = post.userIcon || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+
+                    document.getElementById('detailUserIcon').src = uIcon;
+                    document.getElementById('detailUserName').innerText = uName;
                     document.getElementById('detailPostContent').innerHTML = safeContent;
                     document.getElementById('detailPostTime').innerHTML = date;
                     document.getElementById('detailPostActions').innerHTML = `
@@ -207,35 +356,38 @@
             }
         }
 
+        // 詳細画面での返信送信
         window.submitReply = async function(postId) {
             const replyInput = document.getElementById('detailReplyText');
             const replyText = replyInput.value.trim();
             if (replyText === '') return;
 
             try {
-                await addDoc(collection(db, "replies"), { postId: postId, content: replyText, createdAt: new Date() });
+                // 返信データにも、自分の名前とアイコンをセットして保存
+                await addDoc(collection(db, "replies"), { 
+                    postId: postId, 
+                    content: replyText, 
+                    createdAt: new Date(),
+                    userName: myProfile.name,
+                    userIcon: myProfile.icon
+                });
                 replyInput.value = '';
                 loadReplies(postId);
             } catch (e) { alert("返信に失敗しました: " + e.message); }
         }
 
-        // 💡 修正箇所：エラーの出ない安全な読み込み処理に変更
+        // 返信一覧読み込み
         window.loadReplies = async function(postId) {
             const replyList = document.getElementById('detailReplyList');
-            replyList.innerHTML = '<div style="color:#657786; font-size:14px;">返信を読み込み中...</div>';
+            replyList.innerHTML = '<div style="padding:15px; color:#657786; font-size:14px;">返信を読み込み中...</div>';
             
             try {
-                // インデックスエラーを避けるため、orderByを削除し、whereだけでデータを取得する
                 const q = query(collection(db, "replies"), where("postId", "==", postId));
                 const querySnapshot = await getDocs(q);
                 
-                // 取得したデータを一旦配列にまとめる
                 let repliesArray = [];
-                querySnapshot.forEach((docSnap) => {
-                    repliesArray.push(docSnap.data());
-                });
+                querySnapshot.forEach((docSnap) => { repliesArray.push(docSnap.data()); });
 
-                // JavaScript側で、作成日時（createdAt）が古い順（昇順）に並び替える
                 repliesArray.sort((a, b) => {
                     const timeA = a.createdAt ? a.createdAt.toDate().getTime() : 0;
                     const timeB = b.createdAt ? b.createdAt.toDate().getTime() : 0;
@@ -245,28 +397,38 @@
                 replyList.innerHTML = '';
                 
                 if (repliesArray.length === 0) {
-                    replyList.innerHTML = '<div style="color:#657786; font-size:14px;">まだ返信はありません。</div>';
+                    replyList.innerHTML = '<div style="padding:15px; color:#657786; font-size:14px;">まだ返信はありません。</div>';
                     return;
                 }
 
-                // 並び替えたデータを画面に出力する
                 repliesArray.forEach((reply) => {
                     const date = reply.createdAt ? reply.createdAt.toDate().toLocaleString() : '時間不明';
                     const safeContent = (reply.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     
+                    const rName = reply.userName || "名無しさん";
+                    const rIcon = reply.userIcon || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+
                     const replyDiv = document.createElement('div');
                     replyDiv.className = 'reply-item';
-                    replyDiv.innerHTML = `<div class="reply-item-time">${date}</div><div>${safeContent}</div>`;
+                    replyDiv.innerHTML = `
+                        <div class="post-left">
+                            <img src="${rIcon}" class="user-icon" style="width:38px; height:38px;">
+                        </div>
+                        <div class="post-right">
+                            <div class="post-header">
+                                <span class="user-name" style="font-size:14px;">${rName}</span>
+                                <span class="post-time">${date}</span>
+                            </div>
+                            <div style="font-size:14px; white-space: pre-wrap;">${safeContent}</div>
+                        </div>
+                    `;
                     replyList.appendChild(replyDiv);
                 });
-            } catch (e) { 
-                replyList.innerHTML = `<div class="error-box">返信の読み込みに失敗しました。<br>エラー詳細: ${e.message}</div>`; 
-            }
+            } catch (e) { replyList.innerHTML = `<div class="error-box">返信読込失敗: ${e.message}</div>`; }
         }
 
         window.sharePost = function(postId, encodedContent, event) {
             if(event) event.stopPropagation();
-            
             const content = decodeURIComponent(encodedContent);
             const randomString = Math.random().toString(36).substring(2, 12);
             const baseUrl = window.location.origin + window.location.pathname;
@@ -283,6 +445,7 @@
             }).catch(err => { alert("コピーに失敗しました。"); });
         }
 
+        // 初期起動判定
         const urlParams = new URLSearchParams(window.location.search);
         const postIdParam = urlParams.get('id');
         
