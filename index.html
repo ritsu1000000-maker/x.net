@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 完全アイコン・モデレーション版</title>
+    <title>簡易SNS - 閲覧数カウント版</title>
     <style>
         body { font-family: sans-serif; background-color: #f5f8fa; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; border-left: 1px solid #e1e8ed; border-right: 1px solid #e1e8ed; }
@@ -38,32 +38,28 @@
         .post-time { font-size: 12px; color: #657786; }
         .post-content { font-size: 15px; white-space: pre-wrap; margin-bottom: 10px; line-height: 1.4; }
         
-        /* 📱 リポスト用のラベルスタイル */
         .repost-label { font-size: 12px; color: #536471; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
 
-        /* 📱 完全CSS管理の共通アイコンシステム */
         .icon { width: 18px; height: 18px; fill: currentColor; display: inline-block; vertical-align: middle; }
 
-        /* アクションボタン（4色テーマ） */
-        .post-actions { display: flex; justify-content: space-between; max-width: 400px; margin-top: 5px; }
+        /* アクションボタン（5項目に拡張） */
+        .post-actions { display: flex; justify-content: space-between; max-width: 450px; margin-top: 5px; }
         .action-btn { background: none; border: none; color: #657786; font-size: 13px; cursor: pointer; padding: 6px 10px; border-radius: 15px; display: flex; align-items: center; gap: 6px; transition: background-color 0.2s, color 0.2s; }
         .action-btn.reply:hover { background-color: #e8f5fe; color: #1da1f2; }
         .action-btn.repost:hover { background-color: #e6f4ea; color: #17bf63; }
         .action-btn.like:hover { background-color: #fee5ec; color: #e0245e; }
-        .action-btn.share:hover { background-color: #f4f4f4; color: #14171a; }
+        .action-btn.view:hover { background-color: #e8f5fe; color: #1da1f2; }
+        .action-btn.share:hover { background-color: #f4f4f4; color: #1da1f2; }
 
-        /* 「・・・」メニューボタン */
         .menu-trigger { position: absolute; right: 0; top: 0; background: none; border: none; color: #657786; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; transition: background-color 0.2s, color 0.2s; }
         .menu-trigger:hover { background-color: #e8f5fe; color: #1da1f2; }
 
-        /* ドロップダウンメニュー */
         .dropdown-menu { display: none; position: absolute; right: 0; top: 35px; background: white; border: 1px solid #e1e8ed; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 20; width: 180px; overflow: hidden; padding: 5px 0; }
         .menu-item { padding: 12px 16px; font-size: 14px; color: #14171a; cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left; transition: background-color 0.2s; }
         .menu-item:hover { background-color: #f7f9fa; }
         .menu-item.danger { color: #e0245e; }
         .menu-item.danger:hover { background-color: #fff1f3; }
 
-        /* 詳細画面・通知画面・設定画面 */
         .detail-main-user { display: flex; align-items: center; padding: 20px 20px 10px 20px; gap: 12px; position: relative; }
         .detail-main-post { padding: 10px 20px 20px 20px; border-bottom: 1px solid #e1e8ed; font-size: 22px; line-height: 1.4; }
         .detail-main-time { padding: 15px 20px; color: #657786; font-size: 14px; border-bottom: 1px solid #e1e8ed; }
@@ -72,7 +68,6 @@
         .reply-item { padding: 15px; border-bottom: 1px solid #e1e8ed; display: flex; transition: background-color 0.2s; }
         .reply-item.clickable:hover { background-color: #f7f9fa; }
         
-        /* カスタムアップロードボタン */
         .file-input-label { display: flex; align-items: center; gap: 8px; background-color: #e8f5fe; color: #1da1f2; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; text-align: center; transition: background-color 0.2s; }
         .file-input-label:hover { background-color: #d4edfe; }
         #profileFile { display: none; }
@@ -85,6 +80,7 @@
 
     <div class="container">
 
+        <!-- ホーム画面ビュー -->
         <div id="homeView" class="view-section">
             <div class="header-bar">ホーム</div>
             <div class="tabs">
@@ -104,6 +100,7 @@
             <div id="timeline"></div>
         </div>
 
+        <!-- ポスト詳細画面ビュー -->
         <div id="detailView" class="view-section">
             <div class="header-bar">
                 <button class="back-btn" onclick="showHome()">
@@ -133,6 +130,7 @@
             <div id="detailReplyList"></div>
         </div>
 
+        <!-- 通知画面ビュー -->
         <div id="notificationView" class="view-section">
             <div class="header-bar">
                 <button class="back-btn" onclick="showHome()">
@@ -148,6 +146,7 @@
             <div id="notificationList"></div>
         </div>
 
+        <!-- プロフィール設定画面ビュー -->
         <div id="profileView" class="view-section">
             <div class="header-bar">
                 <button class="back-btn" onclick="showHome()">
@@ -182,18 +181,18 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDoc, getDocs, doc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+        // 💡 閲覧数カウントのために updateDoc と increment を追加インポート
+        import { getFirestore, collection, addDoc, getDoc, getDocs, doc, query, orderBy, where, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-        // ==========================================
-        // 🎨 システム共通・埋め込み用SVGベクターデータ定義
-        // ==========================================
+        // SVGベクターデータ
         const svgReply    = `<svg class="icon" viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg>`;
         const svgRepost   = `<svg class="icon" viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>`;
         const svgLike     = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
         const svgShare    = `<svg class="icon" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>`;
+        // 💡 閲覧数（表示回数）用のグラフアイコンSVGを追加
+        const svgView     = `<svg class="icon" viewBox="0 0 24 24"><path d="M8.75 21V3h2v18h-2zM18 21V8.5h2V21h-2zM4 21l.004-10h2L6 21H4zm9.248 0v-7h2v7h-2z"/></svg>`;
         const svgMenu     = `<svg class="icon" viewBox="0 0 24 24"><path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>`;
         
-        // メニュー項目用SVG
         const svgLink     = `<svg class="icon" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.31 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>`;
         const svgDislike  = `<svg class="icon" viewBox="0 0 24 24"><path d="M10.8 21h-4.3c-.6 0-1-.4-1-1v-8.6c0-.3.1-.5.3-.7l5.4-5.4c.4-.4 1-.4 1.4 0l.5.5c.3.3.4.7.2 1.1l-1.1 3.1h5.2c.6 0 1 .4 1 1v2.2c0 .2 0 .3-.1.5l-2.9 6.7c-.2.5-.7.8-1.2.8z"/></svg>`;
         const svgMute     = `<svg class="icon" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`;
@@ -280,14 +279,14 @@
             const text = textInput.value.trim();
             if (text === '') return;
             try {
+                // 💡 投稿時に views: 0 を初期値として設定
                 await addDoc(collection(db, "posts"), { 
-                    content: text, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isRepost: false
+                    content: text, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isRepost: false, views: 0
                 });
                 textInput.value = ''; loadPosts();
             } catch (e) { alert("投稿エラー: " + e.message); }
         }
 
-        // タイムライン読み込み
         window.loadPosts = async function() {
             const timeline = document.getElementById('timeline');
             timeline.innerHTML = '<div style="padding:15px; color:#657786;">通信中...</div>';
@@ -316,8 +315,10 @@
                     const encodedContent = encodeURIComponent(post.content || "");
                     const uName = post.userName || "名無しさん";
                     const uIcon = post.userIcon || defaultIcon;
+                    
+                    // 💡 閲覧数の取得（古いデータ対策として0をデフォルトに）
+                    const viewCount = post.views || 0;
 
-                    // リポスト表記の最適化
                     const isRepost = post.isRepost || false;
                     const repLabel = isRepost ? `<div class="repost-label">${svgRepost} ${post.repostedBy} さんがリポストしました</div>` : '';
 
@@ -335,7 +336,6 @@
                                     <div class="post-header">
                                         <span class="user-name">${uName}</span>
                                         <span class="post-time">${date}</span>
-                                        
                                         <button class="menu-trigger" onclick="togglePostMenu('${postId}', false, event)">${svgMenu}</button>
                                         <div id="postMenu-${postId}" class="dropdown-menu">
                                             <div class="menu-item" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgLink} リンクをコピー</div>
@@ -348,11 +348,13 @@
                                     </div>
                                     <div class="post-content">${safeContent}</div>
                                     
+                                    <!-- 💡 アクションボタンに「閲覧数（view）」を追加 -->
                                     <div class="post-actions">
-                                        <button class="action-btn reply">${svgReply} <span>返信</span></button>
-                                        <button class="action-btn repost" onclick="repostPost('${postId}', '${uId}', '${encodedContent}', event)">${svgRepost} <span>リポスト</span></button>
-                                        <button class="action-btn like" onclick="likePost('${postId}', '${uId}', event)">${svgLike} <span>いいね</span></button>
-                                        <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgShare} <span>共有</span></button>
+                                        <button class="action-btn reply">${svgReply}</button>
+                                        <button class="action-btn repost" onclick="repostPost('${postId}', '${uId}', '${encodedContent}', event)">${svgRepost}</button>
+                                        <button class="action-btn like" onclick="likePost('${postId}', '${uId}', event)">${svgLike}</button>
+                                        <div class="action-btn view" title="閲覧数">${svgView} <span>${viewCount}</span></div>
+                                        <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgShare}</button>
                                     </div>
                                 </div>
                             </div>
@@ -363,7 +365,6 @@
             } catch (e) { timeline.innerHTML = `<div class="error-box">🚨 エラー詳細：<br>${e.message}</div>`; }
         }
 
-        // いいねシステム
         window.likePost = async function(postId, targetUserId, event) {
             if (event) event.stopPropagation();
             if (targetUserId === myProfile.id) { alert("自分のポストにはいいねできません。"); return; }
@@ -375,7 +376,6 @@
             } catch(e) { alert("エラー: " + e.message); }
         }
 
-        // リポストシステム
         window.repostPost = async function(postId, targetUserId, encodedContent, event) {
             if (event) event.stopPropagation();
             if (await isUserRestricted(myProfile.id)) return;
@@ -383,8 +383,9 @@
             
             const rawContent = decodeURIComponent(encodedContent);
             try {
+                // 💡 リポスト時も views: 0 で初期化
                 await addDoc(collection(db, "posts"), {
-                    content: rawContent, createdAt: new Date(), userId: targetUserId, userName: "元の投稿者", userIcon: defaultIcon, isRepost: true, repostedBy: myProfile.name
+                    content: rawContent, createdAt: new Date(), userId: targetUserId, userName: "元の投稿者", userIcon: defaultIcon, isRepost: true, repostedBy: myProfile.name, views: 0
                 });
                 await addDoc(collection(db, "notifications"), {
                     type: "repost", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date()
@@ -443,7 +444,7 @@
             updateMyIconDisplays(); loadPosts();
         }
 
-        // ポスト詳細画面表示
+        // 💡 ポスト詳細画面表示（クリック時に閲覧数を+1する）
         window.showPostDetail = async function(postId) {
             document.getElementById('homeView').style.display = 'none';
             document.getElementById('profileView').style.display = 'none';
@@ -453,6 +454,7 @@
             document.getElementById('detailPostContent').innerHTML = '読み込み中...';
             document.getElementById('detailPostTime').innerHTML = '';
             document.getElementById('detailReplyList').innerHTML = '';
+            document.getElementById('detailPostActions').innerHTML = '';
             updateMyIconDisplays();
 
             const newUrl = window.location.origin + window.location.pathname + `?id=${postId}`;
@@ -460,6 +462,11 @@
 
             try {
                 const docRef = doc(db, "posts", postId);
+                
+                // 💡 Firebaseの機能「increment(1)」を使って、安全に閲覧数を+1する
+                try { await updateDoc(docRef, { views: increment(1) }); } catch(e) { console.log("閲覧数更新に失敗（無視して続行）"); }
+
+                // 更新した最新のデータを取得
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
@@ -472,16 +479,23 @@
                     const uName = post.userName || "名無しさん";
                     const uIcon = post.userIcon || defaultIcon;
                     const uId = post.userId || "";
+                    
+                    // 💡 更新された閲覧数を画面用変数に入れる
+                    const viewCount = post.views || 0;
 
                     document.getElementById('detailUserIcon').src = uIcon;
                     document.getElementById('detailUserName').innerText = uName;
                     document.getElementById('detailPostContent').innerHTML = safeContent;
                     document.getElementById('detailPostTime').innerHTML = date;
+                    
+                    // 💡 詳細画面のアクションエリアにもアイコンと閲覧数を配置
                     document.getElementById('detailPostActions').innerHTML = `
-                        <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgShare} <span>共有リンクをコピー</span></button>
+                        <div class="post-actions" style="border:none; padding:0;">
+                            <div class="action-btn view" style="cursor:default;" title="表示回数">${svgView} <span style="font-size:15px; margin-left:5px;">${viewCount}</span></div>
+                            <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgShare} <span>共有</span></button>
+                        </div>
                     `;
 
-                    // 詳細画面のメニューボタン設定
                     const detailTrigger = document.getElementById('detailMenuTrigger');
                     detailTrigger.innerHTML = svgMenu;
                     detailTrigger.setAttribute('onclick', `togglePostMenu('${postId}', true, event)`);
@@ -504,7 +518,6 @@
             } catch (e) { document.getElementById('detailPostContent').innerHTML = 'エラー: ' + e.message; }
         }
 
-        // 返信送信
         window.submitReply = async function(postId) {
             if (await isUserRestricted(myProfile.id)) return;
             const replyInput = document.getElementById('detailReplyText');
@@ -524,7 +537,6 @@
             } catch (e) { alert("返信に失敗しました: " + e.message); }
         }
 
-        // 返信一覧読み込み
         window.loadReplies = async function(postId) {
             const replyList = document.getElementById('detailReplyList');
             replyList.innerHTML = '<div style="padding:15px; color:#657786; font-size:14px;">返信を読み込み中...</div>';
@@ -570,7 +582,6 @@
             loadNotifications();
         }
 
-        // 通知一覧読み込み
         window.loadNotifications = async function() {
             const list = document.getElementById('notificationList');
             list.innerHTML = '<div style="padding:15px; color:#657786;">通知を読み込み中...</div>';
