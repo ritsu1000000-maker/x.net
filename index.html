@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - カウント機能・埋め込み搭載版</title>
+    <title>簡易SNS - AI画像＆地図・カスタム通知対応版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <style>
         body { font-family: sans-serif; background-color: #000000; margin: 0; padding: 0; color: #e7e9ea; }
@@ -21,7 +21,11 @@
         .post-box { padding: 15px; border-bottom: 1px solid #2f3336; display: flex; gap: 12px; }
         .post-box-right { flex: 1; display: flex; flex-direction: column; }
         textarea { width: 100%; border: none; resize: none; font-size: 18px; outline: none; margin-bottom: 10px; box-sizing: border-box; background: transparent; color: #e7e9ea; }
-        button.post-btn { align-self: flex-end; background-color: #1d9bf0; color: white; border: none; border-radius: 20px; padding: 10px 20px; font-weight: bold; cursor: pointer; }
+        
+        .toolbar-btn { background: transparent; border: 1px solid #2f3336; color: #1d9bf0; font-size: 13px; font-weight: bold; cursor: pointer; padding: 6px 12px; border-radius: 20px; transition: 0.2s; }
+        .toolbar-btn:hover { background-color: #031018; }
+
+        button.post-btn { background-color: #1d9bf0; color: white; border: none; border-radius: 20px; padding: 8px 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button.post-btn:hover { background-color: #1a8cd8; }
         
         .post { padding: 15px; border-bottom: 1px solid #2f3336; display: flex; cursor: pointer; transition: background-color 0.2s, opacity 0.3s, transform 0.3s; position: relative; }
@@ -88,12 +92,17 @@
         .close-modal { background: none; border: none; color: #e7e9ea; font-size: 24px; cursor: pointer; padding: 0 5px; }
         .close-modal:hover { color: #1d9bf0; }
         .modal-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
+
+        /* トースト通知用スタイル */
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background-color: #1d9bf0; color: white; padding: 12px 24px; border-radius: 25px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-weight: bold; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .toast.show { opacity: 1; }
     </style>
 </head>
 <body onclick="closeAllMenus()">
 
-    <div class="container">
+    <div id="customToast" class="toast"></div>
 
+    <div class="container">
         <div id="homeView" class="view-section">
             <div class="header-bar">ホーム</div>
             <div class="tabs">
@@ -105,8 +114,14 @@
             <div class="post-box">
                 <div onclick="showUserProfile(myProfile.id, event)" style="cursor:pointer;"><img src="" class="user-icon my-current-icon"></div>
                 <div class="post-box-right">
-                    <textarea id="postText" rows="3" placeholder="いまどうしてる？&#10;(YouTube, niconico, ツイキャス, XのURLを貼ると動画や投稿が表示されます)"></textarea>
-                    <button class="post-btn" onclick="submitPost()">ポストする</button>
+                    <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; gap: 8px;">
+                            <button class="toolbar-btn" onclick="attachLocation('postText')">📍 地図</button>
+                            <button class="toolbar-btn" onclick="openAIGenModal('postText')">✨ AI画像生成</button>
+                        </div>
+                        <button class="post-btn" onclick="submitPost()">ポストする</button>
+                    </div>
                 </div>
             </div>
             <div id="timeline"></div>
@@ -133,7 +148,13 @@
                 <div><img src="" class="user-icon my-current-icon"></div>
                 <div class="post-box-right">
                     <textarea id="detailReplyText" rows="2" placeholder="返信をポスト..."></textarea>
-                    <button class="post-btn" id="submitReplyBtn">返信</button>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; gap: 8px;">
+                            <button class="toolbar-btn" onclick="attachLocation('detailReplyText')">📍 地図</button>
+                            <button class="toolbar-btn" onclick="openAIGenModal('detailReplyText')">✨ AI画像生成</button>
+                        </div>
+                        <button class="post-btn" id="submitReplyBtn">返信</button>
+                    </div>
                 </div>
             </div>
             <div id="detailReplyList"></div>
@@ -193,7 +214,6 @@
                 <button class="post-btn" onclick="saveSettings()" style="width: 100%; padding: 12px; border-radius: 25px; font-size: 16px;">設定を保存</button>
             </div>
         </div>
-
     </div>
 
     <div id="repostModal" class="modal-overlay">
@@ -202,11 +222,34 @@
                 <span>リポスト / 引用してポスト</span>
                 <button class="close-modal" onclick="closeRepostModal()">×</button>
             </div>
-            <textarea id="quoteText" rows="3" placeholder="コメントを追加して引用ポスト..." style="font-size: 16px;"></textarea>
+            <textarea id="quoteText" rows="3" placeholder="コメントを追加して引用ポスト..." style="font-size: 16px; width: 100%; border: none; background: transparent; color: #e7e9ea; resize: none; outline: none;"></textarea>
             <div class="modal-actions">
                 <button class="post-btn" style="background-color: transparent; border: 1px solid #00ba7c; color: #00ba7c; flex: 1;" onclick="submitRepost(false)">通常のリポスト</button>
                 <button class="post-btn" style="flex: 1;" onclick="submitRepost(true)">引用してポスト</button>
             </div>
+        </div>
+    </div>
+
+    <div id="aiModal" class="modal-overlay">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span>✨ AI画像生成</span>
+                <button class="close-modal" onclick="document.getElementById('aiModal').style.display='none'">×</button>
+            </div>
+            <input type="text" id="aiPrompt" placeholder="描きたい内容を入力 (例: a cute cat in space)" style="width: 100%; padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #e7e9ea; box-sizing: border-box;">
+            <button class="post-btn" onclick="generateImage()" style="width: 100%;">画像を生成する</button>
+            <div id="aiPreviewArea" style="display: none; text-align: center; margin-top: 10px;">
+                <img id="aiPreviewImg" src="" style="max-width: 100%; border-radius: 12px;">
+                <button class="post-btn" onclick="attachGeneratedImage()" style="width: 100%; margin-top: 10px; background-color: #00ba7c;">ポストに添付する</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="alertModal" class="modal-overlay" style="z-index: 10000;">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 350px; text-align: center;">
+            <div id="alertModalTitle" style="font-weight: bold; font-size: 18px; margin-bottom: 10px; color: #e7e9ea;"></div>
+            <div id="alertModalMessage" style="margin-bottom: 20px; color: #e7e9ea; font-size: 15px; white-space: pre-wrap; line-height: 1.5;"></div>
+            <button class="post-btn" onclick="document.getElementById('alertModal').style.display='none'" style="width: 100%;">OK</button>
         </div>
     </div>
 
@@ -227,6 +270,21 @@
         const svgBlock    = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm4.9-3.1L5.69 5.69C7.04 4.63 8.74 4 12 4c4.41 0 8 3.59 8 8 0 1.85-.63 3.55-1.69 4.9z"/></svg>`
         const svgWarning  = `<svg class="icon" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`;
 
+        // UI機能
+        window.showToast = function(msg) {
+            const toast = document.getElementById('customToast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        window.customAlert = function(title, msg) {
+            document.getElementById('alertModalTitle').innerText = title || "お知らせ";
+            document.getElementById('alertModalMessage').innerText = msg;
+            document.getElementById('alertModal').style.display = 'flex';
+        }
+
+        // Firebase設定
         const firebaseConfig = {
             apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
             authDomain: "sabopennet.firebaseapp.com",
@@ -236,7 +294,6 @@
             appId: "1:284308308452:web:e36dd991e55a0e60e4c7f1",
             measurementId: "G-K17XRK5KRN"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -252,10 +309,21 @@
         let currentDetailPostUserId = "";
         let uploadedImageBase64 = "";
 
-        // 💡 外部サービスのURLを検知して埋め込みHTMLに変換する関数
+        // URLを埋め込みコード（iframe/img）に変換
         function parseEmbeds(text) {
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, function(url) {
+                // 画像（Pollinations生成画像 または 通常の画像拡張子）
+                if (url.match(/^https:\/\/image\.pollinations\.ai\//) || url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+                    return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📸 画像を開く</a><br><img src="${url}" style="max-width: 100%; border-radius: 12px; margin-top: 10px; object-fit: cover;">`;
+                }
+
+                // Googleマップ（現在地添付用）
+                const mapsMatch = url.match(/maps\.google\.com\/maps\?q=([0-9.-]+),([0-9.-]+)/);
+                if (mapsMatch) {
+                    return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📍 位置情報を開く</a><br><iframe width="100%" height="250" src="https://maps.google.com/maps?q=${mapsMatch[1]},${mapsMatch[2]}&output=embed" frameborder="0" style="border-radius:12px; margin-top:10px;"></iframe>`;
+                }
+
                 // YouTube
                 const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
                 if (ytMatch) {
@@ -281,19 +349,80 @@
                     return `<blockquote class="twitter-tweet" data-theme="dark"><a href="${url}"></a></blockquote>`;
                 }
 
-                // その他のURLは通常のリンクとして表示
                 return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a>`;
             });
+        }
+
+        // 新機能：現在地情報の添付
+        window.attachLocation = function(targetId) {
+            if (!navigator.geolocation) {
+                customAlert("エラー", "お使いのブラウザは位置情報に対応していません。");
+                return;
+            }
+            showToast("📍 現在地を取得しています...");
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}`;
+                    const textarea = document.getElementById(targetId);
+                    textarea.value += (textarea.value ? '\n' : '') + mapUrl;
+                    showToast("位置情報を追加しました！");
+                },
+                (error) => {
+                    customAlert("エラー", "位置情報の取得に失敗しました。端末の位置情報設定を確認してください。");
+                }
+            );
+        }
+
+        // 新機能：AI画像生成機能
+        let currentInputTargetId = 'postText';
+        let currentGeneratedImgUrl = "";
+
+        window.openAIGenModal = function(targetId) {
+            currentInputTargetId = targetId;
+            document.getElementById('aiPrompt').value = '';
+            document.getElementById('aiPreviewArea').style.display = 'none';
+            document.getElementById('aiModal').style.display = 'flex';
+        }
+
+        window.generateImage = function() {
+            const prompt = document.getElementById('aiPrompt').value.trim();
+            if (!prompt) { customAlert("エラー", "プロンプト（キーワード）を入力してください。"); return; }
+            
+            showToast("⏳ 画像を生成しています... (約5〜10秒)");
+            const seed = Math.floor(Math.random() * 100000);
+            const encodedPrompt = encodeURIComponent(prompt);
+            const imgUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=512&height=512&nologo=true`;
+            
+            const imgEl = document.getElementById('aiPreviewImg');
+            imgEl.onload = function() {
+                document.getElementById('aiPreviewArea').style.display = 'block';
+                currentGeneratedImgUrl = imgUrl;
+                showToast("✨ 画像が生成されました！");
+            }
+            imgEl.onerror = function() {
+                customAlert("エラー", "画像の生成に失敗しました。時間をおいて再試行してください。");
+            }
+            imgEl.src = imgUrl;
+        }
+
+        window.attachGeneratedImage = function() {
+            if (currentGeneratedImgUrl) {
+                const textarea = document.getElementById(currentInputTargetId);
+                textarea.value += (textarea.value ? '\n' : '') + currentGeneratedImgUrl;
+                document.getElementById('aiModal').style.display = 'none';
+                showToast("画像をポストに添付しました！");
+            }
         }
 
         // 投稿組み立て関数
         function createPostHTML(postId, post, uId, uName, uIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount) {
             let quoteBoxHTML = "";
-            
             if (post.isQuoteRepost && post.originalPost) {
                 const orig = post.originalPost;
                 let safeOrigContent = (orig.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                safeOrigContent = parseEmbeds(safeOrigContent); // 埋め込み変換
+                safeOrigContent = parseEmbeds(safeOrigContent);
                 quoteBoxHTML = `
                     <div class="quote-box" onclick="showPostDetail('${orig.postId}'); event.stopPropagation();">
                         <div class="quote-header">
@@ -325,9 +454,7 @@
                                 </div>
                             </div>
                             <div class="post-content">${safeContent}</div>
-                            
                             ${quoteBoxHTML}
-                            
                             <div class="post-actions">
                                 <button class="action-btn reply">${svgReply} <span class="count-span"></span></button>
                                 <button class="action-btn repost" onclick="repostPost('${postId}', event)">
@@ -386,7 +513,7 @@
                 });
                 if (activeCount >= 10) {
                     const remainingMinutes = Math.ceil(((latestPenaltyTime + (10 * 60 * 1000)) - now) / (60 * 1000));
-                    alert(`🙅 投稿制限中\n\n報告が多数寄せられたためロックされています。\nあと約 ${remainingMinutes} 分間は書き込めません。`);
+                    customAlert("🙅 投稿制限中", `報告が多数寄せられたためロックされています。\nあと約 ${remainingMinutes} 分間は書き込めません。`);
                     return true;
                 }
                 return false;
@@ -419,7 +546,6 @@
                 updateMyIconDisplays();
                 await renderPosts();
             }
-
             const notifyParams = new URLSearchParams();
             notifyParams.set('view', 'notifications');
             let cleanBaseUrl = window.location.origin + window.location.pathname;
@@ -443,7 +569,8 @@
                     content: text, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isRepost: false, views: 0, likes: 0, reposts: 0 
                 });
                 textInput.value = ''; renderPosts();
-            } catch (e) { alert("投稿エラー: " + e.message); }
+                showToast("ポストしました！");
+            } catch (e) { customAlert("投稿エラー", e.message); }
         }
 
         window.renderPosts = async function() {
@@ -461,11 +588,8 @@
                     if (notInterestedPosts.includes(postId) || mutedUsers.includes(uId) || blockedUsers.includes(uId)) return;
 
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
-                    
-                    // 💡 投稿内容をサニタイズしてから、埋め込みコードに変換
                     let safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     safeContent = parseEmbeds(safeContent);
-                    
                     const encodedContent = encodeURIComponent(post.content || "");
                     const uName = post.userName || "名無しさん"; const uIcon = post.userIcon || defaultIcon;
                     
@@ -482,10 +606,7 @@
                     postDiv.innerHTML = createPostHTML(postId, post, uId, uName, uIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount);
                     timeline.appendChild(postDiv);
                 });
-
-                // 💡 追加されたTwitterのウィジェットを読み込む
                 setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
-
             } catch (e) { timeline.innerHTML = `<div class="error-box">🚨 通信エラー：<br>${e.message}</div>`; }
         }
 
@@ -501,11 +622,8 @@
                 if (docSnap.exists()) {
                     const post = docSnap.data(); currentDetailPostUserId = post.userId || "";
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
-                    
-                    // 💡 詳細画面でも埋め込みコードに変換
                     let safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     safeContent = parseEmbeds(safeContent);
-
                     const encodedContent = encodeURIComponent(post.content || "");
                     const uName = post.userName || "名無しさん"; const uIcon = post.userIcon || defaultIcon;
                     const uId = post.userId || ""; 
@@ -521,7 +639,7 @@
                     if (post.isQuoteRepost && post.originalPost) {
                         const orig = post.originalPost;
                         let safeOrigContent = (orig.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                        safeOrigContent = parseEmbeds(safeOrigContent); // 💡 追加
+                        safeOrigContent = parseEmbeds(safeOrigContent);
                         quoteBoxHTML = `
                             <div class="quote-box" onclick="showPostDetail('${orig.postId}'); event.stopPropagation();">
                                 <div class="quote-header"><img src="${orig.userIcon || defaultIcon}" class="quote-icon"><span class="quote-name">${orig.userName}</span></div>
@@ -563,9 +681,7 @@
 
                     document.getElementById('submitReplyBtn').onclick = function() { submitReply(postId); };
                     loadReplies(postId);
-                    
                     setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
-
                 } else { document.getElementById('detailPostContent').innerHTML = '投稿が見つかりませんでした。'; }
             } catch (e) { document.getElementById('detailPostContent').innerHTML = 'エラー: ' + e.message; }
         }
@@ -602,14 +718,12 @@
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
                     
                     let safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    safeContent = parseEmbeds(safeContent); // 💡 埋め込み変換
+                    safeContent = parseEmbeds(safeContent);
 
                     const encodedContent = encodeURIComponent(post.content || "");
-                    
                     const viewCount = post.views || 0;
                     const likeCount = post.likes || 0;
                     const repostCount = post.reposts || 0;
-
                     const isRepost = post.isRepost || false;
                     const repLabel = isRepost ? `<div class="repost-label">${svgRepost} ${post.repostedBy} さんがリポストしました</div>` : '';
 
@@ -619,9 +733,7 @@
                     postDiv.innerHTML = createPostHTML(postId, post, uId, post.userName || "名無しさん", post.userIcon || defaultIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount);
                     profileTimeline.appendChild(postDiv);
                 });
-                
                 setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
-
             } catch (e) { profileTimeline.innerHTML = `<div class="error-box">プロフィール読込失敗: ${e.message}</div>`; }
         }
 
@@ -672,22 +784,16 @@
 
         window.likePost = async function(postId, targetUserId, event) {
             if (event) { event.stopPropagation(); event.cancelBubble = true; }
-            if (targetUserId === myProfile.id) { alert("自分のポストにはいいねできません。"); return; }
-            
+            if (targetUserId === myProfile.id) { customAlert("エラー", "自分のポストにはいいねできません。"); return; }
             try {
                 const docRef = doc(db, "posts", postId);
                 try { await updateDoc(docRef, { likes: increment(1) }); } catch(e) {}
-                
-                await addDoc(collection(db, "notifications"), {
-                    type: "like", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date()
-                });
-                
+                await addDoc(collection(db, "notifications"), { type: "like", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date() });
                 const countSpan = document.getElementById(`like-count-${postId}`);
                 if (countSpan) countSpan.innerText = (parseInt(countSpan.innerText) || 0) + 1;
                 const detailCountSpan = document.getElementById(`detail-like-count-${postId}`);
                 if (detailCountSpan) detailCountSpan.innerText = (parseInt(detailCountSpan.innerText) || 0) + 1;
-                
-            } catch(e) { alert("エラー: " + e.message); }
+            } catch(e) { customAlert("エラー", e.message); }
         }
 
         let currentRepostId = "";
@@ -695,18 +801,16 @@
         window.repostPost = async function(postId, event) {
             if (event) { event.stopPropagation(); event.cancelBubble = true; }
             if (await isUserRestricted(myProfile.id)) return;
-            
             try {
                 const docRef = doc(db, "posts", postId);
                 const docSnap = await getDoc(docRef);
-                if (!docSnap.exists()) { alert("元の投稿が見つかりません。"); return; }
+                if (!docSnap.exists()) { customAlert("エラー", "元の投稿が見つかりません。"); return; }
                 const origPost = docSnap.data();
-                if (origPost.userId === myProfile.id) { alert("自分のポストはリポストできません。"); return; }
-                
+                if (origPost.userId === myProfile.id) { customAlert("エラー", "自分のポストはリポストできません。"); return; }
                 currentRepostId = postId;
                 document.getElementById('quoteText').value = '';
                 document.getElementById('repostModal').style.display = 'flex';
-            } catch(e) { alert("エラー: " + e.message); }
+            } catch(e) { customAlert("エラー", e.message); }
         }
 
         window.closeRepostModal = function() {
@@ -718,25 +822,20 @@
             if (!currentRepostId) return;
             const postId = currentRepostId;
             const comment = document.getElementById('quoteText').value.trim();
-            
             if (isQuote && comment === "") {
-                alert("引用ポストする場合はコメントを入力してください。");
+                customAlert("エラー", "引用ポストする場合はコメントを入力してください。");
                 return;
             }
-
             try {
                 const docRef = doc(db, "posts", postId);
                 const docSnap = await getDoc(docRef);
                 const origPost = docSnap.data();
                 const targetUserId = origPost.userId;
-
                 try { await updateDoc(docRef, { reposts: increment(1) }); } catch(e) {}
-
                 const countSpan = document.getElementById(`repost-count-${postId}`);
                 if (countSpan) countSpan.innerText = (parseInt(countSpan.innerText) || 0) + 1;
                 const detailCountSpan = document.getElementById(`detail-repost-count-${postId}`);
                 if (detailCountSpan) detailCountSpan.innerText = (parseInt(detailCountSpan.innerText) || 0) + 1;
-
                 if (!isQuote) {
                     await addDoc(collection(db, "posts"), {
                         content: origPost.content, createdAt: new Date(), userId: targetUserId, userName: origPost.userName, userIcon: origPost.userIcon, isRepost: true, repostedBy: myProfile.name, views: 0, likes: 0, reposts: 0
@@ -748,10 +847,10 @@
                     });
                 }
                 await addDoc(collection(db, "notifications"), { type: "repost", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date() });
-                
                 closeRepostModal();
+                showToast("リポストしました！");
                 checkRouting();
-            } catch(e) { alert("エラー: " + e.message); }
+            } catch(e) { customAlert("エラー", e.message); }
         }
 
         window.submitReply = async function(postId) {
@@ -764,7 +863,8 @@
                     await addDoc(collection(db, "notifications"), { type: "reply", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: currentDetailPostUserId, content: replyText, createdAt: new Date() });
                 }
                 replyInput.value = ''; loadReplies(postId);
-            } catch (e) { alert("返信に失敗しました: " + e.message); }
+                showToast("返信をポストしました！");
+            } catch (e) { customAlert("エラー", "返信に失敗しました: " + e.message); }
         }
 
         window.loadReplies = async function(postId) {
@@ -778,9 +878,8 @@
                 repliesArray.forEach((reply) => {
                     const rId = reply.userId || ""; if (mutedUsers.includes(rId) || blockedUsers.includes(rId)) return;
                     const date = reply.createdAt ? reply.createdAt.toDate().toLocaleString() : '時間不明';
-                    
                     let safeContent = (reply.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    safeContent = parseEmbeds(safeContent); // 💡 返信も埋め込み変換
+                    safeContent = parseEmbeds(safeContent);
 
                     const rName = reply.userName || "名無しさん"; const rIcon = reply.userIcon || defaultIcon;
                     const replyDiv = document.createElement('div'); replyDiv.className = 'reply-item';
@@ -793,9 +892,7 @@
                     `;
                     replyList.appendChild(replyDiv);
                 });
-                
                 setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
-
             } catch (e) { replyList.innerHTML = `<div class="error-box">返信読込失敗: ${e.message}</div>`; }
         }
 
@@ -816,7 +913,7 @@
             } else if (actionType === 'ブロック') {
                 let list = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; list.push(targetUserId); localStorage.setItem('mySNS_blockedUsers', JSON.stringify(list)); animateRemovePost(postId);
             } else if (actionType === '制限' || actionType === '報告') {
-                addDoc(collection(db, "penalties"), { targetUserId: targetUserId, type: actionType, createdAt: new Date() }); alert(`送信しました。`);
+                addDoc(collection(db, "penalties"), { targetUserId: targetUserId, type: actionType, createdAt: new Date() }); customAlert("報告完了", `送信しました。`);
             }
         }
         function animateRemovePost(postId) {
@@ -826,9 +923,9 @@
 
         window.saveSettings = function() {
             const name = document.getElementById('profileName').value.trim(); const iconUrl = document.getElementById('profileIcon').value.trim();
-            if (name === '') { alert('ニックネームを入力してください。'); return; }
+            if (name === '') { customAlert('エラー', 'ニックネームを入力してください。'); return; }
             myProfile.name = name; if (uploadedImageBase64 !== "") { myProfile.icon = uploadedImageBase64; } else if (iconUrl !== "") { myProfile.icon = iconUrl; }
-            localStorage.setItem('mySNS_profile', JSON.stringify(myProfile)); alert('設定を保存しました！'); showHome();
+            localStorage.setItem('mySNS_profile', JSON.stringify(myProfile)); showToast('設定を保存しました！'); showHome();
         }
 
         window.sharePost = function(postId, encodedContent, event) {
@@ -838,7 +935,7 @@
             let baseUrl = window.location.origin + window.location.pathname; if (baseUrl.endsWith('/')) { baseUrl = baseUrl.slice(0, -1); }
             const params = new URLSearchParams(); params.append('id', postId); params.append('ref', randomString);
             const shareUrl = `${baseUrl}?${params.toString()}`; const shareText = `${content}\n\n${shareUrl}`;
-            navigator.clipboard.writeText(shareText).then(() => { alert("リンクをコピーしました！"); });
+            navigator.clipboard.writeText(shareText).then(() => { showToast("リンクをコピーしました！"); });
         }
 
         checkRouting();
