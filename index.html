@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - メニュー・絵文字デザイン版</title>
+    <title>簡易SNS - メニュー修正版</title>
     <style>
         body { font-family: sans-serif; background-color: #f5f8fa; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; border-left: 1px solid #e1e8ed; border-right: 1px solid #e1e8ed; }
@@ -33,24 +33,24 @@
         
         .user-icon { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #e1e8ed; }
         
-        /* 📱 ヘッダー内の相対配置（メニューのため） */
+        /* ヘッダー内の相対配置 */
         .post-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; padding-right: 30px; position: relative; }
         .user-name { font-weight: bold; font-size: 15px; color: black; }
         .post-time { font-size: 12px; color: #657786; }
         .post-content { font-size: 15px; white-space: pre-wrap; margin-bottom: 10px; line-height: 1.4; }
         
-        /* 📱 絵文字ボタン風（CSS装飾） */
+        /* 絵文字ボタン風 */
         .post-actions { display: flex; gap: 20px; margin-top: 5px; }
         .action-btn { background: none; border: none; color: #657786; font-size: 14px; cursor: pointer; padding: 6px 10px; border-radius: 15px; display: flex; align-items: center; gap: 6px; transition: background-color 0.2s, color 0.2s; }
         .action-btn:hover { background-color: #e8f5fe; color: #1da1f2; }
         .action-btn.share:hover { background-color: #e6f4ea; color: #17bf63; }
 
-        /* 📱 「・・・」メニューボタンのデザイン */
-        .menu-trigger { position: absolute; right: 0; top: 0; background: none; border: none; color: #657786; font-size: 18px; font-weight: bold; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s, color 0.2s; }
+        /* 「・・・」メニューボタンのデザイン */
+        .menu-trigger { position: absolute; right: 0; top: 0; background: none; border: none; color: #657786; font-size: 18px; font-weight: bold; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s, color 0.2s; z-index: 5; }
         .menu-trigger:hover { background-color: #e8f5fe; color: #1da1f2; }
 
-        /* 📱 ドロップダウンメニューのスタイル */
-        .dropdown-menu { display: none; position: absolute; right: 0; top: 35px; background: white; border: 1px solid #e1e8ed; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 20; width: 180px; overflow: hidden; py: 5px; }
+        /* ドロップダウンメニューのスタイル */
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 35px; background: white; border: 1px solid #e1e8ed; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 20; width: 180px; overflow: hidden; padding: 5px 0; }
         .menu-item { padding: 12px 16px; font-size: 14px; color: #14171a; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background-color 0.2s; text-align: left; }
         .menu-item:hover { background-color: #f7f9fa; }
         .menu-item.danger { color: #e0245e; }
@@ -109,6 +109,7 @@
             <div class="detail-main-user">
                 <img src="" id="detailUserIcon" class="user-icon">
                 <div id="detailUserName" class="user-name" style="font-size: 16px;"></div>
+                
                 <button class="menu-trigger" id="detailMenuTrigger">⋯</button>
                 <div id="detailDropdownMenu" class="dropdown-menu"></div>
             </div>
@@ -260,7 +261,6 @@
                     postDiv.id = `postDom-${postId}`;
                     postDiv.setAttribute('onclick', `showPostDetail('${postId}')`);
                     
-                    // 💡 メニューまわりのHTMLを統合＆各項目に絵文字を適応
                     postDiv.innerHTML = `
                         <div class="post-left"><img src="${uIcon}" class="user-icon"></div>
                         <div class="post-right">
@@ -268,7 +268,7 @@
                                 <span class="user-name">${uName}</span>
                                 <span class="post-time">${date}</span>
                                 
-                                <button class="menu-trigger" onclick="togglePostMenu('${postId}', event)">⋯</button>
+                                <button class="menu-trigger" onclick="togglePostMenu('${postId}', false, event)">⋯</button>
                                 <div id="postMenu-${postId}" class="dropdown-menu">
                                     <div class="menu-item" onclick="sharePost('${postId}', '${encodedContent}', event)">🔗 リンクをコピー</div>
                                     <div class="menu-item" onclick="handleMenuAction('${postId}', '${uName}', '興味なし', event)">👎 興味なし</div>
@@ -290,27 +290,42 @@
             } catch (e) { timeline.innerHTML = `<div class="error-box">🚨 エラー詳細：<br>${e.message}</div>`; }
         }
 
-        // 📱 メニューを開閉する処理
-        window.togglePostMenu = function(postId, event) {
-            if (event) event.stopPropagation(); // 親（ポスト全体）のクリックイベントを止める
-            const menu = document.getElementById(`postMenu-${postId}`) || document.getElementById('detailDropdownMenu');
+        // 📱 【完全修正】メニューを開閉する処理
+        window.togglePostMenu = function(postId, isDetail, event) {
+            // イベント伝播を全ブラウザで強力に止めるガード
+            const ev = event || window.event;
+            if (ev) {
+                if (ev.stopPropagation) ev.stopPropagation();
+                ev.cancelBubble = true;
+            }
+
+            // 詳細画面なら専用のID、タイムラインならポスト固有のIDのメニューを取得する
+            const menuId = isDetail ? 'detailDropdownMenu' : `postMenu-${postId}`;
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+
             const isVisible = menu.style.display === 'block';
+            
+            // 一旦すべてのメニューを閉じる
             closeAllMenus();
-            if (!isVisible) { menu.style.display = 'block'; }
+
+            // 閉じていた場合のみ、新しく開く
+            if (!isVisible) { 
+                menu.style.display = 'block'; 
+            }
         }
 
-        // 📱 画面のどこかをクリックしたときにメニューをすべて閉じる
         window.closeAllMenus = function() {
             document.querySelectorAll('.dropdown-menu').forEach(menu => { menu.style.display = 'none'; });
         }
 
-        // 📱 メニュー内の項目をクリックしたときの処理
         window.handleMenuAction = function(postId, targetUserName, actionType, event) {
-            if (event) event.stopPropagation();
+            const ev = event || window.event;
+            if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
+            
             closeAllMenus();
 
             if (actionType === '興味なし' || actionType === 'ミュート' || actionType === 'ブロック') {
-                // フロントエンド演出：タイムラインから対象のポストをアニメーションで消す
                 const postDom = document.getElementById(`postDom-${postId}`);
                 if (postDom) {
                     postDom.style.opacity = '0';
@@ -322,12 +337,11 @@
                 if (actionType === 'ミュート') alert(`${targetUserName} さんをミュートしました。`);
                 if (actionType === 'ブロック') alert(`${targetUserName} さんをブロックしました。`);
                 
-                // 詳細画面で実行された場合はホームに戻す
                 if (document.getElementById('detailView').style.display === 'block') { showHome(); }
             } else if (actionType === '制限') {
                 alert(`${targetUserName} さんのアカウントを制限しました。`);
             } else if (actionType === '報告') {
-                alert("この投稿を運営に報告しました。ご協力ありがとうございました。");
+                alert("この投稿を運営に報告しました。");
             }
         }
 
@@ -377,9 +391,9 @@
                         <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">📤 共有リンクをコピー</button>
                     `;
 
-                    // 💡 詳細画面用のメニューボタン紐付け
+                    // 💡 【修正】詳細画面用ボタンの引数に「true（詳細画面である）」を確実に渡す
                     const detailTrigger = document.getElementById('detailMenuTrigger');
-                    detailTrigger.setAttribute('onclick', `togglePostMenu('${postId}', event)`);
+                    detailTrigger.setAttribute('onclick', `togglePostMenu('${postId}', true, event)`);
                     
                     const detailMenu = document.getElementById('detailDropdownMenu');
                     detailMenu.innerHTML = `
@@ -527,8 +541,9 @@
         }
 
         window.sharePost = function(postId, encodedContent, event) {
-            if(event) event.stopPropagation();
-            closeAllMenus(); // メニューを閉じる
+            const ev = event || window.event;
+            if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
+            closeAllMenus();
             const content = decodeURIComponent(encodedContent);
             const randomString = Math.random().toString(36).substring(2, 12);
             const baseUrl = window.location.origin + window.location.pathname;
