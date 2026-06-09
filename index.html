@@ -3,26 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - メニュー追加版</title>
+    <title>簡易SNS - 返信機能版</title>
     <style>
         body { font-family: sans-serif; background-color: #f5f8fa; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; border-left: 1px solid #e1e8ed; border-right: 1px solid #e1e8ed; }
         
-        /* 📱 追加：メニュー（タブ）の見た目 */
-        .tabs { display: flex; border-bottom: 1px solid #e1e8ed; background-color: rgba(255, 255, 255, 0.9); position: sticky; top: 0; backdrop-filter: blur(5px); }
+        /* メニュー（タブ） */
+        .tabs { display: flex; border-bottom: 1px solid #e1e8ed; background-color: rgba(255, 255, 255, 0.9); position: sticky; top: 0; backdrop-filter: blur(5px); z-index: 10; }
         .tab { flex: 1; text-align: center; padding: 15px; text-decoration: none; color: #657786; font-weight: bold; font-size: 16px; cursor: pointer; transition: background-color 0.2s; }
         .tab:hover { background-color: #e8f5fe; }
         .tab.active { color: black; border-bottom: 4px solid #1da1f2; }
 
+        /* 投稿箱 */
         .post-box { padding: 15px; border-bottom: 10px solid #e1e8ed; display: flex; flex-direction: column; }
         textarea { width: 100%; border: none; resize: none; font-size: 18px; outline: none; margin-bottom: 10px; box-sizing: border-box; }
+        
         button { align-self: flex-end; background-color: #1da1f2; color: white; border: none; border-radius: 20px; padding: 10px 20px; font-weight: bold; cursor: pointer; }
         button:hover { background-color: #0c85d0; }
-        .post { padding: 15px; border-bottom: 1px solid #e1e8ed; }
+        
+        /* タイムライン・ポスト */
+        .post { padding: 15px; border-bottom: 1px solid #e1e8ed; display: flex; flex-direction: column; }
         .post-time { font-size: 12px; color: #657786; margin-bottom: 5px; }
-        .post-content { font-size: 15px; white-space: pre-wrap; }
+        .post-content { font-size: 15px; white-space: pre-wrap; margin-bottom: 10px; }
+        
+        /* 💬 返信ボタン */
+        .reply-trigger { align-self: flex-start; background: none; border: none; color: #657786; font-size: 13px; cursor: pointer; padding: 5px; display: flex; align-items: center; gap: 5px; }
+        .reply-trigger:hover { color: #1da1f2; }
+
+        /* 🔓 返信エリア（最初は非表示） */
+        .reply-section { margin-top: 10px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; display: none; }
+        .reply-box { display: flex; gap: 10px; margin-bottom: 15px; }
+        .reply-input { flex: 1; border: 1px solid #ccd6dd; border-radius: 20px; padding: 8px 15px; font-size: 14px; outline: none; background: white; }
+        .reply-btn { background-color: #1da1f2; color: white; border: none; border-radius: 20px; padding: 6px 15px; font-size: 13px; font-weight: bold; cursor: pointer; shrink: 0; }
+        
+        /* 返信一覧の見た目 */
+        .reply-list { border-top: 1px solid #e1e8ed; padding-top: 10px; }
+        .reply-item { font-size: 14px; padding: 8px 0; border-bottom: 1px dashed #e1e8ed; }
+        .reply-item:last-child { border-bottom: none; }
+        .reply-item-time { font-size: 11px; color: #657786; margin-bottom: 2px; }
+
         .error-box { padding: 20px; margin: 15px; border: 2px solid #e0245e; background-color: #ffebee; color: #e0245e; font-weight: bold; border-radius: 10px; }
-        .error-reason { color: black; font-weight: normal; margin-top: 10px; font-family: monospace; background: white; padding: 10px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
@@ -43,15 +63,12 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-        // --- 🔗 ご要望の「最後が / にならない同じ場所のリンク」を作る処理 ---
+        // 通知リンクの調整（最後が / にならない設定）
         let notifyUrl = window.location.origin + window.location.pathname;
-        if (notifyUrl.endsWith('/')) {
-            notifyUrl = notifyUrl.slice(0, -1); // 最後の / を切り取る
-        }
+        if (notifyUrl.endsWith('/')) { notifyUrl = notifyUrl.slice(0, -1); }
         document.getElementById('notificationLink').href = notifyUrl;
-        // -------------------------------------------------------------
 
         const firebaseConfig = {
             apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
@@ -66,6 +83,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // 新規投稿
         window.submitPost = async function() {
             const textInput = document.getElementById('postText');
             const text = textInput.value.trim();
@@ -83,6 +101,7 @@
             }
         }
 
+        // タイムライン読み込み
         window.loadPosts = async function() {
             const timeline = document.getElementById('timeline');
             timeline.innerHTML = '通信中...';
@@ -99,27 +118,107 @@
                 }
 
                 querySnapshot.forEach((doc) => {
+                    const postId = doc.id; // 各投稿の固有IDを取得
                     const post = doc.data();
-                    const postDiv = document.createElement('div');
-                    postDiv.className = 'post';
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
-                    
                     const rawContent = post.content || "（内容のないデータです）";
                     const safeContent = rawContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     
-                    postDiv.innerHTML = `<div class="post-time">${date}</div><div class="post-content">${safeContent}</div>`;
+                    const postDiv = document.createElement('div');
+                    postDiv.className = 'post';
+                    postDiv.innerHTML = `
+                        <div class="post-time">${date}</div>
+                        <div class="post-content">${safeContent}</div>
+                        
+                        <button class="reply-trigger" onclick="toggleReplySection('${postId}')">💬 返信をみる・書く</button>
+                        
+                        <div id="replySection-${postId}" class="reply-section">
+                            <div class="reply-box">
+                                <input type="text" id="replyInput-${postId}" class="reply-input" placeholder="返信をツイート...">
+                                <button class="reply-btn" onclick="submitReply('${postId}')">返信</button>
+                            </div>
+                            <div id="replyList-${postId}" class="reply-list">読み込み中...</div>
+                        </div>
+                    `;
                     timeline.appendChild(postDiv);
                 });
             } catch (e) {
-                timeline.innerHTML = `
-                    <div class="error-box">
-                        🚨 Firebaseとの通信に失敗しました！
-                        <div class="error-reason">エラー詳細：<br>${e.message}</div>
-                    </div>
-                `;
+                timeline.innerHTML = `<div class="error-box">🚨 エラー詳細：<br>${e.message}</div>`;
             }
         }
 
+        // 返信エリアの開閉切り替え
+        window.toggleReplySection = function(postId) {
+            const section = document.getElementById(`replySection-${postId}`);
+            if (section.style.display === "block") {
+                section.style.display = "none";
+            } else {
+                section.style.display = "block";
+                loadReplies(postId); // 開いた時にその投稿の返信を読み込む
+            }
+        }
+
+        // 返信を送信する機能
+        window.submitReply = async function(postId) {
+            const replyInput = document.getElementById(`replyInput-${postId}`);
+            const replyText = replyInput.value.trim();
+            if (replyText === '') return;
+
+            try {
+                // 'replies'コレクションに、どの投稿宛てか(postId)を記録して保存
+                await addDoc(collection(db, "replies"), {
+                    postId: postId,
+                    content: replyText,
+                    createdAt: new Date()
+                });
+                replyInput.value = '';
+                loadReplies(postId); // 返信一覧を更新
+            } catch (e) {
+                alert("返信に失敗しました: " + e.message);
+            }
+        }
+
+        // 特定の投稿に対する返信を読み込む機能
+        window.loadReplies = async function(postId) {
+            const replyList = document.getElementById(`replyList-${postId}`);
+            replyList.innerHTML = '読み込み中...';
+
+            try {
+                // この投稿のID(postId)と一致する返信だけを古い順（asc）に取得
+                const q = query(
+                    collection(db, "replies"), 
+                    where("postId", "==", postId),
+                    orderBy("createdAt", "asc")
+                );
+                const querySnapshot = await getDocs(q);
+                
+                replyList.innerHTML = '';
+                
+                if (querySnapshot.empty) {
+                    replyList.innerHTML = '<div style="color:#657786; font-size:12px;">まだ返信はありません。</div>';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const reply = doc.data();
+                    const date = reply.createdAt ? reply.createdAt.toDate().toLocaleString() : '時間不明';
+                    const safeContent = reply.content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    
+                    const replyDiv = document.createElement('div');
+                    replyDiv.className = 'reply-item';
+                    replyDiv.innerHTML = `
+                        <div class="reply-item-time">${date}</div>
+                        <div>${safeContent}</div>
+                    `;
+                    replyList.appendChild(replyDiv);
+                });
+            } catch (e) {
+                replyList.innerHTML = '<div style="color:red; font-size:12px;">返信の読み込みに失敗しました。</div>';
+                console.error(e);
+            }
+        }
+
+        // 起動時にタイムラインを読み込み
         loadPosts();
     </script>
 </body>
