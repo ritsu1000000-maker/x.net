@@ -11,12 +11,10 @@
         .header-bar { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #2f3336; background-color: rgba(0, 0, 0, 0.85); position: sticky; top: 0; backdrop-filter: blur(5px); z-index: 10; font-weight: bold; font-size: 18px; }
         .back-btn { background: none; border: none; cursor: pointer; margin-right: 15px; padding: 5px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #e7e9ea; }
         .back-btn:hover { background-color: #181818; }
-
         .tabs { display: flex; border-bottom: 1px solid #2f3336; }
         .tab { flex: 1; text-align: center; padding: 15px; text-decoration: none; color: #71767b; font-weight: bold; font-size: 16px; cursor: pointer; }
         .tab:hover { background-color: #181818; }
         .tab.active { color: #e7e9ea; border-bottom: 4px solid #1d9bf0; }
-
         .post-box { padding: 15px; border-bottom: 1px solid #2f3336; display: flex; gap: 12px; }
         .post-box-right { flex: 1; display: flex; flex-direction: column; }
         textarea { width: 100%; border: none; resize: none; font-size: 18px; outline: none; margin-bottom: 10px; box-sizing: border-box; background: transparent; color: #e7e9ea; }
@@ -36,16 +34,13 @@
         .post-time { font-size: 14px; color: #71767b; }
         .post-content { font-size: 15px; white-space: pre-wrap; margin-bottom: 10px; line-height: 1.4; color: #e7e9ea; }
         .repost-label { font-size: 12px; color: #71767b; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
-
         .quote-box { border: 1px solid #2f3336; border-radius: 12px; padding: 12px; margin-top: 10px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
         .quote-box:hover { background-color: #080808; }
         .quote-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
         .quote-icon { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
         .quote-name { font-weight: bold; font-size: 13px; color: #e7e9ea; }
         .quote-content { font-size: 14px; color: #e7e9ea; white-space: pre-wrap; line-height: 1.4; }
-
         .icon { width: 18px; height: 18px; fill: currentColor; display: inline-block; vertical-align: middle; }
-
         .post-actions { display: flex; justify-content: space-between; max-width: 450px; margin-top: 5px; }
         .action-btn { background: none; border: none; color: #71767b; font-size: 13px; cursor: pointer; padding: 6px 10px; border-radius: 15px; display: flex; align-items: center; gap: 6px; transition: background-color 0.2s, color 0.2s; }
         .action-btn.reply:hover { background-color: #031018; color: #1d9bf0; }
@@ -55,16 +50,13 @@
         .action-btn.share:hover { background-color: #16181c; color: #1d9bf0; }
         
         .count-span { font-size: 14px; min-width: 15px; text-align: left; }
-
         .menu-trigger { position: absolute; right: 0; top: 0; background: none; border: none; color: #71767b; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; transition: background-color 0.2s, color 0.2s; }
         .menu-trigger:hover { background-color: #031018; color: #1d9bf0; }
-
         .dropdown-menu { display: none; position: absolute; right: 0; top: 35px; background: #000000; border: 1px solid #2f3336; border-radius: 12px; box-shadow: 0 0 15px rgba(255,255,255,0.1); z-index: 20; width: 180px; overflow: hidden; padding: 5px 0; }
         .menu-item { padding: 12px 16px; font-size: 14px; color: #e7e9ea; cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left; transition: background-color 0.2s; }
         .menu-item:hover { background-color: #16181c; }
         .menu-item.danger { color: #f91880; }
         .menu-item.danger:hover { background-color: #200914; }
-
         .detail-main-user { display: flex; align-items: center; padding: 20px 20px 10px 20px; gap: 12px; position: relative; }
         .detail-main-post { padding: 10px 20px 20px 20px; border-bottom: 1px solid #2f3336; font-size: 22px; line-height: 1.4; color: #e7e9ea; }
         .detail-main-time { padding: 15px 20px; color: #71767b; font-size: 15px; border-bottom: 1px solid #2f3336; }
@@ -80,7 +72,6 @@
         
         .view-section { display: none; }
         .error-box { padding: 20px; margin: 15px; border: 2px solid #f91880; background-color: #200914; color: #f91880; font-weight: bold; border-radius: 10px; }
-
         /* リポストモーダル用のスタイル */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(91, 112, 131, 0.4); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal-content { background: #000000; width: 90%; max-width: 600px; border-radius: 16px; border: 1px solid #2f3336; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 0 15px rgba(255,255,255,0.1); }
@@ -91,9 +82,7 @@
     </style>
 </head>
 <body onclick="closeAllMenus()">
-
     <div class="container">
-
         <div id="homeView" class="view-section">
             <div class="header-bar">ホーム</div>
             <div class="tabs">
@@ -111,7 +100,6 @@
             </div>
             <div id="timeline"></div>
         </div>
-
         <div id="detailView" class="view-section">
             <div class="header-bar">
                 <button class="back-btn" onclick="showHome()">
@@ -128,7 +116,6 @@
             <div id="detailPostContent" class="detail-main-post"></div>
             <div id="detailPostTime" class="detail-main-time"></div>
             <div style="padding: 10px 20px; border-bottom: 1px solid #2f3336;" id="detailPostActions"></div>
-
             <div class="detail-reply-box">
                 <div><img src="" class="user-icon my-current-icon"></div>
                 <div class="post-box-right">
@@ -138,7 +125,6 @@
             </div>
             <div id="detailReplyList"></div>
         </div>
-
         <div id="notificationView" class="view-section">
             <div class="header-bar">
                 <button class="back-btn" onclick="showHome()">
@@ -153,7 +139,6 @@
             </div>
             <div id="notificationList"></div>
         </div>
-
         <div id="userProfileView" class="view-section">
             <div class="header-bar">
                 <button class="back-btn" onclick="showHome()">
@@ -164,7 +149,6 @@
             <div id="userProfileHeader"></div>
             <div id="userProfileTimeline"></div>
         </div>
-
         <div id="settingsView" class="view-section">
             <div class="header-bar">
                 <button class="back-btn" onclick="showHome()">
@@ -193,9 +177,7 @@
                 <button class="post-btn" onclick="saveSettings()" style="width: 100%; padding: 12px; border-radius: 25px; font-size: 16px;">設定を保存</button>
             </div>
         </div>
-
     </div>
-
     <div id="repostModal" class="modal-overlay">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -209,11 +191,9 @@
             </div>
         </div>
     </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDoc, getDocs, doc, query, orderBy, where, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-
         const svgReply    = `<svg class="icon" viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg>`;
         const svgRepost   = `<svg class="icon" viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>`;
         const svgLike     = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
@@ -226,7 +206,6 @@
         const svgRestrict = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg>`;
         const svgBlock    = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm4.9-3.1L5.69 5.69C7.04 4.63 8.74 4 12 4c4.41 0 8 3.59 8 8 0 1.85-.63 3.55-1.69 4.9z"/></svg>`
         const svgWarning  = `<svg class="icon" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`;
-
         const firebaseConfig = {
             apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
             authDomain: "sabopennet.firebaseapp.com",
@@ -236,10 +215,8 @@
             appId: "1:284308308452:web:e36dd991e55a0e60e4c7f1",
             measurementId: "G-K17XRK5KRN"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
         const defaultIcon = "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&h=150&fit=crop";
         let myProfile = JSON.parse(localStorage.getItem('mySNS_profile')) || {};
         if (!myProfile.id) {
@@ -248,10 +225,8 @@
             myProfile.icon = defaultIcon;
             localStorage.setItem('mySNS_profile', JSON.stringify(myProfile));
         }
-
         let currentDetailPostUserId = "";
         let uploadedImageBase64 = "";
-
         // 💡 相対時間（何秒前、何分前...）を計算する関数
         function formatTimeAgo(firebaseTimestamp) {
             if (!firebaseTimestamp) return '時間不明';
@@ -275,7 +250,6 @@
             const d = past.getDate();
             return y === now.getFullYear() ? `${m}月${d}日` : `${y}年${m}月${d}日`;
         }
-
         // 投稿組み立て関数
         function createPostHTML(postId, post, uId, uName, uIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount) {
             let quoteBoxHTML = "";
@@ -283,7 +257,6 @@
             let myLikedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
             const isLiked = myLikedPosts.includes(postId);
             const likeClass = isLiked ? 'action-btn like liked' : 'action-btn like';
-
             if (post.isQuoteRepost && post.originalPost) {
                 const orig = post.originalPost;
                 const safeOrigContent = (orig.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -297,7 +270,6 @@
                     </div>
                 `;
             }
-
             return `
                 <div class="post-right" style="padding-left:0; width:100%;">
                     ${repLabel}
@@ -339,11 +311,9 @@
                 </div>
             `;
         }
-
         function updateMyIconDisplays() {
             document.querySelectorAll('.my-current-icon').forEach(img => { img.src = myProfile.icon; });
         }
-
         window.handleImageUpload = function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -364,7 +334,6 @@
             };
             reader.readAsDataURL(file);
         }
-
         async function isUserRestricted(userId) {
             try {
                 const q = query(collection(db, "penalties"), where("targetUserId", "==", userId));
@@ -385,7 +354,6 @@
                 return false;
             } catch (e) { return false; }
         }
-
         window.checkRouting = async function() {
             const urlParams = new URLSearchParams(window.location.search);
             const postIdParam = urlParams.get('id');
@@ -394,7 +362,6 @@
             
             document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
             closeAllMenus();
-
             if (postIdParam) {
                 document.getElementById('detailView').style.display = 'block';
                 await renderPostDetail(postIdParam);
@@ -412,21 +379,18 @@
                 updateMyIconDisplays();
                 await renderPosts();
             }
-
             const notifyParams = new URLSearchParams();
             notifyParams.set('view', 'notifications');
             let cleanBaseUrl = window.location.origin + window.location.pathname;
             if (cleanBaseUrl.endsWith('/')) { cleanBaseUrl = cleanBaseUrl.slice(0, -1); }
             document.getElementById('notificationLink').href = `${cleanBaseUrl}?${notifyParams.toString()}`;
         }
-
         window.showHome = function() { window.history.pushState({}, '', window.location.pathname); checkRouting(); }
         window.showPostDetail = function(postId) { const params = new URLSearchParams(); params.set('id', postId); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
         window.showNotifications = function() { const params = new URLSearchParams(); params.set('view', 'notifications'); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
         window.showUserProfile = function(userId, event) { if (event) { event.stopPropagation(); event.cancelBubble = true; } const params = new URLSearchParams(); params.set('user', userId); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
         window.showSettings = function() { const params = new URLSearchParams(); params.set('view', 'settings'); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
         window.addEventListener('popstate', checkRouting);
-
         window.submitPost = async function() {
             if (await isUserRestricted(myProfile.id)) return;
             const textInput = document.getElementById('postText'); const text = textInput.value.trim();
@@ -438,21 +402,17 @@
                 textInput.value = ''; renderPosts();
             } catch (e) { alert("投稿エラー: " + e.message); }
         }
-
         window.renderPosts = async function() {
             const timeline = document.getElementById('timeline'); timeline.innerHTML = '<div style="padding:15px; color:#71767b;">通信中...</div>';
             const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; const notInterestedPosts = JSON.parse(localStorage.getItem('mySNS_notInterestedPosts')) || [];
-
             try {
                 const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
                 timeline.innerHTML = '';
                 if (querySnapshot.empty) { timeline.innerHTML = '<div style="padding:15px; color:#71767b;">まだ投稿がありません。</div>'; return; }
-
                 querySnapshot.forEach((docSnap) => {
                     const postId = docSnap.id; const post = docSnap.data(); const uId = post.userId || "";
                     if (notInterestedPosts.includes(postId) || mutedUsers.includes(uId) || blockedUsers.includes(uId)) return;
-
                     // 💡 相対時間を使用
                     const date = formatTimeAgo(post.createdAt);
                     
@@ -466,7 +426,6 @@
                     
                     const isRepost = post.isRepost || false;
                     const repLabel = isRepost ? `<div class="repost-label">${svgRepost} ${post.repostedBy} さんがリポストしました</div>` : '';
-
                     const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.id = `postDom-${postId}`;
                     postDiv.setAttribute('onclick', `showPostDetail('${postId}')`);
                     
@@ -475,16 +434,13 @@
                 });
             } catch (e) { timeline.innerHTML = `<div class="error-box">🚨 通信エラー：<br>${e.message}</div>`; }
         }
-
         window.renderPostDetail = async function(postId) {
             document.getElementById('detailPostContent').innerHTML = '読み込み中...'; document.getElementById('detailPostTime').innerHTML = ''; document.getElementById('detailReplyList').innerHTML = ''; document.getElementById('detailPostActions').innerHTML = '';
             updateMyIconDisplays();
-
             try {
                 const docRef = doc(db, "posts", postId);
                 try { await updateDoc(docRef, { views: increment(1) }); } catch(e) {}
                 const docSnap = await getDoc(docRef);
-
                 if (docSnap.exists()) {
                     const post = docSnap.data(); currentDetailPostUserId = post.userId || "";
                     
@@ -492,7 +448,6 @@
                     const dateRelative = formatTimeAgo(post.createdAt);
                     const dateAbsolute = post.createdAt ? post.createdAt.toDate().toLocaleString() : '';
                     const displayDate = post.createdAt ? `${dateRelative} &nbsp;·&nbsp; ${dateAbsolute}` : '時間不明';
-
                     const safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     const encodedContent = encodeURIComponent(post.content || "");
                     const uName = post.userName || "名無しさん"; const uIcon = post.userIcon || defaultIcon;
@@ -501,7 +456,6 @@
                     const viewCount = post.views || 0;
                     const likeCount = post.likes || 0;
                     const repostCount = post.reposts || 0;
-
                     document.getElementById('detailUserIcon').src = uIcon; document.getElementById('detailUserIcon').setAttribute('onclick', `showUserProfile('${uId}', event)`);
                     document.getElementById('detailUserName').innerText = uName; document.getElementById('detailUserName').setAttribute('onclick', `showUserProfile('${uId}', event)`);
                     
@@ -516,14 +470,12 @@
                             </div>
                         `;
                     }
-
                     document.getElementById('detailPostContent').innerHTML = safeContent + quoteBoxHTML;
                     document.getElementById('detailPostTime').innerHTML = displayDate;
                     
                     let myLikedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
                     const isLiked = myLikedPosts.includes(postId);
                     const likeClass = isLiked ? 'action-btn like liked' : 'action-btn like';
-
                     document.getElementById('detailPostActions').innerHTML = `
                         <div class="post-actions" style="border:none; padding:0;">
                             <button class="action-btn reply">${svgReply} <span class="count-span"></span></button>
@@ -539,7 +491,6 @@
                             <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgShare}</button>
                         </div>
                     `;
-
                     const detailTrigger = document.getElementById('detailMenuTrigger');
                     detailTrigger.innerHTML = svgMenu; detailTrigger.setAttribute('onclick', `togglePostMenu('${postId}', true, event)`);
                     
@@ -551,22 +502,18 @@
                         <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', 'ブロック', event)">${svgBlock} ブロック</div>
                         <div class="menu-item danger" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '報告', event)">${svgWarning} 報告する</div>
                     `;
-
                     document.getElementById('submitReplyBtn').onclick = function() { submitReply(postId); };
                     loadReplies(postId);
                 } else { document.getElementById('detailPostContent').innerHTML = '投稿が見つかりませんでした。'; }
             } catch (e) { document.getElementById('detailPostContent').innerHTML = 'エラー: ' + e.message; }
         }
-
         window.renderUserProfile = async function(targetUserId) {
             const profileHeader = document.getElementById('userProfileHeader'); const profileTimeline = document.getElementById('userProfileTimeline');
             profileHeader.innerHTML = '<div style="padding:20px; text-align:center;">読み込み中...</div>'; profileTimeline.innerHTML = '<div style="padding:15px; color:#71767b;">通信中...</div>';
             const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; const notInterestedPosts = JSON.parse(localStorage.getItem('mySNS_notInterestedPosts')) || [];
-
             try {
                 const q = query(collection(db, "posts"), where("userId", "==", targetUserId)); const querySnapshot = await getDocs(q);
                 let postsArray = []; let uName = "不明なユーザー"; let uIcon = defaultIcon;
-
                 querySnapshot.forEach(docSnap => {
                     const data = docSnap.data(); data.id = docSnap.id; postsArray.push(data);
                     if (uName === "不明なユーザー" && data.userName) { uName = data.userName; uIcon = data.userIcon || defaultIcon; }
@@ -579,11 +526,9 @@
                         <div style="font-size: 14px; color: #71767b; margin-top: 5px;">@${targetUserId.slice(0, 10)}</div>
                     </div>
                 `;
-
                 postsArray.sort((a, b) => { return (b.createdAt ? b.createdAt.toDate().getTime() : 0) - (a.createdAt ? a.createdAt.toDate().getTime() : 0); });
                 profileTimeline.innerHTML = '';
                 if (postsArray.length === 0) { profileTimeline.innerHTML = '<div style="padding:30px 20px; text-align:center; color:#71767b; font-size:15px; font-weight:bold;">まだ投稿がありません</div>'; return; }
-
                 postsArray.forEach(post => {
                     const postId = post.id; const uId = post.userId || "";
                     if (notInterestedPosts.includes(postId) || mutedUsers.includes(uId) || blockedUsers.includes(uId)) return;
@@ -597,10 +542,8 @@
                     const viewCount = post.views || 0;
                     const likeCount = post.likes || 0;
                     const repostCount = post.reposts || 0;
-
                     const isRepost = post.isRepost || false;
                     const repLabel = isRepost ? `<div class="repost-label">${svgRepost} ${post.repostedBy} さんがリポストしました</div>` : '';
-
                     const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.id = `postDom-${postId}`;
                     postDiv.setAttribute('onclick', `showPostDetail('${postId}')`);
                     
@@ -609,18 +552,15 @@
                 });
             } catch (e) { profileTimeline.innerHTML = `<div class="error-box">プロフィール読込失敗: ${e.message}</div>`; }
         }
-
         window.renderNotifications = async function() {
             const list = document.getElementById('notificationList'); list.innerHTML = '<div style="padding:15px; color:#71767b;">通信中...</div>';
             const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
-
             try {
                 const q = query(collection(db, "notifications"), where("targetUserId", "==", myProfile.id)); const querySnapshot = await getDocs(q);
                 let notificationsArray = []; querySnapshot.forEach((docSnap) => { notificationsArray.push(docSnap.data()); });
                 notificationsArray.sort((a, b) => { return (b.createdAt ? b.createdAt.toDate().getTime() : 0) - (a.createdAt ? a.createdAt.toDate().getTime() : 0); });
                 list.innerHTML = '';
                 if (notificationsArray.length === 0) { list.innerHTML = '<div style="padding:15px; color:#71767b;">まだ通知はありません。</div>'; return; }
-
                 notificationsArray.forEach((notif) => {
                     const sId = notif.senderId || ""; if (mutedUsers.includes(sId) || blockedUsers.includes(sId)) return;
                     
@@ -637,7 +577,6 @@
                         const safeReply = (notif.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                         detailSnippet = `<div style="font-size:14px; color:#71767b; font-style:italic; margin-top:5px;">「${safeReply}」</div>`;
                     }
-
                     const div = document.createElement('div'); div.className = 'reply-item clickable'; div.setAttribute('onclick', `showPostDetail('${notif.postId}')`);
                     div.innerHTML = `
                         <div class="post-left" onclick="showUserProfile('${sId}', event)" style="z-index:2; position:relative;"><img src="${sIcon}" class="user-icon" style="width:38px; height:38px; cursor:pointer;"></div>
@@ -650,14 +589,12 @@
                 });
             } catch (e) { list.innerHTML = `<div class="error-box">通知読込失敗: ${e.message}</div>`; }
         }
-
         window.renderSettings = function() {
             document.getElementById('profileName').value = myProfile.name;
             document.getElementById('profileIcon').value = myProfile.icon.startsWith('data:') ? "" : myProfile.icon;
             document.getElementById('profileIconPreview').src = myProfile.icon;
             uploadedImageBase64 = "";
         }
-
         // いいね実行・取り消し処理
         window.likePost = async function(postId, targetUserId, event) {
             if (event) { event.stopPropagation(); event.cancelBubble = true; }
@@ -672,7 +609,6 @@
                     try { await updateDoc(docRef, { likes: increment(-1) }); } catch(e) {}
                     myLikedPosts = myLikedPosts.filter(id => id !== postId);
                     localStorage.setItem('mySNS_likedPosts', JSON.stringify(myLikedPosts));
-
                     const countSpan = document.getElementById(`like-count-${postId}`);
                     if (countSpan) {
                         let count = (parseInt(countSpan.innerText) || 0) - 1;
@@ -684,12 +620,10 @@
                         detailCountSpan.innerText = count > 0 ? count : '';
                     }
                     if (event && event.currentTarget) event.currentTarget.classList.remove('liked');
-
                 } else {
                     try { await updateDoc(docRef, { likes: increment(1) }); } catch(e) {}
                     myLikedPosts.push(postId);
                     localStorage.setItem('mySNS_likedPosts', JSON.stringify(myLikedPosts));
-
                     if (targetUserId !== myProfile.id) {
                         await addDoc(collection(db, "notifications"), {
                             type: "like", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date()
@@ -704,9 +638,7 @@
                 }
             } catch(e) { alert("エラー: " + e.message); }
         }
-
         let currentRepostId = "";
-
         window.repostPost = async function(postId, event) {
             if (event) { event.stopPropagation(); event.cancelBubble = true; }
             if (await isUserRestricted(myProfile.id)) return;
@@ -721,12 +653,10 @@
                 document.getElementById('repostModal').style.display = 'flex';
             } catch(e) { alert("エラー: " + e.message); }
         }
-
         window.closeRepostModal = function() {
             document.getElementById('repostModal').style.display = 'none';
             currentRepostId = "";
         }
-
         window.submitRepost = async function(isQuote) {
             if (!currentRepostId) return;
             const postId = currentRepostId;
@@ -736,20 +666,16 @@
                 alert("引用ポストする場合はコメントを入力してください。");
                 return;
             }
-
             try {
                 const docRef = doc(db, "posts", postId);
                 const docSnap = await getDoc(docRef);
                 const origPost = docSnap.data();
                 const targetUserId = origPost.userId;
-
                 try { await updateDoc(docRef, { reposts: increment(1) }); } catch(e) {}
-
                 const countSpan = document.getElementById(`repost-count-${postId}`);
                 if (countSpan) countSpan.innerText = (parseInt(countSpan.innerText) || 0) + 1;
                 const detailCountSpan = document.getElementById(`detail-repost-count-${postId}`);
                 if (detailCountSpan) detailCountSpan.innerText = (parseInt(detailCountSpan.innerText) || 0) + 1;
-
                 if (!isQuote) {
                     await addDoc(collection(db, "posts"), {
                         content: origPost.content, createdAt: new Date(), userId: targetUserId, userName: origPost.userName, userIcon: origPost.userIcon, isRepost: true, repostedBy: myProfile.name, views: 0, likes: 0, reposts: 0
@@ -760,7 +686,6 @@
                         originalPost: { postId: postId, userId: targetUserId, userName: origPost.userName, userIcon: origPost.userIcon, content: origPost.content }
                     });
                 }
-
                 if (targetUserId !== myProfile.id) {
                     await addDoc(collection(db, "notifications"), { type: "repost", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date() });
                 }
@@ -769,8 +694,6 @@
                 checkRouting();
             } catch(e) { alert("エラー: " + e.message); }
         }
-
-
         window.submitReply = async function(postId) {
             if (await isUserRestricted(myProfile.id)) return;
             const replyInput = document.getElementById('detailReplyText'); const replyText = replyInput.value.trim();
@@ -783,7 +706,6 @@
                 replyInput.value = ''; loadReplies(postId);
             } catch (e) { alert("返信に失敗しました: " + e.message); }
         }
-
         window.loadReplies = async function(postId) {
             const replyList = document.getElementById('detailReplyList'); replyList.innerHTML = '<div style="padding:15px; color:#71767b; font-size:14px;">返信を読み込み中...</div>';
             const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
@@ -812,14 +734,12 @@
                 });
             } catch (e) { replyList.innerHTML = `<div class="error-box">返信読込失敗: ${e.message}</div>`; }
         }
-
         window.togglePostMenu = function(postId, isDetail, event) {
             const ev = event || window.event; if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
             const menuId = isDetail ? 'detailDropdownMenu' : `postMenu-${postId}`; const menu = document.getElementById(menuId); if (!menu) return;
             const isVisible = menu.style.display === 'block'; closeAllMenus(); if (!isVisible) { menu.style.display = 'block'; }
         }
         window.closeAllMenus = function() { document.querySelectorAll('.dropdown-menu').forEach(menu => { menu.style.display = 'none'; }); }
-
         window.handleMenuAction = function(postId, targetUserId, targetUserName, actionType, event) {
             const ev = event || window.event; if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
             closeAllMenus();
@@ -837,14 +757,12 @@
             const postDom = document.getElementById(`postDom-${postId}`); if (postDom) { postDom.style.opacity = '0'; postDom.style.transform = 'scale(0.95)'; setTimeout(() => { postDom.style.display = 'none'; }, 300); }
             if (document.getElementById('detailView').style.display === 'block') { showHome(); }
         }
-
         window.saveSettings = function() {
             const name = document.getElementById('profileName').value.trim(); const iconUrl = document.getElementById('profileIcon').value.trim();
             if (name === '') { alert('ニックネームを入力してください。'); return; }
             myProfile.name = name; if (uploadedImageBase64 !== "") { myProfile.icon = uploadedImageBase64; } else if (iconUrl !== "") { myProfile.icon = iconUrl; }
             localStorage.setItem('mySNS_profile', JSON.stringify(myProfile)); alert('設定を保存しました！'); showHome();
         }
-
         window.sharePost = function(postId, encodedContent, event) {
             const ev = event || window.event; if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
             closeAllMenus();
@@ -854,8 +772,8 @@
             const shareUrl = `${baseUrl}?${params.toString()}`; const shareText = `${content}\n\n${shareUrl}`;
             navigator.clipboard.writeText(shareText).then(() => { alert("リンクをコピーしました！"); });
         }
-
         checkRouting();
     </script>
 </body>
 </html>
+
