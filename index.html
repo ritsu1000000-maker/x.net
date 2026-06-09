@@ -3,104 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 閲覧数カウント版</title>
+    <title>簡易SNS - ダークモード・引用リポスト版</title>
     <style>
-        body { font-family: sans-serif; background-color: #f5f8fa; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; border-left: 1px solid #e1e8ed; border-right: 1px solid #e1e8ed; }
+        /* 📱 完全ダークモード対応のCSSへ刷新 */
+        body { font-family: sans-serif; background-color: #000000; margin: 0; padding: 0; color: #e7e9ea; }
+        .container { max-width: 600px; margin: 0 auto; background: #000000; min-height: 100vh; border-left: 1px solid #2f3336; border-right: 1px solid #2f3336; }
         
-        /* 共通ヘッダー・タブ */
-        .header-bar { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #e1e8ed; background-color: rgba(255, 255, 255, 0.9); position: sticky; top: 0; backdrop-filter: blur(5px); z-index: 10; font-weight: bold; font-size: 18px; }
-        .back-btn { background: none; border: none; cursor: pointer; margin-right: 15px; padding: 5px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #14171a; }
-        .back-btn:hover { background-color: #e8f5fe; color: #1da1f2; }
+        .header-bar { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #2f3336; background-color: rgba(0, 0, 0, 0.85); position: sticky; top: 0; backdrop-filter: blur(5px); z-index: 10; font-weight: bold; font-size: 18px; }
+        .back-btn { background: none; border: none; cursor: pointer; margin-right: 15px; padding: 5px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #e7e9ea; }
+        .back-btn:hover { background-color: #181818; }
 
-        .tabs { display: flex; border-bottom: 1px solid #e1e8ed; }
-        .tab { flex: 1; text-align: center; padding: 15px; text-decoration: none; color: #657786; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .tab:hover { background-color: #e8f5fe; }
-        .tab.active { color: black; border-bottom: 4px solid #1da1f2; }
+        .tabs { display: flex; border-bottom: 1px solid #2f3336; }
+        .tab { flex: 1; text-align: center; padding: 15px; text-decoration: none; color: #71767b; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .tab:hover { background-color: #181818; }
+        .tab.active { color: #e7e9ea; border-bottom: 4px solid #1d9bf0; }
 
-        /* 投稿入力エリア */
-        .post-box { padding: 15px; border-bottom: 10px solid #e1e8ed; display: flex; gap: 12px; }
+        .post-box { padding: 15px; border-bottom: 1px solid #2f3336; display: flex; gap: 12px; }
         .post-box-right { flex: 1; display: flex; flex-direction: column; }
-        textarea { width: 100%; border: none; resize: none; font-size: 18px; outline: none; margin-bottom: 10px; box-sizing: border-box; }
-        button.post-btn { align-self: flex-end; background-color: #1da1f2; color: white; border: none; border-radius: 20px; padding: 10px 20px; font-weight: bold; cursor: pointer; }
-        button.post-btn:hover { background-color: #0c85d0; }
+        textarea { width: 100%; border: none; resize: none; font-size: 18px; outline: none; margin-bottom: 10px; box-sizing: border-box; background: transparent; color: #e7e9ea; }
+        button.post-btn { align-self: flex-end; background-color: #1d9bf0; color: white; border: none; border-radius: 20px; padding: 10px 20px; font-weight: bold; cursor: pointer; }
+        button.post-btn:hover { background-color: #1a8cd8; }
         
-        /* 投稿（ポスト）の見た目 */
-        .post { padding: 15px; border-bottom: 1px solid #e1e8ed; display: flex; cursor: pointer; transition: background-color 0.2s, opacity 0.3s, transform 0.3s; position: relative; }
-        .post:hover { background-color: #f7f9fa; }
+        .post { padding: 15px; border-bottom: 1px solid #2f3336; display: flex; cursor: pointer; transition: background-color 0.2s, opacity 0.3s, transform 0.3s; position: relative; }
+        .post:hover { background-color: #080808; }
         .post-left { margin-right: 12px; }
         .post-right { flex: 1; display: flex; flex-direction: column; position: relative; width: 100%; }
         
-        .user-icon { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #e1e8ed; }
+        .user-icon { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #2f3336; }
+        .user-name { font-weight: bold; font-size: 15px; color: #e7e9ea; }
+        .user-name:hover { text-decoration: underline; }
         
         .post-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; padding-right: 30px; position: relative; }
-        .user-name { font-weight: bold; font-size: 15px; color: black; }
-        .post-time { font-size: 12px; color: #657786; }
-        .post-content { font-size: 15px; white-space: pre-wrap; margin-bottom: 10px; line-height: 1.4; }
-        
-        .repost-label { font-size: 12px; color: #536471; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
+        .post-time { font-size: 12px; color: #71767b; }
+        .post-content { font-size: 15px; white-space: pre-wrap; margin-bottom: 10px; line-height: 1.4; color: #e7e9ea; }
+        .repost-label { font-size: 12px; color: #71767b; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
+
+        /* 💡 引用リポスト（上に乗る）ためのカードデザイン */
+        .quote-box { border: 1px solid #2f3336; border-radius: 12px; padding: 12px; margin-top: 10px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; }
+        .quote-box:hover { background-color: #080808; }
+        .quote-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+        .quote-icon { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+        .quote-name { font-weight: bold; font-size: 13px; color: #e7e9ea; }
+        .quote-content { font-size: 14px; color: #e7e9ea; white-space: pre-wrap; line-height: 1.4; }
 
         .icon { width: 18px; height: 18px; fill: currentColor; display: inline-block; vertical-align: middle; }
 
-        /* アクションボタン（5項目に拡張） */
         .post-actions { display: flex; justify-content: space-between; max-width: 450px; margin-top: 5px; }
-        .action-btn { background: none; border: none; color: #657786; font-size: 13px; cursor: pointer; padding: 6px 10px; border-radius: 15px; display: flex; align-items: center; gap: 6px; transition: background-color 0.2s, color 0.2s; }
-        .action-btn.reply:hover { background-color: #e8f5fe; color: #1da1f2; }
-        .action-btn.repost:hover { background-color: #e6f4ea; color: #17bf63; }
-        .action-btn.like:hover { background-color: #fee5ec; color: #e0245e; }
-        .action-btn.view:hover { background-color: #e8f5fe; color: #1da1f2; }
-        .action-btn.share:hover { background-color: #f4f4f4; color: #1da1f2; }
+        .action-btn { background: none; border: none; color: #71767b; font-size: 13px; cursor: pointer; padding: 6px 10px; border-radius: 15px; display: flex; align-items: center; gap: 6px; transition: background-color 0.2s, color 0.2s; }
+        .action-btn.reply:hover { background-color: #031018; color: #1d9bf0; }
+        .action-btn.repost:hover { background-color: #05140c; color: #00ba7c; }
+        .action-btn.like:hover { background-color: #200914; color: #f91880; }
+        .action-btn.view:hover { background-color: #031018; color: #1d9bf0; }
+        .action-btn.share:hover { background-color: #16181c; color: #1d9bf0; }
 
-        .menu-trigger { position: absolute; right: 0; top: 0; background: none; border: none; color: #657786; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; transition: background-color 0.2s, color 0.2s; }
-        .menu-trigger:hover { background-color: #e8f5fe; color: #1da1f2; }
+        .menu-trigger { position: absolute; right: 0; top: 0; background: none; border: none; color: #71767b; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; transition: background-color 0.2s, color 0.2s; }
+        .menu-trigger:hover { background-color: #031018; color: #1d9bf0; }
 
-        .dropdown-menu { display: none; position: absolute; right: 0; top: 35px; background: white; border: 1px solid #e1e8ed; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 20; width: 180px; overflow: hidden; padding: 5px 0; }
-        .menu-item { padding: 12px 16px; font-size: 14px; color: #14171a; cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left; transition: background-color 0.2s; }
-        .menu-item:hover { background-color: #f7f9fa; }
-        .menu-item.danger { color: #e0245e; }
-        .menu-item.danger:hover { background-color: #fff1f3; }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 35px; background: #000000; border: 1px solid #2f3336; border-radius: 12px; box-shadow: 0 0 15px rgba(255,255,255,0.1); z-index: 20; width: 180px; overflow: hidden; padding: 5px 0; }
+        .menu-item { padding: 12px 16px; font-size: 14px; color: #e7e9ea; cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left; transition: background-color 0.2s; }
+        .menu-item:hover { background-color: #16181c; }
+        .menu-item.danger { color: #f91880; }
+        .menu-item.danger:hover { background-color: #200914; }
 
         .detail-main-user { display: flex; align-items: center; padding: 20px 20px 10px 20px; gap: 12px; position: relative; }
-        .detail-main-post { padding: 10px 20px 20px 20px; border-bottom: 1px solid #e1e8ed; font-size: 22px; line-height: 1.4; }
-        .detail-main-time { padding: 15px 20px; color: #657786; font-size: 14px; border-bottom: 1px solid #e1e8ed; }
-        .detail-reply-box { padding: 15px; border-bottom: 1px solid #e1e8ed; background-color: #f8f9fa; display: flex; gap: 12px; }
+        .detail-main-post { padding: 10px 20px 20px 20px; border-bottom: 1px solid #2f3336; font-size: 22px; line-height: 1.4; color: #e7e9ea; }
+        .detail-main-time { padding: 15px 20px; color: #71767b; font-size: 14px; border-bottom: 1px solid #2f3336; }
+        .detail-reply-box { padding: 15px; border-bottom: 1px solid #2f3336; background-color: #000000; display: flex; gap: 12px; }
         .reply-list { padding: 0; }
-        .reply-item { padding: 15px; border-bottom: 1px solid #e1e8ed; display: flex; transition: background-color 0.2s; }
-        .reply-item.clickable:hover { background-color: #f7f9fa; }
+        .reply-item { padding: 15px; border-bottom: 1px solid #2f3336; display: flex; transition: background-color 0.2s; }
+        .reply-item.clickable:hover { background-color: #080808; }
         
-        .file-input-label { display: flex; align-items: center; gap: 8px; background-color: #e8f5fe; color: #1da1f2; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; text-align: center; transition: background-color 0.2s; }
-        .file-input-label:hover { background-color: #d4edfe; }
+        .file-input-label { display: flex; align-items: center; gap: 8px; background-color: #1d9bf0; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; text-align: center; transition: background-color 0.2s; justify-content: center; }
+        .file-input-label:hover { background-color: #1a8cd8; }
         #profileFile { display: none; }
+        input[type="text"] { background-color: transparent; color: #e7e9ea; }
         
         .view-section { display: none; }
-        .error-box { padding: 20px; margin: 15px; border: 2px solid #e0245e; background-color: #ffebee; color: #e0245e; font-weight: bold; border-radius: 10px; }
+        .error-box { padding: 20px; margin: 15px; border: 2px solid #f91880; background-color: #200914; color: #f91880; font-weight: bold; border-radius: 10px; }
     </style>
 </head>
 <body onclick="closeAllMenus()">
 
     <div class="container">
 
-        <!-- ホーム画面ビュー -->
         <div id="homeView" class="view-section">
             <div class="header-bar">ホーム</div>
             <div class="tabs">
                 <div class="tab active" onclick="showHome()">タイムライン</div>
                 <div class="tab" id="notificationLink" onclick="showNotifications()">通知</div>
-                <div class="tab" onclick="showProfile()">設定</div>
+                <div class="tab" onclick="showSettings()">設定</div>
             </div>
             
             <div class="post-box">
-                <div><img src="" class="user-icon my-current-icon"></div>
+                <div onclick="showUserProfile(myProfile.id, event)" style="cursor:pointer;"><img src="" class="user-icon my-current-icon"></div>
                 <div class="post-box-right">
                     <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
                     <button class="post-btn" onclick="submitPost()">ポストする</button>
                 </div>
             </div>
-
             <div id="timeline"></div>
         </div>
 
-        <!-- ポスト詳細画面ビュー -->
         <div id="detailView" class="view-section">
             <div class="header-bar">
                 <button class="back-btn" onclick="showHome()">
@@ -108,16 +111,15 @@
                 </button>
                 <span>ポスト</span>
             </div>
-            
             <div class="detail-main-user">
-                <img src="" id="detailUserIcon" class="user-icon">
-                <div id="detailUserName" class="user-name" style="font-size: 16px;"></div>
+                <img src="" id="detailUserIcon" class="user-icon" style="cursor:pointer; z-index:2; position:relative;">
+                <div id="detailUserName" class="user-name" style="font-size: 16px; cursor:pointer; z-index:2; position:relative;"></div>
                 <button class="menu-trigger" id="detailMenuTrigger"></button>
                 <div id="detailDropdownMenu" class="dropdown-menu"></div>
             </div>
             <div id="detailPostContent" class="detail-main-post"></div>
             <div id="detailPostTime" class="detail-main-time"></div>
-            <div style="padding: 10px 20px; border-bottom: 1px solid #e1e8ed;" id="detailPostActions"></div>
+            <div style="padding: 10px 20px; border-bottom: 1px solid #2f3336;" id="detailPostActions"></div>
 
             <div class="detail-reply-box">
                 <div><img src="" class="user-icon my-current-icon"></div>
@@ -126,11 +128,9 @@
                     <button class="post-btn" id="submitReplyBtn">返信</button>
                 </div>
             </div>
-
             <div id="detailReplyList"></div>
         </div>
 
-        <!-- 通知画面ビュー -->
         <div id="notificationView" class="view-section">
             <div class="header-bar">
                 <button class="back-btn" onclick="showHome()">
@@ -141,23 +141,32 @@
             <div class="tabs">
                 <div class="tab" onclick="showHome()">タイムライン</div>
                 <div class="tab active" id="notificationLinkActive">すべての通知</div>
-                <div class="tab" onclick="showProfile()">設定</div>
+                <div class="tab" onclick="showSettings()">設定</div>
             </div>
             <div id="notificationList"></div>
         </div>
 
-        <!-- プロフィール設定画面ビュー -->
-        <div id="profileView" class="view-section">
+        <div id="userProfileView" class="view-section">
+            <div class="header-bar">
+                <button class="back-btn" onclick="showHome()">
+                    <svg class="icon" style="width:22px; height:22px;" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                </button>
+                <span>プロフィール</span>
+            </div>
+            <div id="userProfileHeader"></div>
+            <div id="userProfileTimeline"></div>
+        </div>
+
+        <div id="settingsView" class="view-section">
             <div class="header-bar">
                 <button class="back-btn" onclick="showHome()">
                     <svg class="icon" style="width:22px; height:22px;" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
                 </button>
                 <span>設定</span>
             </div>
-            
             <div style="padding: 20px; display: flex; flex-direction: column; gap: 20px;">
                 <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
-                    <label style="font-weight: bold; color: #657786;">アイコンプレビュー</label>
+                    <label style="font-weight: bold; color: #71767b;">アイコンプレビュー</label>
                     <img src="" id="profileIconPreview" class="user-icon" style="width: 80px; height: 80px; margin-bottom: 10px;">
                     <label for="profileFile" class="file-input-label">
                         <svg class="icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
@@ -166,14 +175,14 @@
                     <input type="file" id="profileFile" accept="image/*" onchange="handleImageUpload(event)">
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label style="font-weight: bold; color: #657786;">ニックネーム</label>
-                    <input type="text" id="profileName" style="padding: 12px; border: 1px solid #ccd6dd; border-radius: 8px; font-size: 16px; outline: none;">
+                    <label style="font-weight: bold; color: #71767b;">ニックネーム</label>
+                    <input type="text" id="profileName" style="padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none;">
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label style="font-weight: bold; color: #657786;">または画像のURLを入力</label>
-                    <input type="text" id="profileIcon" style="padding: 12px; border: 1px solid #ccd6dd; border-radius: 8px; font-size: 16px; outline: none;" oninput="document.getElementById('profileIconPreview').src = this.value">
+                    <label style="font-weight: bold; color: #71767b;">または画像のURLを入力</label>
+                    <input type="text" id="profileIcon" style="padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none;" oninput="document.getElementById('profileIconPreview').src = this.value">
                 </div>
-                <button class="post-btn" onclick="saveProfile()" style="width: 100%; padding: 12px; border-radius: 25px; font-size: 16px;">保存</button>
+                <button class="post-btn" onclick="saveSettings()" style="width: 100%; padding: 12px; border-radius: 25px; font-size: 16px;">設定を保存</button>
             </div>
         </div>
 
@@ -181,18 +190,15 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-        // 💡 閲覧数カウントのために updateDoc と increment を追加インポート
         import { getFirestore, collection, addDoc, getDoc, getDocs, doc, query, orderBy, where, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-        // SVGベクターデータ
+        // SVGアイコンデータ
         const svgReply    = `<svg class="icon" viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg>`;
         const svgRepost   = `<svg class="icon" viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>`;
         const svgLike     = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
         const svgShare    = `<svg class="icon" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>`;
-        // 💡 閲覧数（表示回数）用のグラフアイコンSVGを追加
         const svgView     = `<svg class="icon" viewBox="0 0 24 24"><path d="M8.75 21V3h2v18h-2zM18 21V8.5h2V21h-2zM4 21l.004-10h2L6 21H4zm9.248 0v-7h2v7h-2z"/></svg>`;
         const svgMenu     = `<svg class="icon" viewBox="0 0 24 24"><path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>`;
-        
         const svgLink     = `<svg class="icon" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.31 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>`;
         const svgDislike  = `<svg class="icon" viewBox="0 0 24 24"><path d="M10.8 21h-4.3c-.6 0-1-.4-1-1v-8.6c0-.3.1-.5.3-.7l5.4-5.4c.4-.4 1-.4 1.4 0l.5.5c.3.3.4.7.2 1.1l-1.1 3.1h5.2c.6 0 1 .4 1 1v2.2c0 .2 0 .3-.1.5l-2.9 6.7c-.2.5-.7.8-1.2.8z"/></svg>`;
         const svgMute     = `<svg class="icon" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`;
@@ -214,18 +220,71 @@
         const db = getFirestore(app);
 
         const defaultIcon = "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&h=150&fit=crop";
-        let myProfile = JSON.parse(localStorage.getItem('mySNS_profile')) || {
-            id: "user_" + Math.random().toString(36).substring(2, 12),
-            name: "ゲストユーザー",
-            icon: defaultIcon
-        };
+        let myProfile = JSON.parse(localStorage.getItem('mySNS_profile')) || {};
         if (!myProfile.id) {
             myProfile.id = "user_" + Math.random().toString(36).substring(2, 12);
+            myProfile.name = "ゲストユーザー";
+            myProfile.icon = defaultIcon;
             localStorage.setItem('mySNS_profile', JSON.stringify(myProfile));
         }
 
         let currentDetailPostUserId = "";
         let uploadedImageBase64 = "";
+
+        // 💡 投稿組み立て関数（引用リポストのカード化に対応）
+        function createPostHTML(postId, post, uId, uName, uIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount) {
+            let quoteBoxHTML = "";
+            
+            // 引用リポストだった場合、元の投稿を枠で囲んで表示する
+            if (post.isQuoteRepost && post.originalPost) {
+                const orig = post.originalPost;
+                const safeOrigContent = (orig.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                quoteBoxHTML = `
+                    <div class="quote-box" onclick="showPostDetail('${orig.postId}'); event.stopPropagation();">
+                        <div class="quote-header">
+                            <img src="${orig.userIcon || defaultIcon}" class="quote-icon">
+                            <span class="quote-name">${orig.userName}</span>
+                        </div>
+                        <div class="quote-content">${safeOrigContent}</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="post-right" style="padding-left:0; width:100%;">
+                    ${repLabel}
+                    <div style="display:flex;">
+                        <div class="post-left" onclick="showUserProfile('${uId}', event)" style="z-index:2; position:relative;"><img src="${uIcon}" class="user-icon" style="cursor:pointer;"></div>
+                        <div class="post-right">
+                            <div class="post-header">
+                                <span class="user-name" onclick="showUserProfile('${uId}', event)" style="z-index:2; position:relative; cursor:pointer;">${uName}</span>
+                                <span class="post-time">${date}</span>
+                                <button class="menu-trigger" onclick="togglePostMenu('${postId}', false, event)">${svgMenu}</button>
+                                <div id="postMenu-${postId}" class="dropdown-menu">
+                                    <div class="menu-item" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgLink} リンクをコピー</div>
+                                    <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '興味なし', event)">${svgDislike} 興味なし</div>
+                                    <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', 'ミュート', event)">${svgMute} ミュート</div>
+                                    <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '制限', event)">${svgRestrict} 制限する</div>
+                                    <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', 'ブロック', event)">${svgBlock} ブロック</div>
+                                    <div class="menu-item danger" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '報告', event)">${svgWarning} 報告する</div>
+                                </div>
+                            </div>
+                            <div class="post-content">${safeContent}</div>
+                            
+                            ${quoteBoxHTML}
+                            
+                            <div class="post-actions">
+                                <button class="action-btn reply">${svgReply}</button>
+                                <button class="action-btn repost" onclick="repostPost('${postId}', event)">${svgRepost}</button>
+                                <button class="action-btn like" onclick="likePost('${postId}', '${uId}', event)">${svgLike}</button>
+                                <div class="action-btn view" title="閲覧数">${svgView} <span>${viewCount}</span></div>
+                                <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgShare}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
 
         function updateMyIconDisplays() {
             document.querySelectorAll('.my-current-icon').forEach(img => { img.src = myProfile.icon; });
@@ -273,27 +332,60 @@
             } catch (e) { return false; }
         }
 
+        window.checkRouting = async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const postIdParam = urlParams.get('id');
+            const viewParam = urlParams.get('view');
+            const userParam = urlParams.get('user');
+            
+            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+            closeAllMenus();
+
+            if (postIdParam) {
+                document.getElementById('detailView').style.display = 'block';
+                await renderPostDetail(postIdParam);
+            } else if (userParam) {
+                document.getElementById('userProfileView').style.display = 'block';
+                await renderUserProfile(userParam);
+            } else if (viewParam === 'notifications') {
+                document.getElementById('notificationView').style.display = 'block';
+                await renderNotifications();
+            } else if (viewParam === 'settings') {
+                document.getElementById('settingsView').style.display = 'block';
+                renderSettings();
+            } else {
+                document.getElementById('homeView').style.display = 'block';
+                updateMyIconDisplays();
+                await renderPosts();
+            }
+
+            const notifyParams = new URLSearchParams();
+            notifyParams.set('view', 'notifications');
+            let cleanBaseUrl = window.location.origin + window.location.pathname;
+            if (cleanBaseUrl.endsWith('/')) { cleanBaseUrl = cleanBaseUrl.slice(0, -1); }
+            document.getElementById('notificationLink').href = `${cleanBaseUrl}?${notifyParams.toString()}`;
+        }
+
+        window.showHome = function() { window.history.pushState({}, '', window.location.pathname); checkRouting(); }
+        window.showPostDetail = function(postId) { const params = new URLSearchParams(); params.set('id', postId); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
+        window.showNotifications = function() { const params = new URLSearchParams(); params.set('view', 'notifications'); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
+        window.showUserProfile = function(userId, event) { if (event) { event.stopPropagation(); event.cancelBubble = true; } const params = new URLSearchParams(); params.set('user', userId); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
+        window.showSettings = function() { const params = new URLSearchParams(); params.set('view', 'settings'); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
+        window.addEventListener('popstate', checkRouting);
+
         window.submitPost = async function() {
             if (await isUserRestricted(myProfile.id)) return;
-            const textInput = document.getElementById('postText');
-            const text = textInput.value.trim();
+            const textInput = document.getElementById('postText'); const text = textInput.value.trim();
             if (text === '') return;
             try {
-                // 💡 投稿時に views: 0 を初期値として設定
-                await addDoc(collection(db, "posts"), { 
-                    content: text, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isRepost: false, views: 0
-                });
-                textInput.value = ''; loadPosts();
+                await addDoc(collection(db, "posts"), { content: text, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isRepost: false, views: 0 });
+                textInput.value = ''; renderPosts();
             } catch (e) { alert("投稿エラー: " + e.message); }
         }
 
-        window.loadPosts = async function() {
-            const timeline = document.getElementById('timeline');
-            timeline.innerHTML = '<div style="padding:15px; color:#657786;">通信中...</div>';
-            
-            const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
-            const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
-            const notInterestedPosts = JSON.parse(localStorage.getItem('mySNS_notInterestedPosts')) || [];
+        window.renderPosts = async function() {
+            const timeline = document.getElementById('timeline'); timeline.innerHTML = '<div style="padding:15px; color:#657786;">通信中...</div>';
+            const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; const notInterestedPosts = JSON.parse(localStorage.getItem('mySNS_notInterestedPosts')) || [];
 
             try {
                 const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
@@ -302,206 +394,74 @@
                 if (querySnapshot.empty) { timeline.innerHTML = '<div style="padding:15px; color:#657786;">まだ投稿がありません。</div>'; return; }
 
                 querySnapshot.forEach((docSnap) => {
-                    const postId = docSnap.id;
-                    const post = docSnap.data();
-                    const uId = post.userId || "";
-
-                    if (notInterestedPosts.includes(postId)) return;
-                    if (mutedUsers.includes(uId)) return;
-                    if (blockedUsers.includes(uId)) return;
+                    const postId = docSnap.id; const post = docSnap.data(); const uId = post.userId || "";
+                    if (notInterestedPosts.includes(postId) || mutedUsers.includes(uId) || blockedUsers.includes(uId)) return;
 
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
                     const safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     const encodedContent = encodeURIComponent(post.content || "");
-                    const uName = post.userName || "名無しさん";
-                    const uIcon = post.userIcon || defaultIcon;
-                    
-                    // 💡 閲覧数の取得（古いデータ対策として0をデフォルトに）
-                    const viewCount = post.views || 0;
-
-                    const isRepost = post.isRepost || false;
+                    const uName = post.userName || "名無しさん"; const uIcon = post.userIcon || defaultIcon;
+                    const viewCount = post.views || 0; const isRepost = post.isRepost || false;
                     const repLabel = isRepost ? `<div class="repost-label">${svgRepost} ${post.repostedBy} さんがリポストしました</div>` : '';
 
-                    const postDiv = document.createElement('div');
-                    postDiv.className = 'post';
-                    postDiv.id = `postDom-${postId}`;
+                    const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.id = `postDom-${postId}`;
                     postDiv.setAttribute('onclick', `showPostDetail('${postId}')`);
-                    
-                    postDiv.innerHTML = `
-                        <div class="post-right" style="padding-left:0; width:100%;">
-                            ${repLabel}
-                            <div style="display:flex;">
-                                <div class="post-left"><img src="${uIcon}" class="user-icon"></div>
-                                <div class="post-right">
-                                    <div class="post-header">
-                                        <span class="user-name">${uName}</span>
-                                        <span class="post-time">${date}</span>
-                                        <button class="menu-trigger" onclick="togglePostMenu('${postId}', false, event)">${svgMenu}</button>
-                                        <div id="postMenu-${postId}" class="dropdown-menu">
-                                            <div class="menu-item" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgLink} リンクをコピー</div>
-                                            <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '興味なし', event)">${svgDislike} 興味なし</div>
-                                            <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', 'ミュート', event)">${svgMute} ミュート</div>
-                                            <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '制限', event)">${svgRestrict} 制限する</div>
-                                            <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', 'ブロック', event)">${svgBlock} ブロック</div>
-                                            <div class="menu-item danger" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '報告', event)">${svgWarning} 報告する</div>
-                                        </div>
-                                    </div>
-                                    <div class="post-content">${safeContent}</div>
-                                    
-                                    <!-- 💡 アクションボタンに「閲覧数（view）」を追加 -->
-                                    <div class="post-actions">
-                                        <button class="action-btn reply">${svgReply}</button>
-                                        <button class="action-btn repost" onclick="repostPost('${postId}', '${uId}', '${encodedContent}', event)">${svgRepost}</button>
-                                        <button class="action-btn like" onclick="likePost('${postId}', '${uId}', event)">${svgLike}</button>
-                                        <div class="action-btn view" title="閲覧数">${svgView} <span>${viewCount}</span></div>
-                                        <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgShare}</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    postDiv.innerHTML = createPostHTML(postId, post, uId, uName, uIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount);
                     timeline.appendChild(postDiv);
                 });
-            } catch (e) { timeline.innerHTML = `<div class="error-box">🚨 エラー詳細：<br>${e.message}</div>`; }
+            } catch (e) { timeline.innerHTML = `<div class="error-box">🚨 通信エラー：<br>${e.message}</div>`; }
         }
 
-        window.likePost = async function(postId, targetUserId, event) {
-            if (event) event.stopPropagation();
-            if (targetUserId === myProfile.id) { alert("自分のポストにはいいねできません。"); return; }
-            try {
-                await addDoc(collection(db, "notifications"), {
-                    type: "like", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date()
-                });
-                alert("ポストにいいねしました！相手に通知が届きます。");
-            } catch(e) { alert("エラー: " + e.message); }
-        }
-
-        window.repostPost = async function(postId, targetUserId, encodedContent, event) {
-            if (event) event.stopPropagation();
-            if (await isUserRestricted(myProfile.id)) return;
-            if (targetUserId === myProfile.id) { alert("自分のポストはリポストできません。"); return; }
-            
-            const rawContent = decodeURIComponent(encodedContent);
-            try {
-                // 💡 リポスト時も views: 0 で初期化
-                await addDoc(collection(db, "posts"), {
-                    content: rawContent, createdAt: new Date(), userId: targetUserId, userName: "元の投稿者", userIcon: defaultIcon, isRepost: true, repostedBy: myProfile.name, views: 0
-                });
-                await addDoc(collection(db, "notifications"), {
-                    type: "repost", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date()
-                });
-                alert("ポストをリポストしました！タイムラインに流れます。"); loadPosts();
-            } catch(e) { alert("エラー: " + e.message); }
-        }
-
-        window.togglePostMenu = function(postId, isDetail, event) {
-            const ev = event || window.event;
-            if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
-            const menuId = isDetail ? 'detailDropdownMenu' : `postMenu-${postId}`;
-            const menu = document.getElementById(menuId);
-            if (!menu) return;
-            const isVisible = menu.style.display === 'block';
-            closeAllMenus();
-            if (!isVisible) { menu.style.display = 'block'; }
-        }
-
-        window.closeAllMenus = function() {
-            document.querySelectorAll('.dropdown-menu').forEach(menu => { menu.style.display = 'none'; });
-        }
-
-        window.handleMenuAction = function(postId, targetUserId, targetUserName, actionType, event) {
-            const ev = event || window.event;
-            if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
-            closeAllMenus();
-
-            if (actionType === '興味なし') {
-                let list = JSON.parse(localStorage.getItem('mySNS_notInterestedPosts')) || [];
-                list.push(postId); localStorage.setItem('mySNS_notInterestedPosts', JSON.stringify(list)); animateRemovePost(postId);
-            } else if (actionType === 'ミュート') {
-                let list = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
-                list.push(targetUserId); localStorage.setItem('mySNS_mutedUsers', JSON.stringify(list)); animateRemovePost(postId);
-            } else if (actionType === 'ブロック') {
-                let list = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
-                list.push(targetUserId); localStorage.setItem('mySNS_blockedUsers', JSON.stringify(list)); animateRemovePost(postId);
-            } else if (actionType === '制限' || actionType === '報告') {
-                addDoc(collection(db, "penalties"), { targetUserId: targetUserId, type: actionType, createdAt: new Date() });
-                alert(`送信しました。`);
-            }
-        }
-
-        function animateRemovePost(postId) {
-            const postDom = document.getElementById(`postDom-${postId}`);
-            if (postDom) { postDom.style.opacity = '0'; postDom.style.transform = 'scale(0.95)'; setTimeout(() => { postDom.style.display = 'none'; }, 300); }
-            if (document.getElementById('detailView').style.display === 'block') { showHome(); }
-        }
-
-        window.showHome = function() {
-            document.getElementById('detailView').style.display = 'none';
-            document.getElementById('profileView').style.display = 'none';
-            document.getElementById('notificationView').style.display = 'none';
-            document.getElementById('homeView').style.display = 'block';
-            window.history.replaceState({}, '', window.location.origin + window.location.pathname);
-            updateMyIconDisplays(); loadPosts();
-        }
-
-        // 💡 ポスト詳細画面表示（クリック時に閲覧数を+1する）
-        window.showPostDetail = async function(postId) {
-            document.getElementById('homeView').style.display = 'none';
-            document.getElementById('profileView').style.display = 'none';
-            document.getElementById('notificationView').style.display = 'none';
-            document.getElementById('detailView').style.display = 'block';
-            
-            document.getElementById('detailPostContent').innerHTML = '読み込み中...';
-            document.getElementById('detailPostTime').innerHTML = '';
-            document.getElementById('detailReplyList').innerHTML = '';
-            document.getElementById('detailPostActions').innerHTML = '';
+        window.renderPostDetail = async function(postId) {
+            document.getElementById('detailPostContent').innerHTML = '読み込み中...'; document.getElementById('detailPostTime').innerHTML = ''; document.getElementById('detailReplyList').innerHTML = ''; document.getElementById('detailPostActions').innerHTML = '';
             updateMyIconDisplays();
-
-            const newUrl = window.location.origin + window.location.pathname + `?id=${postId}`;
-            window.history.replaceState({}, '', newUrl);
 
             try {
                 const docRef = doc(db, "posts", postId);
-                
-                // 💡 Firebaseの機能「increment(1)」を使って、安全に閲覧数を+1する
-                try { await updateDoc(docRef, { views: increment(1) }); } catch(e) { console.log("閲覧数更新に失敗（無視して続行）"); }
-
-                // 更新した最新のデータを取得
+                try { await updateDoc(docRef, { views: increment(1) }); } catch(e) {}
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
-                    const post = docSnap.data();
-                    currentDetailPostUserId = post.userId || "";
-                    
+                    const post = docSnap.data(); currentDetailPostUserId = post.userId || "";
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
                     const safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     const encodedContent = encodeURIComponent(post.content || "");
-                    const uName = post.userName || "名無しさん";
-                    const uIcon = post.userIcon || defaultIcon;
-                    const uId = post.userId || "";
-                    
-                    // 💡 更新された閲覧数を画面用変数に入れる
-                    const viewCount = post.views || 0;
+                    const uName = post.userName || "名無しさん"; const uIcon = post.userIcon || defaultIcon;
+                    const uId = post.userId || ""; const viewCount = post.views || 0;
 
-                    document.getElementById('detailUserIcon').src = uIcon;
-                    document.getElementById('detailUserName').innerText = uName;
-                    document.getElementById('detailPostContent').innerHTML = safeContent;
+                    document.getElementById('detailUserIcon').src = uIcon; document.getElementById('detailUserIcon').setAttribute('onclick', `showUserProfile('${uId}', event)`);
+                    document.getElementById('detailUserName').innerText = uName; document.getElementById('detailUserName').setAttribute('onclick', `showUserProfile('${uId}', event)`);
+                    
+                    // 💡 詳細画面でも引用リポストのカードを描画
+                    let quoteBoxHTML = "";
+                    if (post.isQuoteRepost && post.originalPost) {
+                        const orig = post.originalPost;
+                        const safeOrigContent = (orig.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        quoteBoxHTML = `
+                            <div class="quote-box" onclick="showPostDetail('${orig.postId}'); event.stopPropagation();">
+                                <div class="quote-header"><img src="${orig.userIcon || defaultIcon}" class="quote-icon"><span class="quote-name">${orig.userName}</span></div>
+                                <div class="quote-content">${safeOrigContent}</div>
+                            </div>
+                        `;
+                    }
+
+                    document.getElementById('detailPostContent').innerHTML = safeContent + quoteBoxHTML;
                     document.getElementById('detailPostTime').innerHTML = date;
                     
-                    // 💡 詳細画面のアクションエリアにもアイコンと閲覧数を配置
                     document.getElementById('detailPostActions').innerHTML = `
                         <div class="post-actions" style="border:none; padding:0;">
+                            <button class="action-btn reply">${svgReply}</button>
+                            <button class="action-btn repost" onclick="repostPost('${postId}', event)">${svgRepost}</button>
+                            <button class="action-btn like" onclick="likePost('${postId}', '${uId}', event)">${svgLike}</button>
                             <div class="action-btn view" style="cursor:default;" title="表示回数">${svgView} <span style="font-size:15px; margin-left:5px;">${viewCount}</span></div>
-                            <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgShare} <span>共有</span></button>
+                            <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgShare}</button>
                         </div>
                     `;
 
                     const detailTrigger = document.getElementById('detailMenuTrigger');
-                    detailTrigger.innerHTML = svgMenu;
-                    detailTrigger.setAttribute('onclick', `togglePostMenu('${postId}', true, event)`);
+                    detailTrigger.innerHTML = svgMenu; detailTrigger.setAttribute('onclick', `togglePostMenu('${postId}', true, event)`);
                     
-                    const detailMenu = document.getElementById('detailDropdownMenu');
-                    detailMenu.innerHTML = `
+                    document.getElementById('detailDropdownMenu').innerHTML = `
                         <div class="menu-item" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgLink} リンクをコピー</div>
                         <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '興味なし', event)">${svgDislike} 興味なし</div>
                         <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', 'ミュート', event)">${svgMute} ミュート</div>
@@ -512,129 +472,83 @@
 
                     document.getElementById('submitReplyBtn').onclick = function() { submitReply(postId); };
                     loadReplies(postId);
-                } else {
-                    document.getElementById('detailPostContent').innerHTML = '投稿が見つかりませんでした。';
-                }
+                } else { document.getElementById('detailPostContent').innerHTML = '投稿が見つかりませんでした。'; }
             } catch (e) { document.getElementById('detailPostContent').innerHTML = 'エラー: ' + e.message; }
         }
 
-        window.submitReply = async function(postId) {
-            if (await isUserRestricted(myProfile.id)) return;
-            const replyInput = document.getElementById('detailReplyText');
-            const replyText = replyInput.value.trim();
-            if (replyText === '') return;
+        window.renderUserProfile = async function(targetUserId) {
+            const profileHeader = document.getElementById('userProfileHeader'); const profileTimeline = document.getElementById('userProfileTimeline');
+            profileHeader.innerHTML = '<div style="padding:20px; text-align:center;">読み込み中...</div>'; profileTimeline.innerHTML = '<div style="padding:15px; color:#657786;">通信中...</div>';
+            const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; const notInterestedPosts = JSON.parse(localStorage.getItem('mySNS_notInterestedPosts')) || [];
 
             try {
-                await addDoc(collection(db, "replies"), { 
-                    postId: postId, content: replyText, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon
+                const q = query(collection(db, "posts"), where("userId", "==", targetUserId)); const querySnapshot = await getDocs(q);
+                let postsArray = []; let uName = "不明なユーザー"; let uIcon = defaultIcon;
+
+                querySnapshot.forEach(docSnap => {
+                    const data = docSnap.data(); data.id = docSnap.id; postsArray.push(data);
+                    if (uName === "不明なユーザー" && data.userName) { uName = data.userName; uIcon = data.userIcon || defaultIcon; }
                 });
-                if (currentDetailPostUserId !== myProfile.id) {
-                    await addDoc(collection(db, "notifications"), {
-                        type: "reply", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: currentDetailPostUserId, content: replyText, createdAt: new Date()
-                    });
-                }
-                replyInput.value = ''; loadReplies(postId);
-            } catch (e) { alert("返信に失敗しました: " + e.message); }
+                
+                profileHeader.innerHTML = `
+                    <div style="padding: 30px 20px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #2f3336; background-color: #000000;">
+                        <img src="${uIcon}" class="user-icon" style="width: 100px; height: 100px; margin-bottom: 15px; border: 4px solid #000000; box-shadow: 0 0 10px rgba(255,255,255,0.1);">
+                        <div style="font-size: 22px; font-weight: bold; color: #e7e9ea;">${uName}</div>
+                        <div style="font-size: 14px; color: #71767b; margin-top: 5px;">@${targetUserId.slice(0, 10)}</div>
+                    </div>
+                `;
+
+                postsArray.sort((a, b) => { return (b.createdAt ? b.createdAt.toDate().getTime() : 0) - (a.createdAt ? a.createdAt.toDate().getTime() : 0); });
+                profileTimeline.innerHTML = '';
+                if (postsArray.length === 0) { profileTimeline.innerHTML = '<div style="padding:30px 20px; text-align:center; color:#657786; font-size:15px; font-weight:bold;">まだ投稿がありません</div>'; return; }
+
+                postsArray.forEach(post => {
+                    const postId = post.id; const uId = post.userId || "";
+                    if (notInterestedPosts.includes(postId) || mutedUsers.includes(uId) || blockedUsers.includes(uId)) return;
+                    const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
+                    const safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const encodedContent = encodeURIComponent(post.content || "");
+                    const viewCount = post.views || 0; const isRepost = post.isRepost || false;
+                    const repLabel = isRepost ? `<div class="repost-label">${svgRepost} ${post.repostedBy} さんがリポストしました</div>` : '';
+
+                    const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.id = `postDom-${postId}`;
+                    postDiv.setAttribute('onclick', `showPostDetail('${postId}')`);
+                    postDiv.innerHTML = createPostHTML(postId, post, uId, post.userName || "名無しさん", post.userIcon || defaultIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount);
+                    profileTimeline.appendChild(postDiv);
+                });
+            } catch (e) { profileTimeline.innerHTML = `<div class="error-box">プロフィール読込失敗: ${e.message}</div>`; }
         }
 
-        window.loadReplies = async function(postId) {
-            const replyList = document.getElementById('detailReplyList');
-            replyList.innerHTML = '<div style="padding:15px; color:#657786; font-size:14px;">返信を読み込み中...</div>';
-            const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
-            const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
-            try {
-                const q = query(collection(db, "replies"), where("postId", "==", postId));
-                const querySnapshot = await getDocs(q);
-                let repliesArray = [];
-                querySnapshot.forEach((docSnap) => { repliesArray.push(docSnap.data()); });
-                repliesArray.sort((a, b) => {
-                    const timeA = a.createdAt ? a.createdAt.toDate().getTime() : 0;
-                    const timeB = b.createdAt ? b.createdAt.toDate().getTime() : 0;
-                    return timeA - timeB;
-                });
-                replyList.innerHTML = '';
-                if (repliesArray.length === 0) { replyList.innerHTML = '<div style="padding:15px; color:#657786; font-size:14px;">まだ返信はありません。</div>'; return; }
-                repliesArray.forEach((reply) => {
-                    const rId = reply.userId || "";
-                    if (mutedUsers.includes(rId) || blockedUsers.includes(rId)) return;
-                    const date = reply.createdAt ? reply.createdAt.toDate().toLocaleString() : '時間不明';
-                    const safeContent = (reply.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    const rName = reply.userName || "名無しさん"; const rIcon = reply.userIcon || defaultIcon;
-                    const replyDiv = document.createElement('div'); replyDiv.className = 'reply-item';
-                    replyDiv.innerHTML = `
-                        <div class="post-left"><img src="${rIcon}" class="user-icon" style="width:38px; height:38px;"></div>
-                        <div class="post-right">
-                            <div class="post-header"><span class="user-name" style="font-size:14px;">${rName}</span><span class="post-time">${date}</span></div>
-                            <div style="font-size:14px; white-space: pre-wrap;">${safeContent}</div>
-                        </div>
-                    `;
-                    replyList.appendChild(replyDiv);
-                });
-            } catch (e) { replyList.innerHTML = `<div class="error-box">返信読込失敗: ${e.message}</div>`; }
-        }
-
-        window.showNotifications = function() {
-            document.getElementById('homeView').style.display = 'none';
-            document.getElementById('detailView').style.display = 'none';
-            document.getElementById('profileView').style.display = 'none';
-            document.getElementById('notificationView').style.display = 'block';
-            window.history.replaceState({}, '', window.location.origin + window.location.pathname + "?view=notifications");
-            loadNotifications();
-        }
-
-        window.loadNotifications = async function() {
-            const list = document.getElementById('notificationList');
-            list.innerHTML = '<div style="padding:15px; color:#657786;">通知を読み込み中...</div>';
-            
-            const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
-            const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
+        window.renderNotifications = async function() {
+            const list = document.getElementById('notificationList'); list.innerHTML = '<div style="padding:15px; color:#657786;">通信中...</div>';
+            const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
 
             try {
-                const q = query(collection(db, "notifications"), where("targetUserId", "==", myProfile.id));
-                const querySnapshot = await getDocs(q);
-                let notificationsArray = [];
-                querySnapshot.forEach((docSnap) => { notificationsArray.push(docSnap.data()); });
-
-                notificationsArray.sort((a, b) => {
-                    const timeA = a.createdAt ? a.createdAt.toDate().getTime() : 0;
-                    const timeB = b.createdAt ? b.createdAt.toDate().getTime() : 0;
-                    return timeB - timeA;
-                });
-
+                const q = query(collection(db, "notifications"), where("targetUserId", "==", myProfile.id)); const querySnapshot = await getDocs(q);
+                let notificationsArray = []; querySnapshot.forEach((docSnap) => { notificationsArray.push(docSnap.data()); });
+                notificationsArray.sort((a, b) => { return (b.createdAt ? b.createdAt.toDate().getTime() : 0) - (a.createdAt ? a.createdAt.toDate().getTime() : 0); });
                 list.innerHTML = '';
                 if (notificationsArray.length === 0) { list.innerHTML = '<div style="padding:15px; color:#657786;">まだ通知はありません。</div>'; return; }
 
                 notificationsArray.forEach((notif) => {
-                    const sId = notif.senderId || "";
-                    if (mutedUsers.includes(sId) || blockedUsers.includes(sId)) return;
-
+                    const sId = notif.senderId || ""; if (mutedUsers.includes(sId) || blockedUsers.includes(sId)) return;
                     const date = notif.createdAt ? notif.createdAt.toDate().toLocaleString() : '時間不明';
-                    const sName = notif.senderName || "名無しさん";
-                    const sIcon = notif.senderIcon || defaultIcon;
+                    const sName = notif.senderName || "名無しさん"; const sIcon = notif.senderIcon || defaultIcon;
                     
-                    let typeLabel = "";
-                    let detailSnippet = "";
-                    
-                    if (notif.type === 'like') {
-                        typeLabel = `<span style="color:#e0245e; font-weight:bold; display:flex; align-items:center; gap:6px;">${svgLike} ${sName} さんがあなたのポストをいいねしました</span>`;
-                    } else if (notif.type === 'repost') {
-                        typeLabel = `<span style="color:#17bf63; font-weight:bold; display:flex; align-items:center; gap:6px;">${svgRepost} ${sName} さんがあなたのポストをリポストしました</span>`;
-                    } else if (notif.type === 'reply') {
-                        typeLabel = `<span style="color:#1da1f2; font-weight:bold; display:flex; align-items:center; gap:6px;">${svgReply} ${sName} さんがあなたのポストに返信しました</span>`;
+                    let typeLabel = ""; let detailSnippet = "";
+                    if (notif.type === 'like') { typeLabel = `<span style="color:#f91880; font-weight:bold; display:flex; align-items:center; gap:6px;">${svgLike} ${sName} さんがあなたのポストをいいねしました</span>`; } 
+                    else if (notif.type === 'repost') { typeLabel = `<span style="color:#00ba7c; font-weight:bold; display:flex; align-items:center; gap:6px;">${svgRepost} ${sName} さんがあなたのポストをリポストしました</span>`; } 
+                    else if (notif.type === 'reply') {
+                        typeLabel = `<span style="color:#1d9bf0; font-weight:bold; display:flex; align-items:center; gap:6px;">${svgReply} ${sName} さんがあなたのポストに返信しました</span>`;
                         const safeReply = (notif.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                        detailSnippet = `<div style="font-size:14px; color:#657786; font-style:italic; margin-top:5px;">「${safeReply}」</div>`;
+                        detailSnippet = `<div style="font-size:14px; color:#71767b; font-style:italic; margin-top:5px;">「${safeReply}」</div>`;
                     }
 
-                    const div = document.createElement('div');
-                    div.className = 'reply-item clickable';
-                    div.setAttribute('onclick', `showPostDetail('${notif.postId}')`);
+                    const div = document.createElement('div'); div.className = 'reply-item clickable'; div.setAttribute('onclick', `showPostDetail('${notif.postId}')`);
                     div.innerHTML = `
-                        <div class="post-left"><img src="${sIcon}" class="user-icon" style="width:38px; height:38px;"></div>
+                        <div class="post-left" onclick="showUserProfile('${sId}', event)" style="z-index:2; position:relative;"><img src="${sIcon}" class="user-icon" style="width:38px; height:38px; cursor:pointer;"></div>
                         <div class="post-right">
-                            <div class="post-header">
-                                ${typeLabel}
-                                <span class="post-time" style="margin-left:auto;">${date}</span>
-                            </div>
+                            <div class="post-header">${typeLabel}<span class="post-time" style="margin-left:auto;">${date}</span></div>
                             ${detailSnippet}
                         </div>
                     `;
@@ -643,49 +557,140 @@
             } catch (e) { list.innerHTML = `<div class="error-box">通知読込失敗: ${e.message}</div>`; }
         }
 
-        window.showProfile = function() {
-            document.getElementById('homeView').style.display = 'none';
-            document.getElementById('detailView').style.display = 'none';
-            document.getElementById('notificationView').style.display = 'none';
-            document.getElementById('profileView').style.display = 'block';
+        window.renderSettings = function() {
             document.getElementById('profileName').value = myProfile.name;
             document.getElementById('profileIcon').value = myProfile.icon.startsWith('data:') ? "" : myProfile.icon;
             document.getElementById('profileIconPreview').src = myProfile.icon;
             uploadedImageBase64 = "";
         }
 
-        window.saveProfile = function() {
-            const name = document.getElementById('profileName').value.trim();
-            const iconUrl = document.getElementById('profileIcon').value.trim();
-            if (name === '') { alert('ニックネームを入力してください。'); return; }
-            myProfile.name = name;
-            if (uploadedImageBase64 !== "") { myProfile.icon = uploadedImageBase64; }
-            else if (iconUrl !== "") { myProfile.icon = iconUrl; }
-            localStorage.setItem('mySNS_profile', JSON.stringify(myProfile));
-            alert('プロフィールを保存しました！'); showHome();
+        window.likePost = async function(postId, targetUserId, event) {
+            if (event) { event.stopPropagation(); event.cancelBubble = true; }
+            if (targetUserId === myProfile.id) { alert("自分のポストにはいいねできません。"); return; }
+            try {
+                await addDoc(collection(db, "notifications"), { type: "like", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date() });
+                alert("ポストにいいねしました！相手に通知が届きます。");
+            } catch(e) { alert("エラー: " + e.message); }
+        }
+
+        // 💡 【重要】引用リポストと通常リポストを分岐してDBに保存する処理
+        window.repostPost = async function(postId, event) {
+            if (event) { event.stopPropagation(); event.cancelBubble = true; }
+            if (await isUserRestricted(myProfile.id)) return;
+            
+            try {
+                // DBから元の投稿データを取得
+                const docRef = doc(db, "posts", postId);
+                const docSnap = await getDoc(docRef);
+                if (!docSnap.exists()) { alert("元の投稿が見つかりません。"); return; }
+                
+                const origPost = docSnap.data();
+                const targetUserId = origPost.userId;
+                
+                if (targetUserId === myProfile.id) { alert("自分のポストはリポストできません。"); return; }
+                
+                // 💡 入力窓を表示して、引用リポストかどうかを判定
+                const comment = prompt("引用リポストしますか？\nコメントを入力してください。（空欄のままOKを押すと通常のリポストになります）");
+                if (comment === null) return; // キャンセル
+                
+                if (comment.trim() === "") {
+                    // 通常のリポスト（元の投稿者のアイコンと名前を維持して流す）
+                    await addDoc(collection(db, "posts"), {
+                        content: origPost.content, createdAt: new Date(), userId: targetUserId, userName: origPost.userName, userIcon: origPost.userIcon, isRepost: true, repostedBy: myProfile.name, views: 0
+                    });
+                } else {
+                    // 引用リポスト（自分の投稿として記録し、元の投稿データを内包する）
+                    await addDoc(collection(db, "posts"), {
+                        content: comment.trim(), createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isQuoteRepost: true, views: 0,
+                        originalPost: {
+                            postId: postId, userId: targetUserId, userName: origPost.userName, userIcon: origPost.userIcon, content: origPost.content
+                        }
+                    });
+                }
+
+                await addDoc(collection(db, "notifications"), { type: "repost", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date() });
+                
+                alert("ポストをリポストしました！");
+                checkRouting(); // 今いる画面に合わせて再読み込み
+            } catch(e) { alert("エラー: " + e.message); }
+        }
+
+        window.submitReply = async function(postId) {
+            if (await isUserRestricted(myProfile.id)) return;
+            const replyInput = document.getElementById('detailReplyText'); const replyText = replyInput.value.trim();
+            if (replyText === '') return;
+            try {
+                await addDoc(collection(db, "replies"), { postId: postId, content: replyText, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon });
+                if (currentDetailPostUserId !== myProfile.id) {
+                    await addDoc(collection(db, "notifications"), { type: "reply", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: currentDetailPostUserId, content: replyText, createdAt: new Date() });
+                }
+                replyInput.value = ''; loadReplies(postId);
+            } catch (e) { alert("返信に失敗しました: " + e.message); }
+        }
+
+        window.loadReplies = async function(postId) {
+            const replyList = document.getElementById('detailReplyList'); replyList.innerHTML = '<div style="padding:15px; color:#657786; font-size:14px;">返信を読み込み中...</div>';
+            const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
+            try {
+                const q = query(collection(db, "replies"), where("postId", "==", postId)); const querySnapshot = await getDocs(q);
+                let repliesArray = []; querySnapshot.forEach((docSnap) => { repliesArray.push(docSnap.data()); });
+                repliesArray.sort((a, b) => { return (a.createdAt ? a.createdAt.toDate().getTime() : 0) - (b.createdAt ? b.createdAt.toDate().getTime() : 0); });
+                replyList.innerHTML = ''; if (repliesArray.length === 0) { replyList.innerHTML = '<div style="padding:15px; color:#657786; font-size:14px;">まだ返信はありません。</div>'; return; }
+                repliesArray.forEach((reply) => {
+                    const rId = reply.userId || ""; if (mutedUsers.includes(rId) || blockedUsers.includes(rId)) return;
+                    const date = reply.createdAt ? reply.createdAt.toDate().toLocaleString() : '時間不明';
+                    const safeContent = (reply.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const rName = reply.userName || "名無しさん"; const rIcon = reply.userIcon || defaultIcon;
+                    const replyDiv = document.createElement('div'); replyDiv.className = 'reply-item';
+                    replyDiv.innerHTML = `
+                        <div class="post-left" onclick="showUserProfile('${rId}', event)" style="z-index:2; position:relative;"><img src="${rIcon}" class="user-icon" style="width:38px; height:38px; cursor:pointer;"></div>
+                        <div class="post-right">
+                            <div class="post-header"><span class="user-name" onclick="showUserProfile('${rId}', event)" style="font-size:14px; z-index:2; position:relative; cursor:pointer;">${rName}</span><span class="post-time">${date}</span></div>
+                            <div style="font-size:14px; white-space: pre-wrap;">${safeContent}</div>
+                        </div>
+                    `;
+                    replyList.appendChild(replyDiv);
+                });
+            } catch (e) { replyList.innerHTML = `<div class="error-box">返信読込失敗: ${e.message}</div>`; }
+        }
+
+        window.togglePostMenu = function(postId, isDetail, event) {
+            const ev = event || window.event; if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
+            const menuId = isDetail ? 'detailDropdownMenu' : `postMenu-${postId}`; const menu = document.getElementById(menuId); if (!menu) return;
+            const isVisible = menu.style.display === 'block'; closeAllMenus(); if (!isVisible) { menu.style.display = 'block'; }
+        }
+        window.closeAllMenus = function() { document.querySelectorAll('.dropdown-menu').forEach(menu => { menu.style.display = 'none'; }); }
+
+        window.handleMenuAction = function(postId, targetUserId, targetUserName, actionType, event) {
+            const ev = event || window.event; if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
+            closeAllMenus();
+            if (actionType === '興味なし') {
+                let list = JSON.parse(localStorage.getItem('mySNS_notInterestedPosts')) || []; list.push(postId); localStorage.setItem('mySNS_notInterestedPosts', JSON.stringify(list)); animateRemovePost(postId);
+            } else if (actionType === 'ミュート') {
+                let list = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; list.push(targetUserId); localStorage.setItem('mySNS_mutedUsers', JSON.stringify(list)); animateRemovePost(postId);
+            } else if (actionType === 'ブロック') {
+                let list = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; list.push(targetUserId); localStorage.setItem('mySNS_blockedUsers', JSON.stringify(list)); animateRemovePost(postId);
+            } else if (actionType === '制限' || actionType === '報告') {
+                addDoc(collection(db, "penalties"), { targetUserId: targetUserId, type: actionType, createdAt: new Date() }); alert(`送信しました。`);
+            }
+        }
+        function animateRemovePost(postId) {
+            const postDom = document.getElementById(`postDom-${postId}`); if (postDom) { postDom.style.opacity = '0'; postDom.style.transform = 'scale(0.95)'; setTimeout(() => { postDom.style.display = 'none'; }, 300); }
+            if (document.getElementById('detailView').style.display === 'block') { showHome(); }
         }
 
         window.sharePost = function(postId, encodedContent, event) {
-            const ev = event || window.event;
-            if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
+            const ev = event || window.event; if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
             closeAllMenus();
-            const content = decodeURIComponent(encodedContent);
-            const randomString = Math.random().toString(36).substring(2, 12);
-            const baseUrl = window.location.origin + window.location.pathname;
-            const params = new URLSearchParams();
-            params.append('id', postId); params.append('ref', randomString);
-            const shareUrl = `${baseUrl}?${params.toString()}`;
-            const shareText = `${content}\n\n${shareUrl}`;
+            const content = decodeURIComponent(encodedContent); const randomString = Math.random().toString(36).substring(2, 12);
+            let baseUrl = window.location.origin + window.location.pathname; if (baseUrl.endsWith('/')) { baseUrl = baseUrl.slice(0, -1); }
+            const params = new URLSearchParams(); params.append('id', postId); params.append('ref', randomString);
+            const shareUrl = `${baseUrl}?${params.toString()}`; const shareText = `${content}\n\n${shareUrl}`;
             navigator.clipboard.writeText(shareText).then(() => { alert("リンクをコピーしました！"); });
         }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const postIdParam = urlParams.get('id');
-        const viewParam = urlParams.get('view');
-        
-        if (postIdParam) { showPostDetail(postIdParam); }
-        else if (viewParam === 'notifications') { showNotifications(); }
-        else { showHome(); }
+        // 初期起動
+        checkRouting();
     </script>
 </body>
 </html>
