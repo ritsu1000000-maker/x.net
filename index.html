@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - AI日本語対応＆地図検索・カスタム通知対応版</title>
+    <title>簡易SNS - 予約投稿＆投票・AI画像・地図対応版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <style>
         body { font-family: sans-serif; background-color: #000000; margin: 0; padding: 0; color: #e7e9ea; }
@@ -96,6 +96,8 @@
         /* トースト通知用スタイル */
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background-color: #1d9bf0; color: white; padding: 12px 24px; border-radius: 25px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-weight: bold; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .toast.show { opacity: 1; }
+
+        .poll-input { width: 100%; padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #e7e9ea; box-sizing: border-box; margin-bottom: 10px; }
     </style>
 </head>
 <body onclick="closeAllMenus()">
@@ -115,10 +117,15 @@
                 <div onclick="showUserProfile(myProfile.id, event)" style="cursor:pointer;"><img src="" class="user-icon my-current-icon"></div>
                 <div class="post-box-right">
                     <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
+                    
+                    <div id="postAttachments" style="font-size: 13px; color: #1d9bf0; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px;"></div>
+
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <div style="display: flex; gap: 8px;">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="toolbar-btn" onclick="openScheduleModal()">🕒 予約</button>
+                            <button class="toolbar-btn" onclick="openPollModal()">📊 投票</button>
                             <button class="toolbar-btn" onclick="openMapModal('postText')">📍 地図</button>
-                            <button class="toolbar-btn" onclick="openAIGenModal('postText')">✨ AI画像生成</button>
+                            <button class="toolbar-btn" onclick="openAIGenModal('postText')">✨ AI画像</button>
                         </div>
                         <button class="post-btn" onclick="submitPost()">ポストする</button>
                     </div>
@@ -151,7 +158,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <div style="display: flex; gap: 8px;">
                             <button class="toolbar-btn" onclick="openMapModal('detailReplyText')">📍 地図</button>
-                            <button class="toolbar-btn" onclick="openAIGenModal('detailReplyText')">✨ AI画像生成</button>
+                            <button class="toolbar-btn" onclick="openAIGenModal('detailReplyText')">✨ AI画像</button>
                         </div>
                         <button class="post-btn" id="submitReplyBtn">返信</button>
                     </div>
@@ -198,7 +205,7 @@
                     <label style="font-weight: bold; color: #71767b;">アイコンプレビュー</label>
                     <img src="" id="profileIconPreview" class="user-icon" style="width: 80px; height: 80px; margin-bottom: 10px;">
                     <label for="profileFile" class="file-input-label">
-                        <svg class="icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+                        <svg class="icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5-5 5z"/></svg>
                         画像をアップロード
                     </label>
                     <input type="file" id="profileFile" accept="image/*" onchange="handleImageUpload(event)">
@@ -227,6 +234,32 @@
                 <button class="post-btn" style="background-color: transparent; border: 1px solid #00ba7c; color: #00ba7c; flex: 1;" onclick="submitRepost(false)">通常のリポスト</button>
                 <button class="post-btn" style="flex: 1;" onclick="submitRepost(true)">引用してポスト</button>
             </div>
+        </div>
+    </div>
+
+    <div id="scheduleModal" class="modal-overlay">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 400px;">
+            <div class="modal-header">
+                <span>🕒 予約投稿</span>
+                <button class="close-modal" onclick="document.getElementById('scheduleModal').style.display='none'">×</button>
+            </div>
+            <div style="color: #71767b; font-size: 13px; margin-bottom: 10px;">未来の日時を指定すると、その時間になるまでタイムラインに公開されません。（自分のプロフィールからは確認できます）</div>
+            <input type="datetime-local" id="scheduleInput" style="width: 100%; padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: #000; color: #e7e9ea; box-sizing: border-box; color-scheme: dark;">
+            <button class="post-btn" onclick="attachSchedule()" style="width: 100%; margin-top: 15px;">時間を設定する</button>
+        </div>
+    </div>
+
+    <div id="pollModal" class="modal-overlay">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 400px;">
+            <div class="modal-header">
+                <span>📊 投票を作成</span>
+                <button class="close-modal" onclick="document.getElementById('pollModal').style.display='none'">×</button>
+            </div>
+            <input type="text" id="pollOpt1" placeholder="選択肢 1" class="poll-input">
+            <input type="text" id="pollOpt2" placeholder="選択肢 2" class="poll-input">
+            <input type="text" id="pollOpt3" placeholder="選択肢 3 (任意)" class="poll-input">
+            <input type="text" id="pollOpt4" placeholder="選択肢 4 (任意)" class="poll-input">
+            <button class="post-btn" onclick="attachPoll()" style="width: 100%; margin-top: 10px;">投票を設定する</button>
         </div>
     </div>
 
@@ -319,133 +352,198 @@
 
         let currentDetailPostUserId = "";
         let uploadedImageBase64 = "";
+        
+        // 予約・投票のローカルステート
+        let currentScheduleTime = null;
+        let currentPollOptions = null;
+
+        // 添付状態のUI更新
+        window.updateAttachmentUI = function() {
+            let html = "";
+            if (currentScheduleTime) {
+                html += `<div style="display:inline-block; background:#031018; padding:5px 10px; border-radius:15px; border:1px solid #1d9bf0;">
+                            ⏳ ${currentScheduleTime.toLocaleString()} に予約済み 
+                            <span onclick="currentScheduleTime=null; updateAttachmentUI()" style="color:#f91880; cursor:pointer; margin-left:8px; font-weight:bold;">✖</span>
+                         </div>`;
+            }
+            if (currentPollOptions) {
+                html += `<div style="display:inline-block; background:#05140c; padding:5px 10px; border-radius:15px; border:1px solid #00ba7c; color:#00ba7c;">
+                            📊 投票を追加済み (${currentPollOptions.options.length}択) 
+                            <span onclick="currentPollOptions=null; updateAttachmentUI()" style="color:#f91880; cursor:pointer; margin-left:8px; font-weight:bold;">✖</span>
+                         </div>`;
+            }
+            document.getElementById('postAttachments').innerHTML = html;
+        }
+
+        // 予約機能
+        window.openScheduleModal = function() {
+            document.getElementById('scheduleInput').value = '';
+            document.getElementById('scheduleModal').style.display = 'flex';
+        }
+
+        window.attachSchedule = function() {
+            const val = document.getElementById('scheduleInput').value;
+            if(!val) return;
+            const selectedDate = new Date(val);
+            if(selectedDate <= new Date()) {
+                customAlert("エラー", "未来の時間を指定してください。");
+                return;
+            }
+            currentScheduleTime = selectedDate;
+            updateAttachmentUI();
+            document.getElementById('scheduleModal').style.display = 'none';
+        }
+
+        // 投票機能
+        window.openPollModal = function() {
+            document.getElementById('pollOpt1').value = '';
+            document.getElementById('pollOpt2').value = '';
+            document.getElementById('pollOpt3').value = '';
+            document.getElementById('pollOpt4').value = '';
+            document.getElementById('pollModal').style.display = 'flex';
+        }
+
+        window.attachPoll = function() {
+            const opts = [
+                document.getElementById('pollOpt1').value.trim(),
+                document.getElementById('pollOpt2').value.trim(),
+                document.getElementById('pollOpt3').value.trim(),
+                document.getElementById('pollOpt4').value.trim()
+            ].filter(v => v !== '');
+
+            if(opts.length < 2) {
+                customAlert("エラー", "投票の選択肢は最低2つ必要です。");
+                return;
+            }
+            currentPollOptions = { options: opts, votes: {} };
+            updateAttachmentUI();
+            document.getElementById('pollModal').style.display = 'none';
+        }
+
+        window.votePoll = async function(postId, optionIndex, event) {
+            if (event) { event.stopPropagation(); event.cancelBubble = true; }
+            if (await isUserRestricted(myProfile.id)) return;
+            try {
+                const docRef = doc(db, "posts", postId);
+                const docSnap = await getDoc(docRef);
+                if (!docSnap.exists()) return;
+                const post = docSnap.data();
+
+                if (!post.poll || !post.poll.options) return;
+                if (!post.poll.votes) post.poll.votes = {};
+
+                post.poll.votes[myProfile.id] = optionIndex;
+                await updateDoc(docRef, { "poll.votes": post.poll.votes });
+                showToast("投票しました！");
+
+                // 再描画
+                if (document.getElementById('detailView').style.display === 'block') {
+                    renderPostDetail(postId);
+                } else if (document.getElementById('userProfileView').style.display === 'block') {
+                    renderUserProfile(post.userId);
+                } else {
+                    renderPosts();
+                }
+            } catch(e) { customAlert("エラー", "投票に失敗しました。"); }
+        }
 
         // URLを埋め込みコードに変換
         function parseEmbeds(text) {
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, function(url) {
-                // 画像リンク
                 if (url.match(/^https:\/\/image\.pollinations\.ai\//) || url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
                     return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📸 画像を開く</a><br><img src="${url}" style="max-width: 100%; border-radius: 12px; margin-top: 10px; object-fit: cover;">`;
                 }
-
-                // Googleマップ（検索指定）
                 const mapsMatch = url.match(/maps\.google\.com\/maps\?q=([^&\s]+)/);
                 if (mapsMatch) {
                     return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📍 地図を開く</a><br><iframe width="100%" height="250" src="https://maps.google.com/maps?q=${mapsMatch[1]}&output=embed" frameborder="0" style="border-radius:12px; margin-top:10px;"></iframe>`;
                 }
-
-                // YouTube
                 const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
                 if (ytMatch) {
                     return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a><br><iframe width="100%" height="315" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:12px; margin-top:10px;"></iframe>`;
                 }
-
-                // ニコニコ動画
                 const nicoMatch = url.match(/nicovideo\.jp\/watch\/([a-zA-Z0-9]+)/);
                 if (nicoMatch) {
                     return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a><br><iframe width="100%" height="315" src="https://embed.nicovideo.jp/watch/${nicoMatch[1]}" frameborder="0" allowfullscreen style="border-radius:12px; margin-top:10px;"></iframe>`;
                 }
-
-                // ツイキャス
                 const twitcasMatch = url.match(/twitcasting\.tv\/([a-zA-Z0-9_-]+)/);
                 if (twitcasMatch) {
                     const user = twitcasMatch[1];
                     return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a><br><iframe width="100%" height="315" src="https://twitcasting.tv/${user}/iframe" frameborder="0" allowfullscreen style="border-radius:12px; margin-top:10px;"></iframe>`;
                 }
-
-                // Twitter / X
                 const twitterMatch = url.match(/(?:twitter\.com|x\.com)\/([a-zA-Z0-9_]+)\/status\/([0-9]+)/);
                 if (twitterMatch) {
                     return `<blockquote class="twitter-tweet" data-theme="dark"><a href="${url}"></a></blockquote>`;
                 }
-
                 return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a>`;
             });
         }
 
-        // 新機能：地図（場所検索）機能
+        // 地図検索機能
         let currentMapTargetId = '';
         window.openMapModal = function(targetId) {
             currentMapTargetId = targetId;
             document.getElementById('mapKeyword').value = '';
             document.getElementById('mapModal').style.display = 'flex';
         }
-
         window.attachMapLink = function() {
             const keyword = document.getElementById('mapKeyword').value.trim();
             if (!keyword) { customAlert("エラー", "場所の名前を入力してください。"); return; }
-            
             const encodedKeyword = encodeURIComponent(keyword);
             const mapUrl = `https://maps.google.com/maps?q=${encodedKeyword}`;
-            
             const textarea = document.getElementById(currentMapTargetId);
             textarea.value += (textarea.value ? '\n' : '') + mapUrl;
             document.getElementById('mapModal').style.display = 'none';
             showToast("地図情報を添付しました！");
         }
 
-        // 新機能：AI画像生成機能（日本語対応・タイムアウト付き）
+        // AI画像生成機能
         let currentInputTargetId = 'postText';
         let currentGeneratedImgUrl = "";
-
         window.openAIGenModal = function(targetId) {
             currentInputTargetId = targetId;
             document.getElementById('aiPrompt').value = '';
             document.getElementById('aiPreviewArea').style.display = 'none';
             document.getElementById('aiModal').style.display = 'flex';
         }
-
         window.generateImage = async function() {
             const prompt = document.getElementById('aiPrompt').value.trim();
-            if (!prompt) { customAlert("エラー", "プロンプト（キーワード）を入力してください。"); return; }
-            
+            if (!prompt) { customAlert("エラー", "プロンプトを入力してください。"); return; }
             document.getElementById('aiPreviewArea').style.display = 'none';
             
             let englishPrompt = prompt;
-            // 日本語が含まれている場合は自動で英語に翻訳
             if (/[ぁ-んァ-ヶ亜-熙]/.test(prompt)) {
                 showToast("⏳ 準備中... (日本語を翻訳しています)");
                 try {
                     const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
                     const data = await res.json();
                     englishPrompt = data[0][0][0];
-                } catch (e) {
-                    console.error("翻訳エラー:", e);
-                }
+                } catch (e) {}
             }
             
             showToast("⏳ 画像を生成しています... (約5〜15秒)");
             const seed = Math.floor(Math.random() * 1000000);
-            const encodedPrompt = encodeURIComponent(englishPrompt);
-            const imgUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=512&height=512&nologo=true`;
+            const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(englishPrompt)}?seed=${seed}&width=512&height=512&nologo=true`;
             
             const imgEl = document.getElementById('aiPreviewImg');
-            
-            // エラー対策：タイムアウト処理
             let isLoaded = false;
             const timeout = setTimeout(() => {
                 if (!isLoaded) {
                     imgEl.src = ""; 
-                    customAlert("エラー", "画像の生成がタイムアウトしました。\nサーバーが混雑している可能性がありますので、時間をおいて再試行してください。");
+                    customAlert("エラー", "生成がタイムアウトしました。時間をおいて再試行してください。");
                 }
-            }, 20000); // 20秒待機
-
+            }, 20000);
             imgEl.onload = function() {
-                isLoaded = true;
-                clearTimeout(timeout);
+                isLoaded = true; clearTimeout(timeout);
                 document.getElementById('aiPreviewArea').style.display = 'block';
-                currentGeneratedImgUrl = imgUrl;
-                showToast("✨ 画像が生成されました！");
+                currentGeneratedImgUrl = imgUrl; showToast("✨ 画像が生成されました！");
             }
             imgEl.onerror = function() {
-                isLoaded = true;
-                clearTimeout(timeout);
-                customAlert("エラー", "画像の生成に失敗しました。\n時間をおいて再試行してください。");
+                isLoaded = true; clearTimeout(timeout);
+                customAlert("エラー", "画像の生成に失敗しました。時間をおいて再試行してください。");
             }
             imgEl.src = imgUrl;
         }
-
         window.attachGeneratedImage = function() {
             if (currentGeneratedImgUrl) {
                 const textarea = document.getElementById(currentInputTargetId);
@@ -455,8 +553,14 @@
             }
         }
 
-        // 投稿組み立て関数
-        function createPostHTML(postId, post, uId, uName, uIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount) {
+        // 投稿組み立て関数（予約・投票の表示追加）
+        function createPostHTML(postId, post, uId, uName, uIcon, dateObj, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount) {
+            const now = new Date();
+            const isScheduled = dateObj > now;
+            const dateStr = dateObj.toLocaleString();
+            
+            let scheduleLabelHTML = isScheduled ? `<span style="color:#1d9bf0; font-size:12px; margin-left:8px; border:1px solid #1d9bf0; padding:2px 4px; border-radius:4px;">予約投稿</span>` : "";
+
             let quoteBoxHTML = "";
             if (post.isQuoteRepost && post.originalPost) {
                 const orig = post.originalPost;
@@ -473,6 +577,40 @@
                 `;
             }
 
+            // 投票（アンケート）の組み立て
+            let pollHTML = "";
+            if (post.poll && post.poll.options) {
+                const totalVotesObj = post.poll.votes || {};
+                const totalVotes = Object.keys(totalVotesObj).length;
+                const hasVoted = totalVotesObj[myProfile.id] !== undefined;
+
+                pollHTML += `<div style="margin: 10px 0; border: 1px solid #2f3336; border-radius: 12px; padding: 12px; font-size: 14px;">`;
+                post.poll.options.forEach((opt, idx) => {
+                    const votesForOpt = Object.values(totalVotesObj).filter(v => v === idx).length;
+                    const percent = totalVotes === 0 ? 0 : Math.round((votesForOpt / totalVotes) * 100);
+
+                    if (hasVoted || isScheduled) {
+                        const isMyVote = totalVotesObj[myProfile.id] === idx;
+                        pollHTML += `
+                            <div style="margin-bottom: 8px; position: relative; background: #16181c; border-radius: 6px; overflow: hidden; height: 36px; display: flex; align-items: center;">
+                                <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${percent}%; background: ${isMyVote ? 'rgba(29, 155, 240, 0.4)' : '#333639'}; z-index: 0; transition: width 0.5s;"></div>
+                                <div style="position: relative; width: 100%; padding: 0 12px; display: flex; justify-content: space-between; z-index: 1;">
+                                    <span style="font-weight:bold;">${opt} ${isMyVote ? '✓' : ''}</span>
+                                    <span>${percent}%</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        pollHTML += `
+                            <button onclick="votePoll('${postId}', ${idx}, event)" style="display: block; width: 100%; padding: 10px; margin-bottom: 8px; border: 1px solid #1d9bf0; background: transparent; color: #1d9bf0; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center;">
+                                ${opt}
+                            </button>
+                        `;
+                    }
+                });
+                pollHTML += `<div style="color: #71767b; font-size: 13px; margin-top: 5px;">${totalVotes} 票</div></div>`;
+            }
+
             return `
                 <div class="post-right" style="padding-left:0; width:100%;">
                     ${repLabel}
@@ -481,7 +619,8 @@
                         <div class="post-right">
                             <div class="post-header">
                                 <span class="user-name" onclick="showUserProfile('${uId}', event)" style="z-index:2; position:relative; cursor:pointer;">${uName}</span>
-                                <span class="post-time">${date}</span>
+                                <span class="post-time">${dateStr}</span>
+                                ${scheduleLabelHTML}
                                 <button class="menu-trigger" onclick="togglePostMenu('${postId}', false, event)">${svgMenu}</button>
                                 <div id="postMenu-${postId}" class="dropdown-menu">
                                     <div class="menu-item" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgLink} リンクをコピー</div>
@@ -493,6 +632,7 @@
                                 </div>
                             </div>
                             <div class="post-content">${safeContent}</div>
+                            ${pollHTML}
                             ${quoteBoxHTML}
                             <div class="post-actions">
                                 <button class="action-btn reply">${svgReply} <span class="count-span"></span></button>
@@ -599,16 +739,28 @@
         window.showSettings = function() { const params = new URLSearchParams(); params.set('view', 'settings'); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
         window.addEventListener('popstate', checkRouting);
 
+        // 投稿の送信（予約・投票の保存対応）
         window.submitPost = async function() {
             if (await isUserRestricted(myProfile.id)) return;
             const textInput = document.getElementById('postText'); const text = textInput.value.trim();
             if (text === '') return;
+            
+            const postDate = currentScheduleTime ? currentScheduleTime : new Date();
+            let postData = {
+                content: text, createdAt: postDate, userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isRepost: false, views: 0, likes: 0, reposts: 0 
+            };
+            if (currentPollOptions) {
+                postData.poll = currentPollOptions;
+            }
+
             try {
-                await addDoc(collection(db, "posts"), { 
-                    content: text, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isRepost: false, views: 0, likes: 0, reposts: 0 
-                });
-                textInput.value = ''; renderPosts();
-                showToast("ポストしました！");
+                await addDoc(collection(db, "posts"), postData);
+                textInput.value = '';
+                showToast(currentScheduleTime ? "予約投稿をセットしました！" : "ポストしました！");
+                currentScheduleTime = null;
+                currentPollOptions = null;
+                updateAttachmentUI();
+                renderPosts();
             } catch (e) { customAlert("投稿エラー", e.message); }
         }
 
@@ -626,23 +778,23 @@
                     const postId = docSnap.id; const post = docSnap.data(); const uId = post.userId || "";
                     if (notInterestedPosts.includes(postId) || mutedUsers.includes(uId) || blockedUsers.includes(uId)) return;
 
-                    const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
+                    const dateObj = post.createdAt ? post.createdAt.toDate() : new Date(0);
+                    // 他人の予約投稿はタイムラインに表示しない
+                    if (dateObj > new Date() && uId !== myProfile.id) return;
+
                     let safeContent = (post.content || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
                     safeContent = parseEmbeds(safeContent);
                     const encodedContent = encodeURIComponent(post.content || "");
                     const uName = post.userName || "名無しさん"; const uIcon = post.userIcon || defaultIcon;
                     
-                    const viewCount = post.views || 0; 
-                    const likeCount = post.likes || 0; 
-                    const repostCount = post.reposts || 0;
-                    
+                    const viewCount = post.views || 0; const likeCount = post.likes || 0; const repostCount = post.reposts || 0;
                     const isRepost = post.isRepost || false;
                     const repLabel = isRepost ? `<div class="repost-label">${svgRepost} ${post.repostedBy} さんがリポストしました</div>` : '';
 
                     const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.id = `postDom-${postId}`;
                     postDiv.setAttribute('onclick', `showPostDetail('${postId}')`);
                     
-                    postDiv.innerHTML = createPostHTML(postId, post, uId, uName, uIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount);
+                    postDiv.innerHTML = createPostHTML(postId, post, uId, uName, uIcon, dateObj, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount);
                     timeline.appendChild(postDiv);
                 });
                 setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
@@ -660,35 +812,40 @@
 
                 if (docSnap.exists()) {
                     const post = docSnap.data(); currentDetailPostUserId = post.userId || "";
-                    const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
+                    const dateObj = post.createdAt ? post.createdAt.toDate() : new Date(0);
+                    
+                    // 予約期間中の他人の投稿アクセス制限
+                    if (dateObj > new Date() && post.userId !== myProfile.id) {
+                        document.getElementById('detailPostContent').innerHTML = 'この投稿はまだ公開されていません。';
+                        return;
+                    }
+
                     let safeContent = (post.content || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
                     safeContent = parseEmbeds(safeContent);
                     const encodedContent = encodeURIComponent(post.content || "");
                     const uName = post.userName || "名無しさん"; const uIcon = post.userIcon || defaultIcon;
                     const uId = post.userId || ""; 
                     
-                    const viewCount = post.views || 0;
-                    const likeCount = post.likes || 0;
-                    const repostCount = post.reposts || 0;
+                    const viewCount = post.views || 0; const likeCount = post.likes || 0; const repostCount = post.reposts || 0;
 
                     document.getElementById('detailUserIcon').src = uIcon; document.getElementById('detailUserIcon').setAttribute('onclick', `showUserProfile('${uId}', event)`);
                     document.getElementById('detailUserName').innerText = uName; document.getElementById('detailUserName').setAttribute('onclick', `showUserProfile('${uId}', event)`);
                     
-                    let quoteBoxHTML = "";
-                    if (post.isQuoteRepost && post.originalPost) {
-                        const orig = post.originalPost;
-                        let safeOrigContent = (orig.content || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
-                        safeOrigContent = parseEmbeds(safeOrigContent);
-                        quoteBoxHTML = `
-                            <div class="quote-box" onclick="showPostDetail('${orig.postId}'); event.stopPropagation();">
-                                <div class="quote-header"><img src="${orig.userIcon || defaultIcon}" class="quote-icon"><span class="quote-name">${orig.userName}</span></div>
-                                <div class="quote-content">${safeOrigContent}</div>
-                            </div>
-                        `;
-                    }
+                    // 疑似的にcreatePostHTMLと同じように組み立て
+                    let dummyHtml = createPostHTML(postId, post, uId, uName, uIcon, dateObj, safeContent, encodedContent, false, "", viewCount, likeCount, repostCount);
+                    // createPostHTMLはラップされたdivを返すので、中身だけ抽出する（簡易対応）
+                    
+                    const tempDiv = document.createElement('div'); tempDiv.innerHTML = dummyHtml;
+                    const postContentDiv = tempDiv.querySelector('.post-content');
+                    const pollDiv = tempDiv.querySelector('div[style*="margin: 10px 0; border: 1px solid #2f3336;"]');
+                    const quoteDiv = tempDiv.querySelector('.quote-box');
+                    
+                    let finalContentHTML = postContentDiv.innerHTML;
+                    if(pollDiv) finalContentHTML += pollDiv.outerHTML;
+                    if(quoteDiv) finalContentHTML += quoteDiv.outerHTML;
 
-                    document.getElementById('detailPostContent').innerHTML = safeContent + quoteBoxHTML;
-                    document.getElementById('detailPostTime').innerHTML = date;
+                    document.getElementById('detailPostContent').innerHTML = finalContentHTML;
+                    document.getElementById('detailPostTime').innerHTML = dateObj.toLocaleString() + (dateObj > new Date() ? ' [予約中]' : '');
                     
                     document.getElementById('detailPostActions').innerHTML = `
                         <div class="post-actions" style="border:none; padding:0;">
@@ -754,22 +911,22 @@
                 postsArray.forEach(post => {
                     const postId = post.id; const uId = post.userId || "";
                     if (notInterestedPosts.includes(postId) || mutedUsers.includes(uId) || blockedUsers.includes(uId)) return;
-                    const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
                     
+                    const dateObj = post.createdAt ? post.createdAt.toDate() : new Date(0);
+                    if (dateObj > new Date() && uId !== myProfile.id) return; // プロフィールでも他人の予約は見せない
+
                     let safeContent = (post.content || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
                     safeContent = parseEmbeds(safeContent);
 
                     const encodedContent = encodeURIComponent(post.content || "");
-                    const viewCount = post.views || 0;
-                    const likeCount = post.likes || 0;
-                    const repostCount = post.reposts || 0;
+                    const viewCount = post.views || 0; const likeCount = post.likes || 0; const repostCount = post.reposts || 0;
                     const isRepost = post.isRepost || false;
                     const repLabel = isRepost ? `<div class="repost-label">${svgRepost} ${post.repostedBy} さんがリポストしました</div>` : '';
 
                     const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.id = `postDom-${postId}`;
                     postDiv.setAttribute('onclick', `showPostDetail('${postId}')`);
                     
-                    postDiv.innerHTML = createPostHTML(postId, post, uId, post.userName || "名無しさん", post.userIcon || defaultIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount);
+                    postDiv.innerHTML = createPostHTML(postId, post, uId, post.userName || "名無しさん", post.userIcon || defaultIcon, dateObj, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount);
                     profileTimeline.appendChild(postDiv);
                 });
                 setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
@@ -836,7 +993,6 @@
         }
 
         let currentRepostId = "";
-
         window.repostPost = async function(postId, event) {
             if (event) { event.stopPropagation(); event.cancelBubble = true; }
             if (await isUserRestricted(myProfile.id)) return;
@@ -861,10 +1017,7 @@
             if (!currentRepostId) return;
             const postId = currentRepostId;
             const comment = document.getElementById('quoteText').value.trim();
-            if (isQuote && comment === "") {
-                customAlert("エラー", "引用ポストする場合はコメントを入力してください。");
-                return;
-            }
+            if (isQuote && comment === "") { customAlert("エラー", "引用ポストする場合はコメントを入力してください。"); return; }
             try {
                 const docRef = doc(db, "posts", postId);
                 const docSnap = await getDoc(docRef);
@@ -886,9 +1039,7 @@
                     });
                 }
                 await addDoc(collection(db, "notifications"), { type: "repost", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date() });
-                closeRepostModal();
-                showToast("リポストしました！");
-                checkRouting();
+                closeRepostModal(); showToast("リポストしました！"); checkRouting();
             } catch(e) { customAlert("エラー", e.message); }
         }
 
@@ -901,8 +1052,7 @@
                 if (currentDetailPostUserId !== myProfile.id) {
                     await addDoc(collection(db, "notifications"), { type: "reply", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: currentDetailPostUserId, content: replyText, createdAt: new Date() });
                 }
-                replyInput.value = ''; loadReplies(postId);
-                showToast("返信をポストしました！");
+                replyInput.value = ''; loadReplies(postId); showToast("返信をポストしました！");
             } catch (e) { customAlert("エラー", "返信に失敗しました: " + e.message); }
         }
 
