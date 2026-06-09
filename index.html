@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - カウント機能搭載版</title>
+    <title>簡易SNS(仮)</title>
     <style>
         :root {
             --bg-color: #000000;
@@ -896,4 +896,1939 @@
             } else {
                 window.dmAudioData = '';
             }
+                    // 🎨 お絵描き（ペイントモーダル）の実装
+        window.postDrawingData = "";
+        window.replyDrawingData = "";
+        window.dmDrawingData = "";
+
+        let paintCanvas = null;
+        let paintCtx = null;
+        let isPainting = false;
+        let paintColor = "#000000";
+        let paintWidth = 6;
+        let paintHistory = [];
+        let paintTarget = "post";
+        let lastPaintX = 0;
+        let lastPaintY = 0;
+
+        window.openPaintModal = function(target) {
+            paintTarget = target;
+            document.getElementById('paintModal').style.display = 'flex';
+            
+            if (!paintCanvas) {
+                paintCanvas = document.getElementById('paintCanvas');
+                paintCtx = paintCanvas.getContext('2d');
+                
+                // イベント登録 (マウス)
+                paintCanvas.addEventListener('mousedown', startPaint);
+                paintCanvas.addEventListener('mousemove', drawPaint);
+                paintCanvas.addEventListener('mouseup', stopPaint);
+                paintCanvas.addEventListener('mouseleave', stopPaint);
+                
+                // イベント登録 (タッチ)
+                paintCanvas.addEventListener('touchstart', startPaintTouch, { passive: false });
+                paintCanvas.addEventListener('touchmove', drawPaintTouch, { passive: false });
+                paintCanvas.addEventListener('touchend', stopPaint);
+            }
+            
+            clearPaintCanvas();
+            paintHistory = [];
+            savePaintHistory(); // 初期状態
+            
+            selectPaintColor('#000000', document.querySelector('.color-dot'));
+            selectPaintWidth(6, document.querySelector('.tool-btn[onclick*="6,"]'));
+        };
+
+        window.closePaintModal = function() {
+            document.getElementById('paintModal').style.display = 'none';
+        };
+
+        window.clearPaintCanvas = function() {
+            if (!paintCtx) return;
+            paintCtx.fillStyle = '#ffffff';
+            paintCtx.fillRect(0, 0, paintCanvas.width, paintCanvas.height);
+        };
+
+        function startPaint(e) {
+            isPainting = true;
+            const rect = paintCanvas.getBoundingClientRect();
+            lastPaintX = (e.clientX - rect.left) * (paintCanvas.width / rect.width);
+            lastPaintY = (e.clientY - rect.top) * (paintCanvas.height / rect.height);
+        }
+
+        function drawPaint(e) {
+            if (!isPainting) return;
+            const rect = paintCanvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (paintCanvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (paintCanvas.height / rect.height);
+            
+            paintCtx.beginPath();
+            paintCtx.moveTo(lastPaintX, lastPaintY);
+            paintCtx.lineTo(x, y);
+            paintCtx.strokeStyle = paintColor;
+            paintCtx.lineWidth = paintWidth;
+            paintCtx.lineCap = 'round';
+            paintCtx.lineJoin = 'round';
+            paintCtx.stroke();
+            
+            lastPaintX = x;
+            lastPaintY = y;
+        }
+
+        function startPaintTouch(e) {
+            e.preventDefault();
+            isPainting = true;
+            const rect = paintCanvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            lastPaintX = (touch.clientX - rect.left) * (paintCanvas.width / rect.width);
+            lastPaintY = (touch.clientY - rect.top) * (paintCanvas.height / rect.height);
+        }
+
+        function drawPaintTouch(e) {
+            if (!isPainting) return;
+            e.preventDefault();
+            const rect = paintCanvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = (touch.clientX - rect.left) * (paintCanvas.width / rect.width);
+            const y = (touch.clientY - rect.top) * (paintCanvas.height / rect.height);
+            
+            paintCtx.beginPath();
+            paintCtx.moveTo(lastPaintX, lastPaintY);
+            paintCtx.lineTo(x, y);
+            paintCtx.strokeStyle = paintColor;
+            paintCtx.lineWidth = paintWidth;
+            paintCtx.lineCap = 'round';
+            paintCtx.lineJoin = 'round';
+            paintCtx.stroke();
+            
+            lastPaintX = x;
+            lastPaintY = y;
+        }
+
+        function stopPaint() {
+            if (isPainting) {
+                isPainting = false;
+                savePaintHistory();
+            }
+        }
+
+        function savePaintHistory() {
+            if (!paintCanvas) return;
+            if (paintHistory.length >= 20) {
+                paintHistory.shift();
+            }
+            paintHistory.push(paintCtx.getImageData(0, 0, paintCanvas.width, paintCanvas.height));
+        }
+
+        window.undoPaintCanvas = function() {
+            if (paintHistory.length > 1) {
+                paintHistory.pop();
+                const prevState = paintHistory[paintHistory.length - 1];
+                paintCtx.putImageData(prevState, 0, 0);
+            }
+        };
+
+        window.selectPaintColor = function(color, el) {
+            paintColor = color;
+            document.getElementById('paintColorPicker').value = color;
+            document.querySelectorAll('.color-dot').forEach(dot => {
+                dot.classList.remove('active');
+                dot.style.borderColor = dot.style.background.includes('fff') ? '#ccc' : 'transparent';
+            });
+            if (el) {
+                el.classList.add('active');
+                el.style.borderColor = '#1d9bf0';
+            }
+        };
+
+        window.selectPaintWidth = function(width, el) {
+            paintWidth = width;
+            document.getElementById('brushSizeDisplay').innerText = `${width}px`;
+            document.querySelectorAll('#paintModal .tool-btn').forEach(btn => {
+                btn.style.border = 'none';
+            });
+            if (el) {
+                el.style.border = '1px solid #1d9bf0';
+            }
+        };
+
+        window.submitPaintDrawing = function() {
+            const dataUrl = paintCanvas.toDataURL('image/png');
+            if (paintTarget === 'post') {
+                window.postDrawingData = dataUrl;
+                showDrawingPreview('post', dataUrl);
+            } else if (paintTarget === 'reply') {
+                window.replyDrawingData = dataUrl;
+                showDrawingPreview('reply', dataUrl);
+            } else if (paintTarget === 'chat') {
+                window.dmDrawingData = dataUrl;
+                showDrawingPreview('chat', dataUrl);
+            }
+            closePaintModal();
+        };
+
+        window.showDrawingPreview = function(prefix, dataUrl) {
+            const container = document.getElementById(`${prefix}DrawingPreviewContainer`);
+            const img = document.getElementById(`${prefix}DrawingPreview`);
+            if (container && img) {
+                img.src = dataUrl;
+                container.style.display = 'flex';
+            }
+        };
+
+        window.removeDrawingPreview = function(prefix) {
+            const container = document.getElementById(`${prefix}DrawingPreviewContainer`);
+            const img = document.getElementById(`${prefix}DrawingPreview`);
+            if (container && img) {
+                img.src = '';
+                container.style.display = 'none';
+            }
+            if (prefix === 'post') {
+                window.postDrawingData = '';
+            } else if (prefix === 'reply') {
+                window.replyDrawingData = '';
+            } else {
+                window.dmDrawingData = '';
+            }
+        };
+
+        // 📺 動画検索＆プレビュー用グローバル変数
+        window.postNicoVideoId = "";
+        window.replyNicoVideoId = "";
+        window.dmNicoVideoId = "";
+        window.postYTVideoId = "";
+        window.replyYTVideoId = "";
+        window.dmYTVideoId = "";
+
+        let activeSearchTarget = 'post';
+
+        window.openNicoSearchModal = function(target) {
+            activeSearchTarget = target;
+            document.getElementById('nicoSearchInput').value = '';
+            document.getElementById('nicoSearchResults').innerHTML = '';
+            document.getElementById('nicoSearchModal').style.display = 'flex';
+        };
+        window.closeNicoSearchModal = function() {
+            document.getElementById('nicoSearchModal').style.display = 'none';
+        };
+        
+        window.openYTSearchModal = function(target) {
+            activeSearchTarget = target;
+            document.getElementById('ytSearchInput').value = '';
+            document.getElementById('ytSearchResults').innerHTML = '';
+            document.getElementById('ytSearchModal').style.display = 'flex';
+        };
+        window.closeYTSearchModal = function() {
+            document.getElementById('ytSearchModal').style.display = 'none';
+        };
+
+        window.removeNicoPreview = function(prefix) {
+            document.getElementById(`${prefix}NicoPreviewContainer`).style.display = 'none';
+            if (prefix === 'post') window.postNicoVideoId = '';
+            else if (prefix === 'reply') window.replyNicoVideoId = '';
+            else if (prefix === 'chat') window.dmNicoVideoId = '';
+        };
+
+        window.removeYTPreview = function(prefix) {
+            document.getElementById(`${prefix}YTPreviewContainer`).style.display = 'none';
+            if (prefix === 'post') window.postYTVideoId = '';
+            else if (prefix === 'reply') window.replyYTVideoId = '';
+            else if (prefix === 'chat') window.dmYTVideoId = '';
+        };
+
+        // ニコニコタグ検索 (CodeTabs CORS Proxy使用)
+        window.executeNicoSearch = async function() {
+            const input = document.getElementById('nicoSearchInput').value.trim();
+            if (input === '') return;
+            
+            const resultsDiv = document.getElementById('nicoSearchResults');
+            resultsDiv.innerHTML = '<div style="color:var(--text-muted); font-size:14px; padding:10px;">検索中...</div>';
+            
+            try {
+                const rssUrl = `https://www.nicovideo.jp/tag/${encodeURIComponent(input)}?rss=2.0`;
+                const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rssUrl)}`;
+                
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error("CORSプロキシエラー");
+                
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                const items = xmlDoc.getElementsByTagName("item");
+                
+                resultsDiv.innerHTML = '';
+                if (items.length === 0) {
+                    resultsDiv.innerHTML = '<div style="color:var(--text-muted); font-size:14px; padding:10px;">該当する動画が見つかりませんでした。</div>';
+                    return;
+                }
+                
+                for (let i = 0; i < Math.min(items.length, 10); i++) {
+                    const item = items[i];
+                    const title = item.getElementsByTagName("title")[0]?.textContent || "無題";
+                    const link = item.getElementsByTagName("link")[0]?.textContent || "";
+                    const desc = item.getElementsByTagName("description")[0]?.textContent || "";
+                    
+                    const imgMatch = desc.match(/src="([^"]+)"/);
+                    const thumbnail = imgMatch ? imgMatch[1] : defaultIcon;
+                    
+                    const idMatch = link.match(/watch\/([a-zA-Z0-9]+)/);
+                    const videoId = idMatch ? idMatch[1] : "";
+                    
+                    if (!videoId) continue;
+                    
+                    const div = document.createElement('div');
+                    div.style.display = 'flex';
+                    div.style.gap = '10px';
+                    div.style.padding = '8px';
+                    div.style.borderBottom = '1px solid var(--border-color)';
+                    
+                    div.innerHTML = `
+                        <img src="${thumbnail}" style="width:100px; height:75px; object-fit:cover; border-radius:4px; background:var(--hover-bg);">
+                        <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+                            <div style="font-size:14px; font-weight:bold; color:var(--text-color); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${title}</div>
+                            <button class="post-btn" onclick="selectNicoVideo('${videoId}', '${encodeURIComponent(title)}')" style="font-size:12px; align-self:flex-end; padding:4px 10px;">選択</button>
+                        </div>
+                    `;
+                    resultsDiv.appendChild(div);
+                }
+            } catch (e) {
+                console.error("Niconico search error:", e);
+                resultsDiv.innerHTML = '<div style="color:#f91880; font-size:14px; padding:10px;">検索エラーが発生しました。</div>';
+            }
+        };
+
+        window.selectNicoVideo = function(videoId, titleEncoded) {
+            const title = decodeURIComponent(titleEncoded);
+            if (activeSearchTarget === 'post') {
+                window.postNicoVideoId = videoId;
+                document.getElementById('postNicoPreviewTitle').innerText = `ニコニコ動画: ${title}`;
+                document.getElementById('postNicoPreviewContainer').style.display = 'flex';
+            } else if (activeSearchTarget === 'reply') {
+                window.replyNicoVideoId = videoId;
+                document.getElementById('replyNicoPreviewTitle').innerText = `ニコニコ動画: ${title}`;
+                document.getElementById('replyNicoPreviewContainer').style.display = 'flex';
+            } else if (activeSearchTarget === 'chat') {
+                window.dmNicoVideoId = videoId;
+                document.getElementById('chatNicoPreviewTitle').innerText = `ニコニコ動画: ${title}`;
+                document.getElementById('chatNicoPreviewContainer').style.display = 'flex';
+            }
+            closeNicoSearchModal();
+        };
+
+        // YouTube検索 (Invidious API使用)
+        const INVIDIOUS_INSTANCES = [
+            "https://yewtu.be",
+            "https://invidious.nerdvpn.de",
+            "https://invidious.flokinet.to",
+            "https://invidious.privacydev.net"
+        ];
+
+        async function searchYouTube(queryText) {
+            for (const instance of INVIDIOUS_INSTANCES) {
+                try {
+                    const url = `${instance}/api/v1/search?q=${encodeURIComponent(queryText)}&type=video`;
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (Array.isArray(data)) return data;
+                    }
+                } catch (e) {
+                    console.warn(`Invidious instance ${instance} failed:`, e);
+                }
+            }
+            throw new Error("検索サーバーが一時的に利用できません。");
+        }
+
+        window.executeYTSearch = async function() {
+            const input = document.getElementById('ytSearchInput').value.trim();
+            if (input === '') return;
+            
+            const resultsDiv = document.getElementById('ytSearchResults');
+            resultsDiv.innerHTML = '<div style="color:var(--text-muted); font-size:14px; padding:10px;">検索中...</div>';
+            
+            try {
+                const results = await searchYouTube(input);
+                resultsDiv.innerHTML = '';
+                
+                const videos = results.filter(item => item.type === "video");
+                if (videos.length === 0) {
+                    resultsDiv.innerHTML = '<div style="color:var(--text-muted); font-size:14px; padding:10px;">該当する動画が見つかりませんでした。</div>';
+                    return;
+                }
+                
+                videos.slice(0, 10).forEach(video => {
+                    const title = video.title || "無題";
+                    const videoId = video.videoId;
+                    const thumbnail = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                    
+                    const div = document.createElement('div');
+                    div.style.display = 'flex';
+                    div.style.gap = '10px';
+                    div.style.padding = '8px';
+                    div.style.borderBottom = '1px solid var(--border-color)';
+                    
+                    div.innerHTML = `
+                        <img src="${thumbnail}" style="width:100px; height:75px; object-fit:cover; border-radius:4px; background:var(--hover-bg);">
+                        <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+                            <div style="font-size:14px; font-weight:bold; color:var(--text-color); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${title}</div>
+                            <button class="post-btn" onclick="selectYTVideo('${videoId}', '${encodeURIComponent(title)}')" style="font-size:12px; align-self:flex-end; padding:4px 10px;">選択</button>
+                        </div>
+                    `;
+                    resultsDiv.appendChild(div);
+                });
+            } catch (e) {
+                console.error("YouTube search error:", e);
+                resultsDiv.innerHTML = '<div style="color:#f91880; font-size:14px; padding:10px;">検索エラーが発生しました。</div>';
+            }
+        };
+
+        window.selectYTVideo = function(videoId, titleEncoded) {
+            const title = decodeURIComponent(titleEncoded);
+            if (activeSearchTarget === 'post') {
+                window.postYTVideoId = videoId;
+                document.getElementById('postYTPreviewTitle').innerText = `YouTube: ${title}`;
+                document.getElementById('postYTPreviewContainer').style.display = 'flex';
+            } else if (activeSearchTarget === 'reply') {
+                window.replyYTVideoId = videoId;
+                document.getElementById('replyYTPreviewTitle').innerText = `YouTube: ${title}`;
+                document.getElementById('replyYTPreviewContainer').style.display = 'flex';
+            } else if (activeSearchTarget === 'chat') {
+                window.dmYTVideoId = videoId;
+                document.getElementById('chatYTPreviewTitle').innerText = `YouTube: ${title}`;
+                document.getElementById('chatYTPreviewContainer').style.display = 'flex';
+            }
+            closeYTSearchModal();
+        };
+
+        // 🎨 リアルタイム絵チャボードの実装
+        let sharedCanvas = null;
+        let sharedCtx = null;
+        let isSharedPainting = false;
+        let sharedColor = "#000000";
+        let sharedWidth = 6;
+        let sharedStrokePoints = [];
+        let lastSharedX = 0;
+        let lastSharedY = 0;
+        
+        let sharedStrokesListener = null;
+        let sharedCanvasListener = null;
+        let lastClearTime = 0;
+        let receivedStrokesMap = new Set(); 
+
+        window.toggleSharedPaint = function() {
+            const container = document.getElementById('sharedPaintContainer');
+            if (container.style.display === 'flex') {
+                container.style.display = 'none';
+                stopSharedPaintListener();
+            } else {
+                container.style.display = 'flex';
+                initSharedPaint();
+                startSharedPaintListener();
+            }
+        };
+
+        function initSharedPaint() {
+            if (sharedCanvas) return;
+            sharedCanvas = document.getElementById('sharedPaintCanvas');
+            sharedCtx = sharedCanvas.getContext('2d');
+            
+            sharedCanvas.addEventListener('mousedown', startSharedPaint);
+            sharedCanvas.addEventListener('mousemove', drawSharedPaint);
+            sharedCanvas.addEventListener('mouseup', stopSharedPaint);
+            sharedCanvas.addEventListener('mouseleave', stopSharedPaint);
+            
+            sharedCanvas.addEventListener('touchstart', startSharedPaintTouch, { passive: false });
+            sharedCanvas.addEventListener('touchmove', drawSharedPaintTouch, { passive: false });
+            sharedCanvas.addEventListener('touchend', stopSharedPaint);
+            
+            selectSharedColor('#000000', document.querySelector('.shared-color-dot'));
+        }
+
+        function getCanvasCoords(e, touch) {
+            const rect = sharedCanvas.getBoundingClientRect();
+            const clientX = touch ? e.touches[0].clientX : e.clientX;
+            const clientY = touch ? e.touches[0].clientY : e.clientY;
+            return {
+                x: Math.round((clientX - rect.left) * (sharedCanvas.width / rect.width)),
+                y: Math.round((clientY - rect.top) * (sharedCanvas.height / rect.height))
+            };
+        }
+
+        function startSharedPaint(e) {
+            isSharedPainting = true;
+            const coords = getCanvasCoords(e, false);
+            lastSharedX = coords.x;
+            lastSharedY = coords.y;
+            sharedStrokePoints = [{ x: coords.x, y: coords.y }];
+        }
+
+        function drawSharedPaint(e) {
+            if (!isSharedPainting) return;
+            const coords = getCanvasCoords(e, false);
+            
+            sharedCtx.beginPath();
+            sharedCtx.moveTo(lastSharedX, lastSharedY);
+            sharedCtx.lineTo(coords.x, coords.y);
+            sharedCtx.strokeStyle = sharedColor;
+            sharedCtx.lineWidth = sharedWidth;
+            sharedCtx.lineCap = 'round';
+            sharedCtx.lineJoin = 'round';
+            sharedCtx.stroke();
+            
+            lastSharedX = coords.x;
+            lastSharedY = coords.y;
+            sharedStrokePoints.push({ x: coords.x, y: coords.y });
+        }
+
+        function startSharedPaintTouch(e) {
+            e.preventDefault();
+            isSharedPainting = true;
+            const coords = getCanvasCoords(e, true);
+            lastSharedX = coords.x;
+            lastSharedY = coords.y;
+            sharedStrokePoints = [{ x: coords.x, y: coords.y }];
+        }
+
+        function drawSharedPaintTouch(e) {
+            if (!isSharedPainting) return;
+            e.preventDefault();
+            const coords = getCanvasCoords(e, true);
+            
+            sharedCtx.beginPath();
+            sharedCtx.moveTo(lastSharedX, lastSharedY);
+            sharedCtx.lineTo(coords.x, coords.y);
+            sharedCtx.strokeStyle = sharedColor;
+            sharedCtx.lineWidth = sharedWidth;
+            sharedCtx.lineCap = 'round';
+            sharedCtx.lineJoin = 'round';
+            sharedCtx.stroke();
+            
+            lastSharedX = coords.x;
+            lastSharedY = coords.y;
+            sharedStrokePoints.push({ x: coords.x, y: coords.y });
+        }
+
+        async function stopSharedPaint() {
+            if (isSharedPainting) {
+                isSharedPainting = false;
+                if (sharedStrokePoints.length === 0) return;
+                
+                const roomId = [myProfile.id, currentConversationUserId].sort().join('_');
+                try {
+                    await addDoc(collection(db, "shared_strokes"), {
+                        roomId: roomId,
+                        senderId: myProfile.id,
+                        points: sharedStrokePoints,
+                        color: sharedColor,
+                        width: sharedWidth,
+                        createdAt: new Date(Date.now() + serverTimeOffset)
+                    });
+                } catch (e) {
+                    console.error("Failed to send stroke:", e);
+                }
+                sharedStrokePoints = [];
+            }
+        }
+
+        window.selectSharedColor = function(color, el) {
+            sharedColor = color;
+            document.getElementById('sharedPaintColorPicker').value = color;
+            document.querySelectorAll('.shared-color-dot').forEach(dot => {
+                dot.classList.remove('active');
+                dot.style.borderColor = dot.style.background.includes('fff') ? '#ccc' : 'transparent';
+            });
+            if (el) {
+                el.classList.add('active');
+                el.style.borderColor = '#1d9bf0';
+            }
+        };
+
+        window.selectSharedWidth = function(width) {
+            sharedWidth = parseInt(width);
+        };
+
+        window.clearSharedPaint = async function() {
+            if (!currentConversationUserId) return;
+            const roomId = [myProfile.id, currentConversationUserId].sort().join('_');
+            
+            if (confirm("絵チャボードの内容を全員の画面から全消去しますか？")) {
+                try {
+                    await addDoc(collection(db, "shared_clears"), {
+                        roomId: roomId,
+                        createdAt: new Date(Date.now() + serverTimeOffset)
+                    });
+                } catch(e) {
+                    console.error("Clear shared paint error:", e);
+                }
+            }
+        };
+
+        window.saveSharedPaintImage = function() {
+            if (!sharedCanvas) return;
+            const link = document.createElement('a');
+            link.download = `paint-chat-${Date.now()}.png`;
+            link.href = sharedCanvas.toDataURL('image/png');
+            link.click();
+        };
+
+        function startSharedPaintListener() {
+            stopSharedPaintListener();
+            if (!currentConversationUserId) return;
+            
+            const roomId = [myProfile.id, currentConversationUserId].sort().join('_');
+            
+            // 最新のクリア時刻を監視
+            const qClear = query(collection(db, "shared_clears"), where("roomId", "==", roomId));
+            sharedCanvasListener = onSnapshot(qClear, (snapshot) => {
+                let latestClear = 0;
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const clearTime = data.createdAt ? data.createdAt.toDate().getTime() : 0;
+                    if (clearTime > latestClear) {
+                        latestClear = clearTime;
+                    }
+                });
+                
+                if (latestClear > lastClearTime) {
+                    lastClearTime = latestClear;
+                    if (sharedCtx) {
+                        sharedCtx.fillStyle = '#ffffff';
+                        sharedCtx.fillRect(0, 0, sharedCanvas.width, sharedCanvas.height);
+                    }
+                    receivedStrokesMap.clear();
+                    reloadSharedStrokes();
+                }
+            });
+
+            // ストロークのリアルタイム受信
+            const qStrokes = query(collection(db, "shared_strokes"), where("roomId", "==", roomId));
+            sharedStrokesListener = onSnapshot(qStrokes, (snapshot) => {
+                let newStrokes = [];
+                snapshot.forEach(docSnap => {
+                    const strokeId = docSnap.id;
+                    const data = docSnap.data();
+                    const strokeTime = data.createdAt ? data.createdAt.toDate().getTime() : 0;
+                    
+                    if (strokeTime > lastClearTime && !receivedStrokesMap.has(strokeId)) {
+                        newStrokes.push({ id: strokeId, time: strokeTime, data: data });
+                    }
+                });
+                
+                newStrokes.sort((a, b) => a.time - b.time);
+                newStrokes.forEach(stroke => {
+                    receivedStrokesMap.add(stroke.id);
+                    drawReceivedStroke(stroke.data);
+                });
+            });
+        }
+
+        function reloadSharedStrokes() {
+            if (!currentConversationUserId) return;
+            const roomId = [myProfile.id, currentConversationUserId].sort().join('_');
+            
+            if (sharedCtx) {
+                sharedCtx.fillStyle = '#ffffff';
+                sharedCtx.fillRect(0, 0, sharedCanvas.width, sharedCanvas.height);
+            }
+            
+            const qStrokes = query(collection(db, "shared_strokes"), where("roomId", "==", roomId));
+            getDocs(qStrokes).then(snapshot => {
+                let strokes = [];
+                snapshot.forEach(docSnap => {
+                    const strokeId = docSnap.id;
+                    const data = docSnap.data();
+                    const strokeTime = data.createdAt ? data.createdAt.toDate().getTime() : 0;
+                    
+                    if (strokeTime > lastClearTime) {
+                        strokes.push({ id: strokeId, time: strokeTime, data: data });
+                    }
+                });
+                
+                strokes.sort((a, b) => a.time - b.time);
+                strokes.forEach(stroke => {
+                    receivedStrokesMap.add(stroke.id);
+                    drawReceivedStroke(stroke.data);
+                });
+            });
+        }
+
+        function drawReceivedStroke(strokeData) {
+            if (!sharedCtx || !strokeData.points || strokeData.points.length === 0) return;
+            
+            sharedCtx.beginPath();
+            sharedCtx.moveTo(strokeData.points[0].x, strokeData.points[0].y);
+            
+            for (let i = 1; i < strokeData.points.length; i++) {
+                sharedCtx.lineTo(strokeData.points[i].x, strokeData.points[i].y);
+            }
+            
+            sharedCtx.strokeStyle = strokeData.color;
+            sharedCtx.lineWidth = strokeData.width;
+            sharedCtx.lineCap = 'round';
+            sharedCtx.lineJoin = 'round';
+            sharedCtx.stroke();
+        }
+
+        function stopSharedPaintListener() {
+            if (sharedStrokesListener) {
+                sharedStrokesListener();
+                sharedStrokesListener = null;
+            }
+            if (sharedCanvasListener) {
+                sharedCanvasListener();
+                sharedCanvasListener = null;
+            }
+            lastClearTime = 0;
+            receivedStrokesMap.clear();
+            
+            if (sharedCtx && sharedCanvas) {
+                sharedCtx.fillStyle = '#ffffff';
+                sharedCtx.fillRect(0, 0, sharedCanvas.width, sharedCanvas.height);
+            }
+        }
+
+        window.handleImageUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const size = 96; canvas.width = size; canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    const side = Math.min(img.width, img.height);
+                    ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+                    uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                    document.getElementById('profileIconPreview').src = uploadedImageBase64;
+                    document.getElementById('profileIcon').value = "";
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function isUserRestricted(userId) {
+            try {
+                const q = query(collection(db, "penalties"), where("targetUserId", "==", userId));
+                const querySnapshot = await getDocs(q);
+                const now = Date.now();
+                const tenMinutesAgo = now - (10 * 60 * 1000);
+                let activeCount = 0; let latestPenaltyTime = 0;
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const createdAt = data.createdAt ? data.createdAt.toDate().getTime() : 0;
+                    if (createdAt >= tenMinutesAgo) { activeCount++; if (createdAt > latestPenaltyTime) { latestPenaltyTime = createdAt; } }
+                });
+                if (activeCount >= 10) {
+                    const remainingMinutes = Math.ceil(((latestPenaltyTime + (10 * 60 * 1000)) - now) / (60 * 1000));
+                    alert(`🙅 投稿制限中\n\nロックされています。あと約 ${remainingMinutes} 分間は書き込めません。`);
+                    return true;
+                }
+                return false;
+            } catch (e) { return false; }
+        }
+
+        // 👥 フォロー機能
+        window.toggleFollow = async function(targetUserId) {
+            const followBtn = document.getElementById('profileFollowBtn');
+            if (!followBtn) return;
+            
+            try {
+                const isFollowing = await checkFollowStatus(targetUserId);
+                if (isFollowing) {
+                    const q = query(collection(db, "follows"), where("followerId", "==", myProfile.id));
+                    const querySnapshot = await getDocs(q);
+                    querySnapshot.forEach(async (docSnap) => {
+                        if (docSnap.data().followedId === targetUserId) {
+                            await deleteDoc(doc(db, "follows", docSnap.id));
+                        }
+                    });
+                } else {
+                    await addDoc(collection(db, "follows"), {
+                        followerId: myProfile.id,
+                        followedId: targetUserId,
+                        createdAt: new Date(Date.now() + serverTimeOffset)
+                    });
+                }
+                await renderUserProfile(targetUserId);
+            } catch (e) {
+                alert("フォロー操作に失敗しました: " + e.message);
+            }
+        };
+
+        window.checkFollowStatus = async function(targetUserId) {
+            try {
+                const q = query(collection(db, "follows"), where("followerId", "==", myProfile.id));
+                const querySnapshot = await getDocs(q);
+                let isFollowing = false;
+                querySnapshot.forEach(docSnap => {
+                    if (docSnap.data().followedId === targetUserId) {
+                        isFollowing = true;
+                    }
+                });
+                return isFollowing;
+            } catch (e) { return false; }
+        };
+
+        window.fetchFollowCounts = async function(targetUserId) {
+            try {
+                const qFollowing = query(collection(db, "follows"), where("followerId", "==", targetUserId));
+                const snapFollowing = await getDocs(qFollowing);
+                let following = 0;
+                snapFollowing.forEach(() => following++);
+                
+                const qFollowers = query(collection(db, "follows"), where("followedId", "==", targetUserId));
+                const snapFollowers = await getDocs(qFollowers);
+                let followers = 0;
+                snapFollowers.forEach(() => followers++);
+                
+                return { following, followers };
+            } catch (e) {
+                return { following: 0, followers: 0 };
+            }
+        };
+
+        // 💬 DM機能の実装
+        let currentConversationUserId = "";
+
+        window.showDMs = function() {
+            const params = new URLSearchParams();
+            params.set('view', 'dms');
+            window.history.pushState({}, '', `?${params.toString()}`);
+            checkRouting();
+        };
+
+        window.openChat = function(userId) {
+            const params = new URLSearchParams();
+            params.set('chat', userId);
+            window.history.pushState({}, '', `?${params.toString()}`);
+            checkRouting();
+        };
+
+        window.renderDMs = async function() {
+            const list = document.getElementById('conversationList');
+            list.innerHTML = '<div style="padding:15px; color:var(--text-muted);">チャット履歴を読み込み中...</div>';
+            
+            try {
+                const q = query(collection(db, "direct_messages"), where("participants", "array-contains", myProfile.id));
+                const querySnapshot = await getDocs(q);
+                list.innerHTML = '';
+                
+                const convos = {};
+                querySnapshot.forEach(docSnap => {
+                    const msg = docSnap.data();
+                    const otherId = msg.senderId === myProfile.id ? msg.receiverId : msg.senderId;
+                    if (!convos[otherId] || (msg.createdAt?.toDate ? msg.createdAt.toDate().getTime() : 0) > (convos[otherId].createdAt?.toDate ? convos[otherId].createdAt.toDate().getTime() : 0)) {
+                        convos[otherId] = msg;
+                    }
+                });
+                
+                const convoKeys = Object.keys(convos);
+                if (convoKeys.length === 0) {
+                    list.innerHTML = '<div style="padding:30px; text-align:center; color:var(--text-muted); font-size:15px;">メッセージ履歴がありません。</div>';
+                    return;
+                }
+                
+                convoKeys.sort((a, b) => {
+                    const timeA = convos[a].createdAt?.toDate ? convos[a].createdAt.toDate().getTime() : 0;
+                    const timeB = convos[b].createdAt?.toDate ? convos[b].createdAt.toDate().getTime() : 0;
+                    return timeB - timeA;
+                });
+                
+                for (const targetId of convoKeys) {
+                    const profile = await fetchUserProfile(targetId);
+                    const lastMsg = convos[targetId];
+                    const date = formatTimeAgo(lastMsg.createdAt);
+                    const contentSnippet = lastMsg.content || (lastMsg.audioData ? "🔊 ボイスメッセージ" : lastMsg.nicoVideoId ? "📺 ニコニコ動画" : lastMsg.ytVideoId ? "📺 YouTube動画" : lastMsg.drawingData ? "🎨 お絵描き" : "");
+                    
+                    const convoDiv = document.createElement('div');
+                    convoDiv.style.display = 'flex';
+                    convoDiv.style.padding = '15px';
+                    convoDiv.style.borderBottom = '1px solid var(--border-color)';
+                    convoDiv.style.cursor = 'pointer';
+                    convoDiv.onclick = () => openChat(targetId);
+                    convoDiv.className = 'reply-item clickable';
+                    
+                    convoDiv.innerHTML = `
+                        <img src="${profile.icon}" class="user-icon" style="margin-right:12px;">
+                        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-weight:bold; font-size:15px; color:var(--text-color);">${profile.name}</span>
+                                <span style="font-size:12px; color:var(--text-muted);">${date}</span>
+                            </div>
+                            <div style="font-size:14px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:400px;">${contentSnippet}</div>
+                        </div>
+                    `;
+                    list.appendChild(convoDiv);
+                }
+            } catch (e) {
+                list.innerHTML = `<div class="error-box">DM一覧読込失敗: ${e.message}</div>`;
+            }
+        };
+
+        window.loadDMMessages = async function(targetUserId) {
+            const list = document.getElementById('chatMessageList');
+            try {
+                const q = query(collection(db, "direct_messages"), where("participants", "array-contains", myProfile.id));
+                const querySnapshot = await getDocs(q);
+                
+                let messages = [];
+                querySnapshot.forEach(docSnap => {
+                    const msg = docSnap.data();
+                    if ((msg.senderId === myProfile.id && msg.receiverId === targetUserId) ||
+                        (msg.senderId === targetUserId && msg.receiverId === myProfile.id)) {
+                        msg.id = docSnap.id;
+                        messages.push(msg);
+                    }
+                });
+                
+                messages.sort((a, b) => {
+                    const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+                    const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+                    return timeA - timeB;
+                });
+                
+                const isNearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 100;
+                
+                list.innerHTML = '';
+                if (messages.length === 0) {
+                    list.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:14px; padding:30px;">メッセージを送信してチャットを開始しましょう！</div>';
+                    return;
+                }
+                
+                messages.forEach(msg => {
+                    const isMe = msg.senderId === myProfile.id;
+                    const align = isMe ? 'flex-end' : 'flex-start';
+                    const msgBg = isMe ? '#1d9bf0' : 'var(--hover-bg)';
+                    const msgColor = isMe ? '#ffffff' : 'var(--text-color)';
+                    const date = msg.createdAt ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                    
+                    let audioHTML = "";
+                    if (msg.audioData) {
+                        audioHTML = `
+                            <div style="margin-top:5px; margin-bottom:5px;">
+                                <audio src="${msg.audioData}" controls style="max-width:100%; max-height:36px; filter: invert(${isMe ? 0 : 'var(--audio-invert, 0)'});"></audio>
+                            </div>
+                        `;
+                    }
+                    
+                    let nicoHTML = "";
+                    if (msg.nicoVideoId) {
+                        nicoHTML = `
+                            <div style="position: relative; width: 260px; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-top: 5px; border-radius: 8px;">
+                                <iframe src="https://embed.nicovideo.jp/watch/${msg.nicoVideoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
+                            </div>
+                        `;
+                    }
+                    
+                    let ytHTML = "";
+                    if (msg.ytVideoId) {
+                        ytHTML = `
+                            <div style="position: relative; width: 260px; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-top: 5px; border-radius: 8px;">
+                                <iframe src="https://www.youtube.com/embed/${msg.ytVideoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
+                            </div>
+                        `;
+                    }
+                    
+                    let dmDrawingHTML = "";
+                    if (msg.drawingData) {
+                        dmDrawingHTML = `
+                            <div style="margin-top:5px; margin-bottom:5px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; overflow:hidden; max-width:260px; max-height:260px; display:flex; align-items:center; justify-content:center;">
+                                <img src="${msg.drawingData}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                            </div>
+                        `;
+                    }
+                    
+                    const bubble = document.createElement('div');
+                    bubble.style.display = 'flex';
+                    bubble.style.flexDirection = 'column';
+                    bubble.style.alignItems = align;
+                    bubble.style.width = '100%';
+                    
+                    const contentText = msg.content ? `<div style="white-space:pre-wrap;">${msg.content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>` : "";
+                    
+                    bubble.innerHTML = `
+                        <div style="max-width:70%; display:flex; flex-direction:column; align-items:${align};">
+                            <div style="background:${msgBg}; color:${msgColor}; padding:10px 14px; border-radius:18px; font-size:14px; line-height:1.4; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                ${contentText}
+                                ${audioHTML}
+                                ${nicoHTML}
+                                ${ytHTML}
+                                ${dmDrawingHTML}
+                            </div>
+                            <span style="font-size:11px; color:var(--text-muted); margin-top:4px; padding:0 5px;">${date}</span>
+                        </div>
+                    `;
+                    list.appendChild(bubble);
+                });
+                
+                if (isNearBottom || list.scrollTop === 0) {
+                    list.scrollTop = list.scrollHeight;
+                }
+            } catch (e) {
+                list.innerHTML = `<div style="color:#f91880; font-size:14px; padding:15px;">メッセージ読み込み失敗: ${e.message}</div>`;
+            }
+        };
+
+        window.sendDM = async function() {
+            if (!currentConversationUserId) return;
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            const audioData = window.dmAudioData || "";
+            const nicoVideoId = window.dmNicoVideoId || "";
+            const ytVideoId = window.dmYTVideoId || "";
+            const drawingData = window.dmDrawingData || "";
+            
+            if (text === '' && audioData === '' && nicoVideoId === '' && ytVideoId === '' && drawingData === '') return;
+            
+            try {
+                await addDoc(collection(db, "direct_messages"), {
+                    senderId: myProfile.id,
+                    receiverId: currentConversationUserId,
+                    participants: [myProfile.id, currentConversationUserId],
+                    content: text,
+                    audioData: audioData,
+                    nicoVideoId: nicoVideoId,
+                    ytVideoId: ytVideoId,
+                    drawingData: drawingData,
+                    createdAt: new Date(Date.now() + serverTimeOffset)
+                });
+                
+                input.value = '';
+                removeAudioPreview('chatAudio');
+                removeNicoPreview('chat');
+                removeYTPreview('chat');
+                removeDrawingPreview('chat');
+            } catch (e) {
+                alert("メッセージ送信に失敗しました: " + e.message);
+            }
+        };
+
+        let activeChatListener = null;
+
+        function startChatPolling(userId) {
+            stopChatPolling();
+            loadDMMessages(userId);
+            
+            const q = query(collection(db, "direct_messages"), where("participants", "array-contains", myProfile.id));
+            activeChatListener = onSnapshot(q, (snapshot) => {
+                loadDMMessages(userId);
+            });
+        }
+        
+        function stopChatPolling() {
+            if (activeChatListener) {
+                activeChatListener();
+                activeChatListener = null;
+            }
+            stopSharedPaintListener();
+            const paintContainer = document.getElementById('sharedPaintContainer');
+            if (paintContainer) paintContainer.style.display = 'none';
+        }
+
+        window.openNewChatModal = async function() {
+            document.getElementById('newChatUserIdInput').value = '';
+            document.getElementById('newChatModal').style.display = 'flex';
+            
+            const listContainer = document.getElementById('followedUsersList');
+            listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:14px;">読み込み中...</div>';
+            
+            try {
+                const q = query(collection(db, "follows"), where("followerId", "==", myProfile.id));
+                const querySnapshot = await getDocs(q);
+                listContainer.innerHTML = '';
+                
+                if (querySnapshot.empty) {
+                    listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:14px;">フォローしているユーザーがいません。</div>';
+                    return;
+                }
+                
+                querySnapshot.forEach(async (docSnap) => {
+                    const data = docSnap.data();
+                    const targetId = data.followedId;
+                    const profile = await fetchUserProfile(targetId);
+                    
+                    const div = document.createElement('div');
+                    div.style.display = 'flex';
+                    div.style.alignItems = 'center';
+                    div.style.justifyContent = 'space-between';
+                    div.style.padding = '8px';
+                    div.style.borderBottom = '1px solid var(--border-color)';
+                    
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <img src="${profile.icon}" class="user-icon" style="width:32px; height:32px;">
+                            <span style="font-weight:bold; font-size:14px; color:var(--text-color);">${profile.name}</span>
+                        </div>
+                        <button class="post-btn" onclick="startChatFromList('${targetId}')" style="font-size:12px; padding:4px 10px;">チャット</button>
+                    `;
+                    listContainer.appendChild(div);
+                });
+            } catch (e) {
+                listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:14px;">エラーが発生しました。</div>';
+            }
+        };
+        
+        window.closeNewChatModal = function() {
+            document.getElementById('newChatModal').style.display = 'none';
+        };
+        
+        window.startChatFromList = function(userId) {
+            closeNewChatModal();
+            openChat(userId);
+        };
+        
+        window.startNewChatFromInput = function() {
+            const userId = document.getElementById('newChatUserIdInput').value.trim();
+            if (userId === '') return;
+            closeNewChatModal();
+            openChat(userId);
+        };
+
+        // キャッシュ
+        async function fetchUserProfile(userId) {
+            if (window.userProfileCache && window.userProfileCache[userId]) {
+                return window.userProfileCache[userId];
+            }
+            if (!window.userProfileCache) window.userProfileCache = {};
+            
+            try {
+                const q = query(collection(db, "posts"), where("userId", "==", userId));
+                const querySnapshot = await getDocs(q);
+                let name = "ユーザー";
+                let icon = defaultIcon;
+                
+                querySnapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if (data.userName) {
+                        name = data.userName;
+                        icon = data.userIcon || defaultIcon;
+                    }
+                });
+                
+                const profile = { name, icon };
+                window.userProfileCache[userId] = profile;
+                return profile;
+            } catch (e) {
+                return { name: "ユーザー", icon: defaultIcon };
+            }
+        }
+
+        // ルーティング
+        window.checkRouting = async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const postIdParam = urlParams.get('id');
+            const viewParam = urlParams.get('view');
+            const userParam = urlParams.get('user');
+            const chatParam = urlParams.get('chat');
+            
+            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+            closeAllMenus();
+            stopChatPolling();
+            currentConversationUserId = "";
+
+            if (postIdParam) {
+                document.getElementById('detailView').style.display = 'block';
+                await renderPostDetail(postIdParam);
+            } else if (userParam) {
+                document.getElementById('userProfileView').style.display = 'block';
+                await renderUserProfile(userParam);
+            } else if (chatParam) {
+                document.getElementById('chatView').style.display = 'flex';
+                currentConversationUserId = chatParam;
+                
+                const profile = await fetchUserProfile(chatParam);
+                document.getElementById('chatPartnerName').innerText = profile.name;
+                
+                document.getElementById('chatInput').value = '';
+                removeAudioPreview('chatAudio');
+                removeNicoPreview('chat');
+                removeYTPreview('chat');
+                
+                startChatPolling(chatParam);
+            } else if (viewParam === 'dms') {
+                document.getElementById('dmView').style.display = 'block';
+                await renderDMs();
+            } else if (viewParam === 'notifications') {
+                document.getElementById('notificationView').style.display = 'block';
+                await renderNotifications();
+            } else if (viewParam === 'settings') {
+                document.getElementById('settingsView').style.display = 'block';
+                renderSettings();
+            } else {
+                document.getElementById('homeView').style.display = 'block';
+                updateMyIconDisplays();
+                await renderPosts();
+            }
+
+            const notifyParams = new URLSearchParams();
+            notifyParams.set('view', 'notifications');
+            let cleanBaseUrl = window.location.origin + window.location.pathname;
+            if (cleanBaseUrl.endsWith('/')) { cleanBaseUrl = cleanBaseUrl.slice(0, -1); }
+            document.getElementById('notificationLink').href = `${cleanBaseUrl}?${notifyParams.toString()}`;
+            if (document.getElementById('notificationLinkDM')) {
+                document.getElementById('notificationLinkDM').href = `${cleanBaseUrl}?${notifyParams.toString()}`;
+            }
+        }
+
+        window.showHome = function() { window.history.pushState({}, '', window.location.pathname); checkRouting(); }
+        window.showPostDetail = function(postId) { const params = new URLSearchParams(); params.set('id', postId); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
+        window.showNotifications = function() { const params = new URLSearchParams(); params.set('view', 'notifications'); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
+        window.showUserProfile = function(userId, event) { if (event) { event.stopPropagation(); event.cancelBubble = true; } const params = new URLSearchParams(); params.set('user', userId); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
+        window.showSettings = function() { const params = new URLSearchParams(); params.set('view', 'settings'); window.history.pushState({}, '', `?${params.toString()}`); checkRouting(); }
+        window.addEventListener('popstate', checkRouting);
+
+        window.submitPost = async function() {
+            if (await isUserRestricted(myProfile.id)) return;
+            const textInput = document.getElementById('postText'); const text = textInput.value.trim();
+            const audioData = window.postAudioData || "";
+            const nicoVideoId = window.postNicoVideoId || "";
+            const ytVideoId = window.postYTVideoId || "";
+            const drawingData = window.postDrawingData || "";
+            
+            if (text === '' && audioData === '' && nicoVideoId === '' && ytVideoId === '' && drawingData === '') return;
+            try {
+                await addDoc(collection(db, "posts"), { 
+                    content: text,
+                    audioData: audioData,
+                    nicoVideoId: nicoVideoId,
+                    ytVideoId: ytVideoId,
+                    drawingData: drawingData,
+                    createdAt: new Date(Date.now() + serverTimeOffset),
+                    userId: myProfile.id,
+                    userName: myProfile.name,
+                    userIcon: myProfile.icon,
+                    isRepost: false,
+                    views: 0,
+                    likes: 0,
+                    reposts: 0 
+                });
+                textInput.value = '';
+                removeAudioPreview('postAudio');
+                removeNicoPreview('post');
+                removeYTPreview('post');
+                removeDrawingPreview('post');
+                renderPosts();
+            } catch (e) { alert("投稿エラー: " + e.message); }
+        }
+
+        let timelineSearchQuery = "";
+        window.executeTimelineSearch = function() {
+            const input = document.getElementById('timelineSearchInput');
+            const queryVal = input.value.trim();
+            timelineSearchQuery = queryVal;
+            
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (timelineSearchQuery !== "") {
+                clearBtn.style.display = 'inline-block';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+            renderPosts();
+        };
+
+        window.clearTimelineSearch = function() {
+            document.getElementById('timelineSearchInput').value = "";
+            timelineSearchQuery = "";
+            document.getElementById('clearSearchBtn').style.display = 'none';
+            renderPosts();
+        };
+
+        window.renderPosts = async function() {
+            const timeline = document.getElementById('timeline'); timeline.innerHTML = '<div style="padding:15px; color:#71767b;">通信中...</div>';
+            const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; const notInterestedPosts = JSON.parse(localStorage.getItem('mySNS_notInterestedPosts')) || [];
+
+            try {
+                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+                timeline.innerHTML = '';
+                if (querySnapshot.empty) { timeline.innerHTML = '<div style="padding:15px; color:#71767b;">まだ投稿がありません。</div>'; return; }
+
+                querySnapshot.forEach((docSnap) => {
+                    const postId = docSnap.id; const post = docSnap.data(); const uId = post.userId || "";
+                    if (notInterestedPosts.includes(postId) || mutedUsers.includes(uId) || blockedUsers.includes(uId)) return;
+
+                    if (timelineSearchQuery !== "") {
+                        const content = (post.content || "").toLowerCase();
+                        const userName = (post.userName || "").toLowerCase();
+                        const queryLower = timelineSearchQuery.toLowerCase();
+                        if (!content.includes(queryLower) && !userName.includes(queryLower)) {
+                            return;
+                        }
+                    }
+
+                    const date = formatTimeAgo(post.createdAt);
+                    const safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const encodedContent = encodeURIComponent(post.content || "");
+                    const uName = post.userName || "名無しさん"; const uIcon = post.userIcon || defaultIcon;
+                    
+                    const viewCount = post.views || 0; 
+                    const likeCount = post.likes || 0; 
+                    const repostCount = post.reposts || 0;
+                    
+                    const isRepost = post.isRepost || false;
+                    const repLabel = isRepost ? `<div class="repost-label">${svgRepost} ${post.repostedBy} さんがリポストしました</div>` : '';
+
+                    const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.id = `postDom-${postId}`;
+                    postDiv.setAttribute('onclick', `showPostDetail('${postId}')`);
+                    
+                    postDiv.innerHTML = createPostHTML(postId, post, uId, uName, uIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount);
+                    timeline.appendChild(postDiv);
+                });
+            } catch (e) { timeline.innerHTML = `<div class="error-box">🚨 通信エラー：<br>${e.message}</div>`; }
+        }
+
+        window.renderPostDetail = async function(postId) {
+            document.getElementById('detailPostContent').innerHTML = '読み込み中...'; document.getElementById('detailPostTime').innerHTML = ''; document.getElementById('detailReplyList').innerHTML = ''; document.getElementById('detailPostActions').innerHTML = '';
+            updateMyIconDisplays();
+
+            try {
+                const docRef = doc(db, "posts", postId);
+                try { await updateDoc(docRef, { views: increment(1) }); } catch(e) {}
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const post = docSnap.data(); currentDetailPostUserId = post.userId || "";
+                    
+                    const dateRelative = formatTimeAgo(post.createdAt);
+                    const dateAbsolute = post.createdAt ? post.createdAt.toDate().toLocaleString() : '';
+                    const displayDate = post.createdAt ? `${dateRelative} &nbsp;·&nbsp; ${dateAbsolute}` : '時間不明';
+
+                    const safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const encodedContent = encodeURIComponent(post.content || "");
+                    const uName = post.userName || "名無しさん"; const uIcon = post.userIcon || defaultIcon;
+                    const uId = post.userId || ""; 
+                    
+                    const viewCount = post.views || 0;
+                    const likeCount = post.likes || 0;
+                    const repostCount = post.reposts || 0;
+
+                    document.getElementById('detailUserIcon').src = uIcon; document.getElementById('detailUserIcon').setAttribute('onclick', `showUserProfile('${uId}', event)`);
+                    document.getElementById('detailUserName').innerText = uName; document.getElementById('detailUserName').setAttribute('onclick', `showUserProfile('${uId}', event)`);
+                    
+                    let quoteBoxHTML = "";
+                    if (post.isQuoteRepost && post.originalPost) {
+                        const orig = post.originalPost;
+                        const safeOrigContent = (orig.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        quoteBoxHTML = `
+                            <div class="quote-box" onclick="showPostDetail('${orig.postId}'); event.stopPropagation();">
+                                <div class="quote-header"><img src="${orig.userIcon || defaultIcon}" class="quote-icon"><span class="quote-name">${orig.userName}</span></div>
+                                <div class="quote-content">${safeOrigContent}</div>
+                            </div>
+                        `;
+                    }
+
+                    let audioHTML = "";
+                    if (post.audioData) {
+                        audioHTML = `
+                            <div style="margin-top:15px; margin-bottom:15px;">
+                                <audio src="${post.audioData}" controls style="width:100%; max-height:40px;"></audio>
+                            </div>
+                        `;
+                    }
+
+                    let nicoHTML = "";
+                    if (post.nicoVideoId) {
+                        nicoHTML = `
+                            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-top: 15px; margin-bottom: 15px; border-radius: 12px;">
+                                <iframe src="https://embed.nicovideo.jp/watch/${post.nicoVideoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
+                            </div>
+                        `;
+                    }
+
+                    let ytHTML = "";
+                    if (post.ytVideoId) {
+                        ytHTML = `
+                            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-top: 15px; margin-bottom: 15px; border-radius: 12px;">
+                                <iframe src="https://www.youtube.com/embed/${post.ytVideoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
+                            </div>
+                        `;
+                    }
+
+                    let drawingHTML = "";
+                    if (post.drawingData) {
+                        drawingHTML = `
+                            <div style="margin-top:15px; margin-bottom:15px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; overflow:hidden; max-width:100%; max-height:400px; display:flex; align-items:center; justify-content:center;">
+                                <img src="${post.drawingData}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                            </div>
+                        `;
+                    }
+
+                    document.getElementById('detailPostContent').innerHTML = safeContent + audioHTML + nicoHTML + ytHTML + drawingHTML + quoteBoxHTML;
+                    document.getElementById('detailPostTime').innerHTML = displayDate;
+                    
+                    let myLikedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
+                    const isLiked = myLikedPosts.includes(postId);
+                    const likeClass = isLiked ? 'action-btn like liked' : 'action-btn like';
+
+                    document.getElementById('detailPostActions').innerHTML = `
+                        <div class="post-actions" style="border:none; padding:0;">
+                            <button class="action-btn reply">${svgReply} <span class="count-span"></span></button>
+                            <button class="action-btn repost" onclick="repostPost('${postId}', event)">
+                                ${svgRepost} <span class="count-span" id="detail-repost-count-${postId}">${repostCount > 0 ? repostCount : ''}</span>
+                            </button>
+                            <button class="${likeClass}" onclick="likePost('${postId}', '${uId}', event)">
+                                ${svgLike} <span class="count-span" id="detail-like-count-${postId}">${likeCount > 0 ? likeCount : ''}</span>
+                            </button>
+                            <div class="action-btn view" style="cursor:default;" title="表示回数">
+                                ${svgView} <span class="count-span">${viewCount > 0 ? viewCount : ''}</span>
+                            </div>
+                            <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgShare}</button>
+                        </div>
+                    `;
+
+                    const detailTrigger = document.getElementById('detailMenuTrigger');
+                    detailTrigger.innerHTML = svgMenu; detailTrigger.setAttribute('onclick', `togglePostMenu('${postId}', true, event)`);
+                    
+                    document.getElementById('detailDropdownMenu').innerHTML = `
+                        <div class="menu-item" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgLink} リンクをコピー</div>
+                        <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '興味なし', event)">${svgDislike} 興味なし</div>
+                        <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', 'ミュート', event)">${svgMute} ミュート</div>
+                        <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '制限', event)">${svgRestrict} 制限する</div>
+                        <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', 'ブロック', event)">${svgBlock} ブロック</div>
+                        <div class="menu-item danger" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '報告', event)">${svgWarning} 報告する</div>
+                    `;
+
+                    document.getElementById('submitReplyBtn').onclick = function() { submitReply(postId); };
+                    loadReplies(postId);
+                } else { document.getElementById('detailPostContent').innerHTML = '投稿が見つかりませんでした。'; }
+            } catch (e) { document.getElementById('detailPostContent').innerHTML = 'エラー: ' + e.message; }
+        }
+
+        window.renderUserProfile = async function(targetUserId) {
+            const profileHeader = document.getElementById('userProfileHeader'); const profileTimeline = document.getElementById('userProfileTimeline');
+            profileHeader.innerHTML = '<div style="padding:20px; text-align:center;">読み込み中...</div>'; profileTimeline.innerHTML = '<div style="padding:15px; color:#71767b;">通信中...</div>';
+            const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; const notInterestedPosts = JSON.parse(localStorage.getItem('mySNS_notInterestedPosts')) || [];
+
+            try {
+                const q = query(collection(db, "posts"), where("userId", "==", targetUserId)); const querySnapshot = await getDocs(q);
+                let postsArray = []; let uName = "不明なユーザー"; let uIcon = defaultIcon;
+
+                querySnapshot.forEach(docSnap => {
+                    const data = docSnap.data(); data.id = docSnap.id; postsArray.push(data);
+                    if (uName === "不明なユーザー" && data.userName) { uName = data.userName; uIcon = data.userIcon || defaultIcon; }
+                });
+                
+                const isFollowing = await checkFollowStatus(targetUserId);
+                const counts = await fetchFollowCounts(targetUserId);
+                
+                let actionBtnHTML = "";
+                if (targetUserId !== myProfile.id) {
+                    actionBtnHTML = `
+                        <div style="display:flex; gap:10px; margin-top:15px;">
+                            <button class="post-btn" id="profileFollowBtn" onclick="toggleFollow('${targetUserId}')" style="background-color: ${isFollowing ? 'transparent' : 'var(--text-color)'}; color: ${isFollowing ? 'var(--text-color)' : 'var(--bg-color)'}; border: 1px solid var(--text-color);">
+                                ${isFollowing ? 'フォロー解除' : 'フォローする'}
+                            </button>
+                            <button class="post-btn" onclick="openChat('${targetUserId}')" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-color); display:flex; align-items:center; justify-content:center; padding: 10px;">
+                                <svg class="icon" viewBox="0 0 24 24" style="width:20px; height:20px;"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                            </button>
+                        </div>
+                    `;
+                }
+
+                profileHeader.innerHTML = `
+                    <div style="padding: 30px 20px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid var(--border-color); background-color: var(--container-bg);">
+                        <img src="${uIcon}" class="user-icon" style="width: 100px; height: 100px; margin-bottom: 15px; border: 4px solid var(--border-color); box-shadow: 0 0 10px var(--shadow-color);">
+                        <div style="font-size: 22px; font-weight: bold; color: var(--text-color);">${uName}</div>
+                        <div style="font-size: 14px; color: var(--text-muted); margin-top: 5px;">@${targetUserId.slice(0, 10)}</div>
+                        <div style="display:flex; gap:15px; margin-top:10px; font-size:14px; color: var(--text-muted);">
+                            <span>フォロー中 <strong>${counts.following}</strong></span>
+                            <span>フォロワー <strong>${counts.followers}</strong></span>
+                        </div>
+                        ${actionBtnHTML}
+                    </div>
+                `;
+
+                postsArray.sort((a, b) => { return (b.createdAt ? b.createdAt.toDate().getTime() : 0) - (a.createdAt ? a.createdAt.toDate().getTime() : 0); });
+                profileTimeline.innerHTML = '';
+                if (postsArray.length === 0) { profileTimeline.innerHTML = '<div style="padding:30px 20px; text-align:center; color:#71767b; font-size:15px; font-weight:bold;">まだ投稿がありません</div>'; return; }
+
+                postsArray.forEach(post => {
+                    const postId = post.id; const uId = post.userId || "";
+                    if (notInterestedPosts.includes(postId) || mutedUsers.includes(uId) || blockedUsers.includes(uId)) return;
+                    
+                    const date = formatTimeAgo(post.createdAt);
+                    const safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const encodedContent = encodeURIComponent(post.content || "");
+                    
+                    const viewCount = post.views || 0;
+                    const likeCount = post.likes || 0;
+                    const repostCount = post.reposts || 0;
+
+                    const isRepost = post.isRepost || false;
+                    const repLabel = isRepost ? `<div class="repost-label">${svgRepost} ${post.repostedBy} さんがリポストしました</div>` : '';
+
+                    const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.id = `postDom-${postId}`;
+                    postDiv.setAttribute('onclick', `showPostDetail('${postId}')`);
+                    
+                    postDiv.innerHTML = createPostHTML(postId, post, uId, post.userName || "名無しさん", post.userIcon || defaultIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount);
+                    profileTimeline.appendChild(postDiv);
+                });
+            } catch (e) { profileTimeline.innerHTML = `<div class="error-box">プロフィール読込失敗: ${e.message}</div>`; }
+        }
+
+        window.renderNotifications = async function() {
+            const list = document.getElementById('notificationList'); list.innerHTML = '<div style="padding:15px; color:#71767b;">通信中...</div>';
+            const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
+
+            try {
+                const q = query(collection(db, "notifications"), where("targetUserId", "==", myProfile.id)); const querySnapshot = await getDocs(q);
+                let notificationsArray = []; querySnapshot.forEach((docSnap) => { notificationsArray.push(docSnap.data()); });
+                notificationsArray.sort((a, b) => { return (b.createdAt ? b.createdAt.toDate().getTime() : 0) - (a.createdAt ? a.createdAt.toDate().getTime() : 0); });
+                list.innerHTML = '';
+                if (notificationsArray.length === 0) { list.innerHTML = '<div style="padding:15px; color:#71767b;">まだ通知はありません。</div>'; return; }
+
+                notificationsArray.forEach((notif) => {
+                    const sId = notif.senderId || ""; if (mutedUsers.includes(sId) || blockedUsers.includes(sId)) return;
+                    
+                    const date = formatTimeAgo(notif.createdAt);
+                    const sName = notif.senderName || "名無しさん"; const sIcon = notif.senderIcon || defaultIcon;
+                    
+                    let typeLabel = ""; let detailSnippet = "";
+                    if (notif.type === 'like') { typeLabel = `<span style="color:#f91880; font-weight:bold; display:flex; align-items:center; gap:6px;">${svgLike} ${sName} さんがポストをいいねしました</span>`; } 
+                    else if (notif.type === 'repost') { typeLabel = `<span style="color:#00ba7c; font-weight:bold; display:flex; align-items:center; gap:6px;">${svgRepost} ${sName} さんがポストをリポストしました</span>`; } 
+                    else if (notif.type === 'reply') {
+                        typeLabel = `<span style="color:#1d9bf0; font-weight:bold; display:flex; align-items:center; gap:6px;">${svgReply} ${sName} さんがポストに返信しました</span>`;
+                        const safeReply = (notif.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        detailSnippet = `<div style="font-size:14px; color:#71767b; font-style:italic; margin-top:5px;">「${safeReply}」</div>`;
+                    }
+
+                    const div = document.createElement('div'); div.className = 'reply-item clickable'; div.setAttribute('onclick', `showPostDetail('${notif.postId}')`);
+                    div.innerHTML = `
+                        <div class="post-left" onclick="showUserProfile('${sId}', event)" style="z-index:2; position:relative;"><img src="${sIcon}" class="user-icon" style="width:38px; height:38px; cursor:pointer;"></div>
+                        <div class="post-right">
+                            <div class="post-header">${typeLabel}<span class="post-time" style="margin-left:auto;">${date}</span></div>
+                            ${detailSnippet}
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (e) { list.innerHTML = `<div class="error-box">通知読込失敗: ${e.message}</div>`; }
+        }
+
+        window.renderSettings = function() {
+            document.getElementById('profileName').value = myProfile.name;
+            document.getElementById('profileIcon').value = myProfile.icon.startsWith('data:') ? "" : myProfile.icon;
+            document.getElementById('profileIconPreview').src = myProfile.icon;
+            document.getElementById('settingsThemeSelect').value = localStorage.getItem('mySNS_theme') || 'dark';
+            uploadedImageBase64 = "";
+        }
+
+        // いいね機能
+        window.likePost = async function(postId, targetUserId, event) {
+            if (event) { event.stopPropagation(); event.cancelBubble = true; }
+            
+            let myLikedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
+            const isLiked = myLikedPosts.includes(postId);
+            
+            try {
+                const docRef = doc(db, "posts", postId);
+                
+                if (isLiked) {
+                    try { await updateDoc(docRef, { likes: increment(-1) }); } catch(e) {}
+                    myLikedPosts = myLikedPosts.filter(id => id !== postId);
+                    localStorage.setItem('mySNS_likedPosts', JSON.stringify(myLikedPosts));
+
+                    const countSpan = document.getElementById(`like-count-${postId}`);
+                    if (countSpan) {
+                        let count = (parseInt(countSpan.innerText) || 0) - 1;
+                        countSpan.innerText = count > 0 ? count : '';
+                    }
+                    const detailCountSpan = document.getElementById(`detail-like-count-${postId}`);
+                    if (detailCountSpan) {
+                        let count = (parseInt(detailCountSpan.innerText) || 0) - 1;
+                        detailCountSpan.innerText = count > 0 ? count : '';
+                    }
+                    if (event && event.currentTarget) event.currentTarget.classList.remove('liked');
+
+                } else {
+                    try { await updateDoc(docRef, { likes: increment(1) }); } catch(e) {}
+                    myLikedPosts.push(postId);
+                    localStorage.setItem('mySNS_likedPosts', JSON.stringify(myLikedPosts));
+
+                    if (targetUserId !== myProfile.id) {
+                        await addDoc(collection(db, "notifications"), {
+                            type: "like", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date(Date.now() + serverTimeOffset)
+                        });
+                    }
+                    
+                    const countSpan = document.getElementById(`like-count-${postId}`);
+                    if (countSpan) countSpan.innerText = (parseInt(countSpan.innerText) || 0) + 1;
+                    const detailCountSpan = document.getElementById(`detail-like-count-${postId}`);
+                    if (detailCountSpan) detailCountSpan.innerText = (parseInt(detailCountSpan.innerText) || 0) + 1;
+                    if (event && event.currentTarget) event.currentTarget.classList.add('liked');
+                }
+            } catch(e) { alert("エラー: " + e.message); }
+        }
+
+        let currentRepostId = "";
+
+        window.repostPost = async function(postId, event) {
+            if (event) { event.stopPropagation(); event.cancelBubble = true; }
+            if (await isUserRestricted(myProfile.id)) return;
+            
+            try {
+                const docRef = doc(db, "posts", postId);
+                const docSnap = await getDoc(docRef);
+                if (!docSnap.exists()) { alert("元の投稿が見つかりません。"); return; }
+                
+                currentRepostId = postId;
+                document.getElementById('quoteText').value = '';
+                document.getElementById('repostModal').style.display = 'flex';
+            } catch(e) { alert("エラー: " + e.message); }
+        }
+
+        window.closeRepostModal = function() {
+            document.getElementById('repostModal').style.display = 'none';
+            currentRepostId = "";
+        }
+
+        window.submitRepost = async function(isQuote) {
+            if (!currentRepostId) return;
+            const postId = currentRepostId;
+            const comment = document.getElementById('quoteText').value.trim();
+            
+            if (isQuote && comment === "") {
+                alert("コメントを入力してください。");
+                return;
+            }
+
+            try {
+                const docRef = doc(db, "posts", postId);
+                const docSnap = await getDoc(docRef);
+                const origPost = docSnap.data();
+                const targetUserId = origPost.userId;
+
+                try { await updateDoc(docRef, { reposts: increment(1) }); } catch(e) {}
+
+                const countSpan = document.getElementById(`repost-count-${postId}`);
+                if (countSpan) countSpan.innerText = (parseInt(countSpan.innerText) || 0) + 1;
+                const detailCountSpan = document.getElementById(`detail-repost-count-${postId}`);
+                if (detailCountSpan) detailCountSpan.innerText = (parseInt(detailCountSpan.innerText) || 0) + 1;
+
+                if (!isQuote) {
+                    await addDoc(collection(db, "posts"), {
+                        content: origPost.content, audioData: origPost.audioData || "", nicoVideoId: origPost.nicoVideoId || "", ytVideoId: origPost.ytVideoId || "", createdAt: new Date(Date.now() + serverTimeOffset), userId: targetUserId, userName: origPost.userName, userIcon: origPost.userIcon, isRepost: true, repostedBy: myProfile.name, views: 0, likes: 0, reposts: 0
+                    });
+                } else {
+                    await addDoc(collection(db, "posts"), {
+                        content: comment, createdAt: new Date(Date.now() + serverTimeOffset), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isQuoteRepost: true, views: 0, likes: 0, reposts: 0,
+                        originalPost: { postId: postId, userId: targetUserId, userName: origPost.userName, userIcon: origPost.userIcon, content: origPost.content, audioData: origPost.audioData || "", nicoVideoId: origPost.nicoVideoId || "", ytVideoId: origPost.ytVideoId || "" }
+                    });
+                }
+
+                if (targetUserId !== myProfile.id) {
+                    await addDoc(collection(db, "notifications"), { type: "repost", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date(Date.now() + serverTimeOffset) });
+                }
+                
+                closeRepostModal();
+                checkRouting();
+            } catch(e) { alert("エラー: " + e.message); }
+        }
+
+        window.submitReply = async function(postId) {
+            if (await isUserRestricted(myProfile.id)) return;
+            const replyInput = document.getElementById('detailReplyText'); const replyText = replyInput.value.trim();
+            const audioData = window.replyAudioData || "";
+            const nicoVideoId = window.replyNicoVideoId || "";
+            const ytVideoId = window.replyYTVideoId || "";
+            const drawingData = window.replyDrawingData || "";
+            
+            if (replyText === '' && audioData === '' && nicoVideoId === '' && ytVideoId === '' && drawingData === '') return;
+            try {
+                await addDoc(collection(db, "replies"), { 
+                    postId: postId, 
+                    content: replyText, 
+                    audioData: audioData, 
+                    nicoVideoId: nicoVideoId,
+                    ytVideoId: ytVideoId,
+                    drawingData: drawingData,
+                    createdAt: new Date(Date.now() + serverTimeOffset), 
+                    userId: myProfile.id, 
+                    userName: myProfile.name, 
+                    userIcon: myProfile.icon 
+                });
+                if (currentDetailPostUserId !== myProfile.id) {
+                    await addDoc(collection(db, "notifications"), { 
+                        type: "reply", 
+                        postId: postId, 
+                        senderId: myProfile.id, 
+                        senderName: myProfile.name, 
+                        senderIcon: myProfile.icon, 
+                        targetUserId: currentDetailPostUserId, 
+                        content: replyText || (audioData ? "🔊 音声メッセージ" : drawingData ? "🎨 お絵描き" : ""), 
+                        createdAt: new Date(Date.now() + serverTimeOffset) 
+                    });
+                }
+                replyInput.value = '';
+                removeAudioPreview('replyAudio');
+                removeNicoPreview('reply');
+                removeYTPreview('reply');
+                removeDrawingPreview('reply');
+                loadReplies(postId);
+            } catch (e) { alert("返信に失敗しました: " + e.message); }
+        }
+
+        window.loadReplies = async function(postId) {
+            const replyList = document.getElementById('detailReplyList'); replyList.innerHTML = '<div style="padding:15px; color:#71767b; font-size:14px;">返信を読み込み中...</div>';
+            const mutedUsers = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blockedUsers = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
+            try {
+                const q = query(collection(db, "replies"), where("postId", "==", postId)); const querySnapshot = await getDocs(q);
+                let repliesArray = []; querySnapshot.forEach((docSnap) => { repliesArray.push(docSnap.data()); });
+                repliesArray.sort((a, b) => { return (a.createdAt ? a.createdAt.toDate().getTime() : 0) - (b.createdAt ? b.createdAt.toDate().getTime() : 0); });
+                replyList.innerHTML = ''; if (repliesArray.length === 0) { replyList.innerHTML = '<div style="padding:15px; color:#71767b; font-size:14px;">まだ返信はありません。</div>'; return; }
+                
+                repliesArray.forEach((reply) => {
+                    const rId = reply.userId || ""; if (mutedUsers.includes(rId) || blockedUsers.includes(rId)) return;
+                    
+                    const date = formatTimeAgo(reply.createdAt);
+                    const safeContent = (reply.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const rName = reply.userName || "名無しさん"; const rIcon = reply.userIcon || defaultIcon;
+                    const replyDiv = document.createElement('div'); replyDiv.className = 'reply-item';
+                    
+                    let replyAudioHTML = "";
+                    if (reply.audioData) {
+                        replyAudioHTML = `
+                            <div style="margin-top:8px;">
+                                <audio src="${reply.audioData}" controls style="max-width:100%; max-height:36px;"></audio>
+                            </div>
+                        `;
+                    }
+                    
+                    let nicoHTML = "";
+                    if (reply.nicoVideoId) {
+                        nicoHTML = `
+                            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-top: 8px; border-radius: 12px;">
+                                <iframe src="https://embed.nicovideo.jp/watch/${reply.nicoVideoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
+                            </div>
+                        `;
+                    }
+
+                    let ytHTML = "";
+                    if (reply.ytVideoId) {
+                        ytHTML = `
+                            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-top: 8px; border-radius: 12px;">
+                                <iframe src="https://www.youtube.com/embed/${reply.ytVideoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
+                            </div>
+                        `;
+                    }
+
+                    let replyDrawingHTML = "";
+                    if (reply.drawingData) {
+                        replyDrawingHTML = `
+                            <div style="margin-top:8px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; overflow:hidden; max-width:200px; max-height:200px; display:flex; align-items:center; justify-content:center;">
+                                <img src="${reply.drawingData}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                            </div>
+                        `;
+                    }
+
+                    replyDiv.innerHTML = `
+                        <div class="post-left" onclick="showUserProfile('${rId}', event)" style="z-index:2; position:relative;"><img src="${rIcon}" class="user-icon" style="width:38px; height:38px; cursor:pointer;"></div>
+                        <div class="post-right">
+                            <div class="post-header"><span class="user-name" onclick="showUserProfile('${rId}', event)" style="font-size:14px; z-index:2; position:relative; cursor:pointer;">${rName}</span><span class="post-time" style="font-size:14px; margin-left:4px;">· ${date}</span></div>
+                            <div style="font-size:14px; white-space: pre-wrap;">${safeContent}</div>
+                            ${replyAudioHTML}
+                            ${nicoHTML}
+                            ${ytHTML}
+                            ${replyDrawingHTML}
+                        </div>
+                    `;
+                    replyList.appendChild(replyDiv);
+                });
+            } catch (e) { replyList.innerHTML = `<div class="error-box">返信読込失敗: ${e.message}</div>`; }
+        }
+
+        window.togglePostMenu = function(postId, isDetail, event) {
+            const ev = event || window.event; if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
+            const menuId = isDetail ? 'detailDropdownMenu' : `postMenu-${postId}`; const menu = document.getElementById(menuId); if (!menu) return;
+            const isVisible = menu.style.display === 'block'; closeAllMenus(); if (!isVisible) { menu.style.display = 'block'; }
+        }
+        window.closeAllMenus = function() { document.querySelectorAll('.dropdown-menu').forEach(menu => { menu.style.display = 'none'; }); }
+
+        window.handleMenuAction = function(postId, targetUserId, targetUserName, actionType, event) {
+            const ev = event || window.event; if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
+            closeAllMenus();
+            if (actionType === '興味なし') {
+                let list = JSON.parse(localStorage.getItem('mySNS_notInterestedPosts')) || []; list.push(postId); localStorage.setItem('mySNS_notInterestedPosts', JSON.stringify(list)); animateRemovePost(postId);
+            } else if (actionType === 'ミュート') {
+                let list = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; list.push(targetUserId); localStorage.setItem('mySNS_mutedUsers', JSON.stringify(list)); animateRemovePost(postId);
+            } else if (actionType === 'ブロック') {
+                let list = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; list.push(targetUserId); localStorage.setItem('mySNS_blockedUsers', JSON.stringify(list)); animateRemovePost(postId);
+            } else if (actionType === '制限' || actionType === '報告') {
+                addDoc(collection(db, "penalties"), { targetUserId: targetUserId, type: actionType, createdAt: new Date(Date.now() + serverTimeOffset) }); alert(`送信しました。`);
+            }
+        }
+        function animateRemovePost(postId) {
+            const postDom = document.getElementById(`postDom-${postId}`); if (postDom) { postDom.style.opacity = '0'; postDom.style.transform = 'scale(0.95)'; setTimeout(() => { postDom.style.display = 'none'; }, 300); }
+            if (document.getElementById('detailView').style.display === 'block') { showHome(); }
+        }
+
+        window.saveSettings = function() {
+            const name = document.getElementById('profileName').value.trim(); const iconUrl = document.getElementById('profileIcon').value.trim();
+            const theme = document.getElementById('settingsThemeSelect').value;
+            if (name === '') { alert('ニックネームを入力してください。'); return; }
+            myProfile.name = name; if (uploadedImageBase64 !== "") { myProfile.icon = uploadedImageBase64; } else if (iconUrl !== "") { myProfile.icon = iconUrl; }
+            localStorage.setItem('mySNS_profile', JSON.stringify(myProfile));
+            setTheme(theme);
+            alert('設定を保存しました！'); showHome();
+        }
+
+        window.sharePost = function(postId, encodedContent, event) {
+            const ev = event || window.event; if (ev) { if (ev.stopPropagation) ev.stopPropagation(); ev.cancelBubble = true; }
+            closeAllMenus();
+            const content = decodeURIComponent(encodedContent); const randomString = Math.random().toString(36).substring(2, 12);
+            let baseUrl = window.location.origin + window.location.pathname; if (baseUrl.endsWith('/')) { baseUrl = baseUrl.slice(0, -1); }
+            const params = new URLSearchParams(); params.append('id', postId); params.append('ref', randomString);
+            const shareUrl = `${baseUrl}?${params.toString()}`; const shareText = `${content}\n\n${shareUrl}`;
+            navigator.clipboard.writeText(shareText).then(() => { alert("リンクをコピーしました！"); });
+        }
+
+        // 時間フォーマット関数
+        function formatTimeAgo(timestamp) {
+            if (!timestamp) return '今さっき';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const diffMs = Date.now() - date.getTime();
+            const diffSec = Math.floor(diffMs / 1000);
+            
+            if (diffSec < 60) {
+                return '今さっき';
+            }
+            const diffMin = Math.floor(diffSec / 60);
+            if (diffMin < 60) {
+                return `${diffMin}分前`;
+            }
+            const diffHour = Math.floor(diffMin / 60);
+            if (diffHour < 24) {
+                return `${diffHour}時間前`;
+            }
+            const diffDay = Math.floor(diffHour / 24);
+            if (diffDay < 7) {
+                return `${diffDay}日前`;
+            }
+            
+            // 7日以上前は絶対表示
+            return date.toLocaleDateString();
+        }
+
+        // SVGアイコンの定義
+        const svgReply = `<svg class="icon" viewBox="0 0 24 24"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.57 5.57-3.93 7.01L21 21.35c-.17.16-.38.25-.61.25-.18 0-.37-.05-.53-.15l-3.32-2.07c-.83.21-1.7.32-2.6.32H9.756c-4.42 0-8.005-3.58-8.005-8zM9.756 3.5c-3.59 0-6.505 2.91-6.505 6.5s2.915 6.5 6.505 6.5h4.159c.99 0 1.94-.17 2.82-.5l.43-.16 2.21 1.38-1-1.63-.22-.36.33-.28c2.09-1.77 3.32-4.39 3.32-7.18 0-3.66-2.97-6.63-6.63-6.63H9.756z"/></svg>`;
+        const svgRepost = `<svg class="icon" viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.024 1.096L4.75 6.201V13c0 2.206 1.794 4 4 4h4.75v1.5H8.75c-3.033 0-5.5-2.467-5.5-5.5V6.201L.092 9.116-.932 8.02 3.5 3.88zM20.5 14.884l1.024-1.096 3.158 2.953V11c0-3.033-2.467-5.5-5.5-5.5h-4.75V4h4.75c2.206 0 4 1.794 4 4v5.741l3.258-3.042 1.024 1.096-4.432 4.14z"/></svg>`;
+        const svgLike = `<svg class="icon" viewBox="0 0 24 24"><path d="M16.697 5.5c-1.222-.06-2.679.691-3.67 2.125h-2.054c-.991-1.434-2.448-2.185-3.67-2.125-2.348.115-4.303 2.12-4.303 4.675 0 2.88 2.656 5.86 8.35 10.45a.76.76 0 00.95 0c5.694-4.59 8.35-7.57 8.35-10.45 0-2.555-1.955-4.56-4.303-4.675zM12 18.725C6.915 14.63 4.25 11.975 4.25 10.175c0-1.635 1.255-2.97 2.813-3.045 1.077-.05 2.146.725 2.72 1.95a.75.75 0 001.35 0c.574-1.225 1.643-2 2.72-1.95 1.558.075 2.813 1.41 2.813 3.045 0 1.8-2.665 4.455-7.75 8.55z"/></svg>`;
+        const svgView = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 3.75c-5.83 0-10.63 4.23-11.75 9.75a1 1 0 000 .5c1.12 5.52 5.92 9.75 11.75 9.75s10.63-4.23 11.75-9.75a1 1 0 000-.5C22.63 7.98 17.83 3.75 12 3.75zM12 21.25C7.05 21.25 2.89 17.65 1.78 13c1.11-4.65 5.27-8.25 10.22-8.25s9.11 3.6 10.22 8.25c-1.11 4.65-5.27 8.25-10.22 8.25zM12 8.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9zm0 7.5a3 3 0 110-6 3 3 0 010 6z"/></svg>`;
+        const svgShare = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2.59l5.7 5.71-1.06 1.06-3.89-3.89V15h-1.5V5.47L7.36 9.36 6.3 8.3 12 2.59zM4.5 13v6c0 .83.67 1.5 1.5 1.5h12c.83 0 1.5-.67 1.5-1.5v-6h1.5v6c0 1.66-1.34 3-3 3H6c-1.66 0-3-1.34-3-3v-6h1.5z"/></svg>`;
+        const svgMenu = `<svg class="icon" viewBox="0 0 24 24"><circle cx='5' cy='12' r='2'/><circle cx='12' cy='12' r='2'/><circle cx='19' cy='12' r='2'/></svg>`;
+        const svgLink = `<svg class="icon" viewBox="0 0 24 24"><path d="M11.9 14.8c-.3 0-.6-.1-.8-.3l-2.8-2.8c-.4-.4-.4-1.1 0-1.5l2.8-2.8c.4-.4 1.1-.4 1.5 0s.4 1.1 0 1.5l-2.1 2.1 2.1 2.1c.4.4.4 1.1 0 1.5-.2.2-.5.3-.7.3zM12.1 9.2c.3 0 .6.1.8.3l2.8 2.8c.4.4.4 1.1 0 1.5l-2.8 2.8c-.4.4-1.1.4-1.5 0s-.4-1.1 0-1.5l2.1-2.1-2.1-2.1c-.4-.4-.4-1.1 0-1.5.2-.2.5-.3.7-.3z"/><path d="M8 21c-3.3 0-6-2.7-6-6V9c0-3.3 2.7-6 6-6h8c3.3 0 6 2.7 6 6v6c0 3.3-2.7 6-6 6H8zm0-16.5c-2.5 0-4.5 2-4.5 4.5v6c0 2.5 2.0 4.5 4.5 4.5h8c2.5 0 4.5-2 4.5-4.5V9c0-2.5-2.0-4.5-4.5-4.5H8z"/></svg>`;
+        const svgDislike = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-4-9h8v2H8z"/></svg>`;
+        const svgMute = `<svg class="icon" viewBox="0 0 24 24"><path d="M18 11c0-2.97-2.16-5.43-5-5.91V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5v1.59c-2.84.48-5 2.94-5 5.91v4.38L3.29 17.1c-.39.39-.39 1.02 0 1.41.2.2.46.29.71.29h16c.25 0 .51-.09.71-.29.39-.39.39-1.02 0-1.41L18 15.38V11zm-6.5-6.5c.28 0 .5.22.5.5v1.08c-2.33.43-4 2.47-4 4.92v4.88L6.12 17.5h11.76L16 15.88V11c0-2.45-1.67-4.49-4-4.92V5c0-.28-.22-.5-.5-.5zm.5 15.5c-1.1 0-2-.9-2-2h4c0 1.1-.9 2-2 2z"/></svg>`;
+        const svgRestrict = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
+        const svgBlock = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.85.63-3.55 1.69-4.9L16.9 16.31C15.55 17.37 13.85 18 12 18zm4.9-3.1L5.69 7.1C6.73 5.37 8.68 4.25 10.9 4.25c4.41 0 8 3.59 8 8 0 2.22-.9 4.17-2.4 5.65z"/></svg>`;
+        const svgWarning = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
+
+        function createPostHTML(postId, post, uId, uName, uIcon, date, safeContent, encodedContent, isRepost, repLabel, viewCount, likeCount, repostCount) {
+            let myLikedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
+            const isLiked = myLikedPosts.includes(postId);
+            const likeClass = isLiked ? 'action-btn like liked' : 'action-btn like';
+
+            let quoteBoxHTML = "";
+            if (post.isQuoteRepost && post.originalPost) {
+                const orig = post.originalPost;
+                const safeOrigContent = (orig.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                quoteBoxHTML = `
+                    <div class="quote-box" onclick="showPostDetail('${orig.postId}'); event.stopPropagation();">
+                        <div class="quote-header"><img src="${orig.userIcon || defaultIcon}" class="quote-icon"><span class="quote-name">${orig.userName}</span></div>
+                        <div class="quote-content">${safeOrigContent}</div>
+                    </div>
+                `;
+            }
+
+            let audioHTML = "";
+            if (post.audioData) {
+                audioHTML = `
+                    <div style="margin-top:10px; margin-bottom:10px;">
+                        <audio src="${post.audioData}" controls style="max-width:100%; max-height:36px;"></audio>
+                    </div>
+                `;
+            }
+
+            let nicoHTML = "";
+            if (post.nicoVideoId) {
+                nicoHTML = `
+                    <div style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-top: 10px; margin-bottom: 10px; border-radius: 8px;">
+                        <iframe src="https://embed.nicovideo.jp/watch/${post.nicoVideoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
+                    </div>
+                `;
+            }
+
+            let ytHTML = "";
+            if (post.ytVideoId) {
+                ytHTML = `
+                    <div style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-top: 10px; margin-bottom: 10px; border-radius: 8px;">
+                        <iframe src="https://www.youtube.com/embed/${post.ytVideoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
+                    </div>
+                `;
+            }
+
+            let drawingHTML = "";
+            if (post.drawingData) {
+                drawingHTML = `
+                    <div style="margin-top:10px; margin-bottom:10px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; overflow:hidden; max-width:100%; max-height:300px; display:flex; align-items:center; justify-content:center;">
+                        <img src="${post.drawingData}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="post-right">
+                    ${repLabel}
+                    <div style="display:flex; width:100%;">
+                        <div class="post-left" onclick="showUserProfile('${uId}', event)" style="z-index:2; position:relative;"><img src="${uIcon}" class="user-icon"></div>
+                        <div style="flex:1;">
+                            <div class="post-header">
+                                <span class="user-name" onclick="showUserProfile('${uId}', event)" style="z-index:2; position:relative;">${uName}</span>
+                                <span class="post-time">· ${date}</span>
+                                <button class="menu-trigger" onclick="togglePostMenu('${postId}', false, event)">${svgMenu}</button>
+                                <div id="postMenu-${postId}" class="dropdown-menu">
+                                    <div class="menu-item" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgLink} リンクをコピー</div>
+                                    <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '興味なし', event)">${svgDislike} 興味なし</div>
+                                    <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', 'ミュート', event)">${svgMute} ミュート</div>
+                                    <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '制限', event)">${svgRestrict} 制限する</div>
+                                    <div class="menu-item" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', 'ブロック', event)">${svgBlock} ブロック</div>
+                                    <div class="menu-item danger" onclick="handleMenuAction('${postId}', '${uId}', '${uName}', '報告', event)">${svgWarning} 報告する</div>
+                                </div>
+                            </div>
+                            <div class="post-content">${safeContent}</div>
+                            ${audioHTML}
+                            ${nicoHTML}
+                            ${ytHTML}
+                            ${drawingHTML}
+                            ${quoteBoxHTML}
+                            <div class="post-actions">
+                                <button class="action-btn reply">${svgReply} <span class="count-span"></span></button>
+                                <button class="action-btn repost" onclick="repostPost('${postId}', event)">
+                                    ${svgRepost} <span class="count-span" id="repost-count-${postId}">${repostCount > 0 ? repostCount : ''}</span>
+                                </button>
+                                <button class="${likeClass}" onclick="likePost('${postId}', '${uId}', event)">
+                                    ${svgLike} <span class="count-span" id="like-count-${postId}">${likeCount > 0 ? likeCount : ''}</span>
+                                </button>
+                                <div class="action-btn view" style="cursor:default;" title="表示回数">
+                                    ${svgView} <span class="count-span">${viewCount > 0 ? viewCount : ''}</span>
+                                </div>
+                                <button class="action-btn share" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgShare}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function init() {
+            await fetchServerTimeOffset();
+            initThemeToggle();
+            checkRouting();
+        }
+        init();
+    </script>
+</body>
+</html>
         };
