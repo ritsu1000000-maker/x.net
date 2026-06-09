@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 通知機能完成版</title>
+    <title>簡易SNS - アイコンアップロード版</title>
     <style>
         body { font-family: sans-serif; background-color: #f5f8fa; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; border-left: 1px solid #e1e8ed; border-right: 1px solid #e1e8ed; }
@@ -52,6 +52,11 @@
         .reply-list { padding: 0; }
         .reply-item { padding: 15px; border-bottom: 1px solid #e1e8ed; display: flex; transition: background-color 0.2s; }
         .reply-item.clickable:hover { background-color: #f7f9fa; }
+
+        /* プロフィール設定画面内のアップロード用スタイル */
+        .file-input-label { display: inline-block; background-color: #e8f5fe; color: #1da1f2; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; text-align: center; transition: background-color 0.2s; }
+        .file-input-label:hover { background-color: #d4edfe; }
+        #profileFile { display: none; } /* 本物のボタンは隠す */
 
         /* 画面切り替え用 */
         .view-section { display: none; }
@@ -129,6 +134,9 @@
                 <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
                     <label style="font-weight: bold; color: #657786;">アイコンプレビュー</label>
                     <img src="" id="profileIconPreview" class="user-icon" style="width: 80px; height: 80px;">
+                    
+                    <label for="profileFile" class="file-input-label">📸 画像をアップロード</label>
+                    <input type="file" id="profileFile" accept="image/*" onchange="handleImageUpload(event)">
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -137,7 +145,7 @@
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label style="font-weight: bold; color: #657786;">アイコンURL</label>
+                    <label style="font-weight: bold; color: #657786;">または画像のURLを入力</label>
                     <input type="text" id="profileIcon" style="padding: 12px; border: 1px solid #ccd6dd; border-radius: 8px; font-size: 16px; outline: none;" oninput="document.getElementById('profileIconPreview').src = this.value">
                 </div>
 
@@ -164,22 +172,56 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 💡 ユーザーデータの管理（通知識別のために、固有のランダムIDを発行する処理を追加）
         const defaultIcon = "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&h=150&fit=crop";
         let myProfile = JSON.parse(localStorage.getItem('mySNS_profile')) || {
-            id: "user_" + Math.random().toString(36).substring(2, 12), // 初回起動時に自動でマイIDを発行
+            id: "user_" + Math.random().toString(36).substring(2, 12),
             name: "ゲストユーザー",
             icon: defaultIcon
         };
-        if (!myProfile.id) { // 古いデータ対策
+        if (!myProfile.id) {
             myProfile.id = "user_" + Math.random().toString(36).substring(2, 12);
             localStorage.setItem('mySNS_profile', JSON.stringify(myProfile));
         }
 
-        let currentDetailPostUserId = ""; // 現在詳細画面で開いているポストの投稿者IDを保持する変数
+        let currentDetailPostUserId = "";
+        let uploadedImageBase64 = ""; // アップロードされた画像の文字列データを一時保存する変数
 
         function updateMyIconDisplays() {
             document.querySelectorAll('.my-current-icon').forEach(img => { img.src = myProfile.icon; });
+        }
+
+        // ==========================================
+        // 📸 画像アップロード＆自動縮小（リサイズ）処理
+        // ==========================================
+        window.handleImageUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Canvasを作成して、画像を96x96ピクセルに縮小する
+                    const canvas = document.createElement('canvas');
+                    const size = 96; // アイコンに最適なサイズ
+                    canvas.width = size;
+                    canvas.height = size;
+                    
+                    const ctx = canvas.getContext('2d');
+                    // 画像を正方形に綺麗に収める（トリミング）
+                    const side = Math.min(img.width, img.height);
+                    ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+                    
+                    // 縮小した画像を文字列（Base64）に変換
+                    uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.8); // 画質80%の軽量JPG
+                    
+                    // 画面のプレビューを更新
+                    document.getElementById('profileIconPreview').src = uploadedImageBase64;
+                    document.getElementById('profileIcon').value = ""; // URL入力欄をクリア
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
         // 新規投稿送信
@@ -192,7 +234,7 @@
                 await addDoc(collection(db, "posts"), { 
                     content: text, 
                     createdAt: new Date(),
-                    userId: myProfile.id, // 💡 誰の投稿かIDを記録
+                    userId: myProfile.id,
                     userName: myProfile.name,
                     userIcon: myProfile.icon
                 });
@@ -204,12 +246,12 @@
         // タイムライン読み込み
         window.loadPosts = async function() {
             const timeline = document.getElementById('timeline');
-            timeline.innerHTML = '<div style="padding:15px;">通信中...</div>';
+            timeline.innerHTML = '<div style="padding:15px; color:#657786;">通信中...</div>';
             try {
                 const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
                 timeline.innerHTML = '';
-                if (querySnapshot.empty) { timeline.innerHTML = '<div style="padding:15px;">まだ投稿がありません。</div>'; return; }
+                if (querySnapshot.empty) { timeline.innerHTML = '<div style="padding:15px; color:#657786;">まだ投稿がありません。</div>'; return; }
 
                 querySnapshot.forEach((docSnap) => {
                     const postId = docSnap.id;
@@ -271,7 +313,7 @@
 
                 if (docSnap.exists()) {
                     const post = docSnap.data();
-                    currentDetailPostUserId = post.userId || ""; // 💡 元の投稿者のIDをしっかり記憶
+                    currentDetailPostUserId = post.userId || "";
                     
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
                     const safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -302,7 +344,6 @@
             if (replyText === '') return;
 
             try {
-                // 💡 返信データに「誰のID宛てか（replyToUserId）」と「自分のID（userId）」を追加して保存
                 await addDoc(collection(db, "replies"), { 
                     postId: postId, 
                     content: replyText, 
@@ -310,14 +351,14 @@
                     userId: myProfile.id,
                     userName: myProfile.name,
                     userIcon: myProfile.icon,
-                    replyToUserId: currentDetailPostUserId // 通知の宛先
+                    replyToUserId: currentDetailPostUserId
                 });
                 replyInput.value = '';
                 loadReplies(postId);
             } catch (e) { alert("返信に失敗しました: " + e.message); }
         }
 
-        // 返信一覧読み込み（安全ソート版）
+        // 返信一覧読み込み
         window.loadReplies = async function(postId) {
             const replyList = document.getElementById('detailReplyList');
             replyList.innerHTML = '<div style="padding:15px; color:#657786; font-size:14px;">返信を読み込み中...</div>';
@@ -356,41 +397,28 @@
             } catch (e) { replyList.innerHTML = `<div class="error-box">返信読込失敗: ${e.message}</div>`; }
         }
 
-        // ==========================================
-        // 🔔 通知画面のコントロール処理
-        // ==========================================
+        // 🔔 通知画面表示
         window.showNotifications = function() {
             document.getElementById('homeView').style.display = 'none';
             document.getElementById('detailView').style.display = 'none';
             document.getElementById('profileView').style.display = 'none';
             document.getElementById('notificationView').style.display = 'block';
-
-            // 要求通りのURL形式（?view=notifications で末尾に / がつかない形式）をヒストリにセット
-            const notifyUrl = window.location.origin + window.location.pathname + "?view=notifications";
-            window.history.replaceState({}, '', notifyUrl);
-
+            window.history.replaceState({}, '', window.location.origin + window.location.pathname + "?view=notifications");
             loadNotifications();
         }
 
         window.loadNotifications = async function() {
             const list = document.getElementById('notificationList');
             list.innerHTML = '<div style="padding:15px; color:#657786;">通知を読み込み中...</div>';
-            
             try {
-                // 自分宛て（replyToUserId == マイID）の返信データをすべて取得
                 const q = query(collection(db, "replies"), where("replyToUserId", "==", myProfile.id));
                 const querySnapshot = await getDocs(q);
-                
                 let notificationsArray = [];
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
-                    // 自分が自分のポストに返信したものは、通知から除外する
-                    if (data.userId !== myProfile.id) {
-                        notificationsArray.push(data);
-                    }
+                    if (data.userId !== myProfile.id) { notificationsArray.push(data); }
                 });
 
-                // 新しい通知が上に来るように並び替え
                 notificationsArray.sort((a, b) => {
                     const timeA = a.createdAt ? a.createdAt.toDate().getTime() : 0;
                     const timeB = b.createdAt ? b.createdAt.toDate().getTime() : 0;
@@ -408,13 +436,12 @@
 
                     const div = document.createElement('div');
                     div.className = 'reply-item clickable';
-                    // 通知をクリックすると直接そのポストの詳細画面が開く
                     div.setAttribute('onclick', `showPostDetail('${reply.postId}')`);
                     div.innerHTML = `
                         <div class="post-left"><img src="${rIcon}" class="user-icon" style="width:38px; height:38px;"></div>
                         <div class="post-right">
                             <div class="post-header">
-                                <span class="user-name" style="font-size:14px; color:#1da1f2;">${rName} さんがあなたのポストに返信しました</span>
+                                <span class="user-name" style="font-size:14px; color:#1da1f2;">${rName} さんが返信しました</span>
                                 <span class="post-time">${date}</span>
                             </div>
                             <div style="font-size:14px; color:#657786; font-style:italic;">「${safeContent}」</div>
@@ -432,18 +459,29 @@
             document.getElementById('notificationView').style.display = 'none';
             document.getElementById('profileView').style.display = 'block';
             document.getElementById('profileName').value = myProfile.name;
-            document.getElementById('profileIcon').value = myProfile.icon;
+            document.getElementById('profileIcon').value = myProfile.icon.startsWith('data:') ? "" : myProfile.icon;
             document.getElementById('profileIconPreview').src = myProfile.icon;
+            uploadedImageBase64 = ""; // 一時変数をクリア
         }
 
+        // プロフィール保存
         window.saveProfile = function() {
             const name = document.getElementById('profileName').value.trim();
-            const icon = document.getElementById('profileIcon').value.trim();
+            const iconUrl = document.getElementById('profileIcon').value.trim();
+            
             if (name === '') { alert('ニックネームを入力してください。'); return; }
+            
             myProfile.name = name;
-            myProfile.icon = icon || defaultIcon;
+            
+            // アップロードされた画像データがあればそれを優先、なければURL入力欄を使う
+            if (uploadedImageBase64 !== "") {
+                myProfile.icon = uploadedImageBase64;
+            } else if (iconUrl !== "") {
+                myProfile.icon = iconUrl;
+            }
+            
             localStorage.setItem('mySNS_profile', JSON.stringify(myProfile));
-            alert('保存しました！');
+            alert('プロフィールを保存しました！');
             showHome();
         }
 
@@ -460,7 +498,6 @@
             navigator.clipboard.writeText(shareText).then(() => { alert("リンクをコピーしました！"); });
         }
 
-        // 初期起動判定（パラメータ読み込み）
         const urlParams = new URLSearchParams(window.location.search);
         const postIdParam = urlParams.get('id');
         const viewParam = urlParams.get('view');
