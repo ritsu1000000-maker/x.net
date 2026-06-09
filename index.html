@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - AI画像＆地図・カスタム通知対応版</title>
+    <title>簡易SNS - AI日本語対応＆地図検索・カスタム通知対応版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <style>
         body { font-family: sans-serif; background-color: #000000; margin: 0; padding: 0; color: #e7e9ea; }
@@ -117,7 +117,7 @@
                     <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <div style="display: flex; gap: 8px;">
-                            <button class="toolbar-btn" onclick="attachLocation('postText')">📍 地図</button>
+                            <button class="toolbar-btn" onclick="openMapModal('postText')">📍 地図</button>
                             <button class="toolbar-btn" onclick="openAIGenModal('postText')">✨ AI画像生成</button>
                         </div>
                         <button class="post-btn" onclick="submitPost()">ポストする</button>
@@ -150,7 +150,7 @@
                     <textarea id="detailReplyText" rows="2" placeholder="返信をポスト..."></textarea>
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <div style="display: flex; gap: 8px;">
-                            <button class="toolbar-btn" onclick="attachLocation('detailReplyText')">📍 地図</button>
+                            <button class="toolbar-btn" onclick="openMapModal('detailReplyText')">📍 地図</button>
                             <button class="toolbar-btn" onclick="openAIGenModal('detailReplyText')">✨ AI画像生成</button>
                         </div>
                         <button class="post-btn" id="submitReplyBtn">返信</button>
@@ -230,13 +230,24 @@
         </div>
     </div>
 
+    <div id="mapModal" class="modal-overlay">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span>📍 場所を指定して添付</span>
+                <button class="close-modal" onclick="document.getElementById('mapModal').style.display='none'">×</button>
+            </div>
+            <input type="text" id="mapKeyword" placeholder="場所の名前や住所を入力 (例: 東京駅, 富士山)" style="width: 100%; padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #e7e9ea; box-sizing: border-box;">
+            <button class="post-btn" onclick="attachMapLink()" style="width: 100%;">地図を添付する</button>
+        </div>
+    </div>
+
     <div id="aiModal" class="modal-overlay">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <span>✨ AI画像生成</span>
                 <button class="close-modal" onclick="document.getElementById('aiModal').style.display='none'">×</button>
             </div>
-            <input type="text" id="aiPrompt" placeholder="描きたい内容を入力 (例: a cute cat in space)" style="width: 100%; padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #e7e9ea; box-sizing: border-box;">
+            <input type="text" id="aiPrompt" placeholder="描きたい内容を入力 (日本語OK)" style="width: 100%; padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #e7e9ea; box-sizing: border-box;">
             <button class="post-btn" onclick="generateImage()" style="width: 100%;">画像を生成する</button>
             <div id="aiPreviewArea" style="display: none; text-align: center; margin-top: 10px;">
                 <img id="aiPreviewImg" src="" style="max-width: 100%; border-radius: 12px;">
@@ -309,19 +320,19 @@
         let currentDetailPostUserId = "";
         let uploadedImageBase64 = "";
 
-        // URLを埋め込みコード（iframe/img）に変換
+        // URLを埋め込みコードに変換
         function parseEmbeds(text) {
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, function(url) {
-                // 画像（Pollinations生成画像 または 通常の画像拡張子）
+                // 画像リンク
                 if (url.match(/^https:\/\/image\.pollinations\.ai\//) || url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
                     return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📸 画像を開く</a><br><img src="${url}" style="max-width: 100%; border-radius: 12px; margin-top: 10px; object-fit: cover;">`;
                 }
 
-                // Googleマップ（現在地添付用）
-                const mapsMatch = url.match(/maps\.google\.com\/maps\?q=([0-9.-]+),([0-9.-]+)/);
+                // Googleマップ（検索指定）
+                const mapsMatch = url.match(/maps\.google\.com\/maps\?q=([^&\s]+)/);
                 if (mapsMatch) {
-                    return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📍 位置情報を開く</a><br><iframe width="100%" height="250" src="https://maps.google.com/maps?q=${mapsMatch[1]},${mapsMatch[2]}&output=embed" frameborder="0" style="border-radius:12px; margin-top:10px;"></iframe>`;
+                    return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📍 地図を開く</a><br><iframe width="100%" height="250" src="https://maps.google.com/maps?q=${mapsMatch[1]}&output=embed" frameborder="0" style="border-radius:12px; margin-top:10px;"></iframe>`;
                 }
 
                 // YouTube
@@ -353,29 +364,28 @@
             });
         }
 
-        // 新機能：現在地情報の添付
-        window.attachLocation = function(targetId) {
-            if (!navigator.geolocation) {
-                customAlert("エラー", "お使いのブラウザは位置情報に対応していません。");
-                return;
-            }
-            showToast("📍 現在地を取得しています...");
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}`;
-                    const textarea = document.getElementById(targetId);
-                    textarea.value += (textarea.value ? '\n' : '') + mapUrl;
-                    showToast("位置情報を追加しました！");
-                },
-                (error) => {
-                    customAlert("エラー", "位置情報の取得に失敗しました。端末の位置情報設定を確認してください。");
-                }
-            );
+        // 新機能：地図（場所検索）機能
+        let currentMapTargetId = '';
+        window.openMapModal = function(targetId) {
+            currentMapTargetId = targetId;
+            document.getElementById('mapKeyword').value = '';
+            document.getElementById('mapModal').style.display = 'flex';
         }
 
-        // 新機能：AI画像生成機能
+        window.attachMapLink = function() {
+            const keyword = document.getElementById('mapKeyword').value.trim();
+            if (!keyword) { customAlert("エラー", "場所の名前を入力してください。"); return; }
+            
+            const encodedKeyword = encodeURIComponent(keyword);
+            const mapUrl = `https://maps.google.com/maps?q=${encodedKeyword}`;
+            
+            const textarea = document.getElementById(currentMapTargetId);
+            textarea.value += (textarea.value ? '\n' : '') + mapUrl;
+            document.getElementById('mapModal').style.display = 'none';
+            showToast("地図情報を添付しました！");
+        }
+
+        // 新機能：AI画像生成機能（日本語対応・タイムアウト付き）
         let currentInputTargetId = 'postText';
         let currentGeneratedImgUrl = "";
 
@@ -386,23 +396,52 @@
             document.getElementById('aiModal').style.display = 'flex';
         }
 
-        window.generateImage = function() {
+        window.generateImage = async function() {
             const prompt = document.getElementById('aiPrompt').value.trim();
             if (!prompt) { customAlert("エラー", "プロンプト（キーワード）を入力してください。"); return; }
             
-            showToast("⏳ 画像を生成しています... (約5〜10秒)");
-            const seed = Math.floor(Math.random() * 100000);
-            const encodedPrompt = encodeURIComponent(prompt);
+            document.getElementById('aiPreviewArea').style.display = 'none';
+            
+            let englishPrompt = prompt;
+            // 日本語が含まれている場合は自動で英語に翻訳
+            if (/[ぁ-んァ-ヶ亜-熙]/.test(prompt)) {
+                showToast("⏳ 準備中... (日本語を翻訳しています)");
+                try {
+                    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
+                    const data = await res.json();
+                    englishPrompt = data[0][0][0];
+                } catch (e) {
+                    console.error("翻訳エラー:", e);
+                }
+            }
+            
+            showToast("⏳ 画像を生成しています... (約5〜15秒)");
+            const seed = Math.floor(Math.random() * 1000000);
+            const encodedPrompt = encodeURIComponent(englishPrompt);
             const imgUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=512&height=512&nologo=true`;
             
             const imgEl = document.getElementById('aiPreviewImg');
+            
+            // エラー対策：タイムアウト処理
+            let isLoaded = false;
+            const timeout = setTimeout(() => {
+                if (!isLoaded) {
+                    imgEl.src = ""; 
+                    customAlert("エラー", "画像の生成がタイムアウトしました。\nサーバーが混雑している可能性がありますので、時間をおいて再試行してください。");
+                }
+            }, 20000); // 20秒待機
+
             imgEl.onload = function() {
+                isLoaded = true;
+                clearTimeout(timeout);
                 document.getElementById('aiPreviewArea').style.display = 'block';
                 currentGeneratedImgUrl = imgUrl;
                 showToast("✨ 画像が生成されました！");
             }
             imgEl.onerror = function() {
-                customAlert("エラー", "画像の生成に失敗しました。時間をおいて再試行してください。");
+                isLoaded = true;
+                clearTimeout(timeout);
+                customAlert("エラー", "画像の生成に失敗しました。\n時間をおいて再試行してください。");
             }
             imgEl.src = imgUrl;
         }
@@ -421,7 +460,7 @@
             let quoteBoxHTML = "";
             if (post.isQuoteRepost && post.originalPost) {
                 const orig = post.originalPost;
-                let safeOrigContent = (orig.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                let safeOrigContent = (orig.content || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
                 safeOrigContent = parseEmbeds(safeOrigContent);
                 quoteBoxHTML = `
                     <div class="quote-box" onclick="showPostDetail('${orig.postId}'); event.stopPropagation();">
@@ -588,7 +627,7 @@
                     if (notInterestedPosts.includes(postId) || mutedUsers.includes(uId) || blockedUsers.includes(uId)) return;
 
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
-                    let safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    let safeContent = (post.content || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
                     safeContent = parseEmbeds(safeContent);
                     const encodedContent = encodeURIComponent(post.content || "");
                     const uName = post.userName || "名無しさん"; const uIcon = post.userIcon || defaultIcon;
@@ -622,7 +661,7 @@
                 if (docSnap.exists()) {
                     const post = docSnap.data(); currentDetailPostUserId = post.userId || "";
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
-                    let safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    let safeContent = (post.content || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
                     safeContent = parseEmbeds(safeContent);
                     const encodedContent = encodeURIComponent(post.content || "");
                     const uName = post.userName || "名無しさん"; const uIcon = post.userIcon || defaultIcon;
@@ -638,7 +677,7 @@
                     let quoteBoxHTML = "";
                     if (post.isQuoteRepost && post.originalPost) {
                         const orig = post.originalPost;
-                        let safeOrigContent = (orig.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        let safeOrigContent = (orig.content || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
                         safeOrigContent = parseEmbeds(safeOrigContent);
                         quoteBoxHTML = `
                             <div class="quote-box" onclick="showPostDetail('${orig.postId}'); event.stopPropagation();">
@@ -717,7 +756,7 @@
                     if (notInterestedPosts.includes(postId) || mutedUsers.includes(uId) || blockedUsers.includes(uId)) return;
                     const date = post.createdAt ? post.createdAt.toDate().toLocaleString() : '時間不明';
                     
-                    let safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    let safeContent = (post.content || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
                     safeContent = parseEmbeds(safeContent);
 
                     const encodedContent = encodeURIComponent(post.content || "");
@@ -758,7 +797,7 @@
                     else if (notif.type === 'repost') { typeLabel = `<span style="color:#00ba7c; font-weight:bold; display:flex; align-items:center; gap:6px;">${svgRepost} ${sName} さんがあなたのポストをリポストしました</span>`; } 
                     else if (notif.type === 'reply') {
                         typeLabel = `<span style="color:#1d9bf0; font-weight:bold; display:flex; align-items:center; gap:6px;">${svgReply} ${sName} さんがあなたのポストに返信しました</span>`;
-                        const safeReply = (notif.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        const safeReply = (notif.content || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
                         detailSnippet = `<div style="font-size:14px; color:#71767b; font-style:italic; margin-top:5px;">「${safeReply}」</div>`;
                     }
 
@@ -878,7 +917,7 @@
                 repliesArray.forEach((reply) => {
                     const rId = reply.userId || ""; if (mutedUsers.includes(rId) || blockedUsers.includes(rId)) return;
                     const date = reply.createdAt ? reply.createdAt.toDate().toLocaleString() : '時間不明';
-                    let safeContent = (reply.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    let safeContent = (reply.content || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
                     safeContent = parseEmbeds(safeContent);
 
                     const rName = reply.userName || "名無しさん"; const rIcon = reply.userIcon || defaultIcon;
