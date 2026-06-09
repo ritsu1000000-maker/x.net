@@ -81,6 +81,14 @@
         
         .view-section { display: none; }
         .error-box { padding: 20px; margin: 15px; border: 2px solid #f91880; background-color: #200914; color: #f91880; font-weight: bold; border-radius: 10px; }
+
+        /* リポストモーダル用のスタイル */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(91, 112, 131, 0.4); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .modal-content { background: #000000; width: 90%; max-width: 600px; border-radius: 16px; border: 1px solid #2f3336; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 0 15px rgba(255,255,255,0.1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2f3336; padding-bottom: 10px; font-weight: bold; font-size: 18px; color: #e7e9ea; }
+        .close-modal { background: none; border: none; color: #e7e9ea; font-size: 24px; cursor: pointer; padding: 0 5px; }
+        .close-modal:hover { color: #1d9bf0; }
+        .modal-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
     </style>
 </head>
 <body onclick="closeAllMenus()">
@@ -187,6 +195,20 @@
             </div>
         </div>
 
+    </div>
+
+    <div id="repostModal" class="modal-overlay">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span>リポスト / 引用してポスト</span>
+                <button class="close-modal" onclick="closeRepostModal()">×</button>
+            </div>
+            <textarea id="quoteText" rows="3" placeholder="コメントを追加して引用ポスト..." style="font-size: 16px;"></textarea>
+            <div class="modal-actions">
+                <button class="post-btn" style="background-color: transparent; border: 1px solid #00ba7c; color: #00ba7c; flex: 1;" onclick="submitRepost(false)">通常のリポスト</button>
+                <button class="post-btn" style="flex: 1;" onclick="submitRepost(true)">引用してポスト</button>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -619,7 +641,10 @@
             } catch(e) { alert("エラー: " + e.message); }
         }
 
-        // 💡 リポスト実行処理（DB更新 ＋ UIをその場で＋1する）
+        // リポストの対象IDを一時保存する変数
+        let currentRepostId = "";
+
+        // リポストボタンを押したときの処理（モーダルを開く）
         window.repostPost = async function(postId, event) {
             if (event) { event.stopPropagation(); event.cancelBubble = true; }
             if (await isUserRestricted(myProfile.id)) return;
@@ -629,37 +654,66 @@
                 const docSnap = await getDoc(docRef);
                 if (!docSnap.exists()) { alert("元の投稿が見つかりません。"); return; }
                 const origPost = docSnap.data();
+                if (origPost.userId === myProfile.id) { alert("自分のポストはリポストできません。"); return; }
+                
+                // モーダルを表示
+                currentRepostId = postId;
+                document.getElementById('quoteText').value = '';
+                document.getElementById('repostModal').style.display = 'flex';
+            } catch(e) { alert("エラー: " + e.message); }
+        }
+
+        // モーダルを閉じる処理
+        window.closeRepostModal = function() {
+            document.getElementById('repostModal').style.display = 'none';
+            currentRepostId = "";
+        }
+
+        // 実際にリポストまたは引用リポストを実行する処理
+        window.submitRepost = async function(isQuote) {
+            if (!currentRepostId) return;
+            const postId = currentRepostId;
+            const comment = document.getElementById('quoteText').value.trim();
+            
+            if (isQuote && comment === "") {
+                alert("引用ポストする場合はコメントを入力してください。");
+                return;
+            }
+
+            try {
+                const docRef = doc(db, "posts", postId);
+                const docSnap = await getDoc(docRef);
+                const origPost = docSnap.data();
                 const targetUserId = origPost.userId;
-                if (targetUserId === myProfile.id) { alert("自分のポストはリポストできません。"); return; }
-                
-                const comment = prompt("引用リポストしますか？\nコメントを入力してください。（空欄のままOKを押すと通常のリポストになります）");
-                if (comment === null) return;
-                
+
                 // Firebaseのリポスト数を+1
                 try { await updateDoc(docRef, { reposts: increment(1) }); } catch(e) {}
 
-                // 💡 画面上の数字をその場で更新
+                // 画面上の数字をその場で更新
                 const countSpan = document.getElementById(`repost-count-${postId}`);
                 if (countSpan) countSpan.innerText = (parseInt(countSpan.innerText) || 0) + 1;
                 const detailCountSpan = document.getElementById(`detail-repost-count-${postId}`);
                 if (detailCountSpan) detailCountSpan.innerText = (parseInt(detailCountSpan.innerText) || 0) + 1;
 
-                if (comment.trim() === "") {
+                if (!isQuote) {
+                    // 通常のリポスト
                     await addDoc(collection(db, "posts"), {
                         content: origPost.content, createdAt: new Date(), userId: targetUserId, userName: origPost.userName, userIcon: origPost.userIcon, isRepost: true, repostedBy: myProfile.name, views: 0, likes: 0, reposts: 0
                     });
                 } else {
+                    // 引用リポスト
                     await addDoc(collection(db, "posts"), {
-                        content: comment.trim(), createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isQuoteRepost: true, views: 0, likes: 0, reposts: 0,
+                        content: comment, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isQuoteRepost: true, views: 0, likes: 0, reposts: 0,
                         originalPost: { postId: postId, userId: targetUserId, userName: origPost.userName, userIcon: origPost.userIcon, content: origPost.content }
                     });
                 }
                 await addDoc(collection(db, "notifications"), { type: "repost", postId: postId, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUserId, createdAt: new Date() });
                 
-                // 完了後に画面を再描画してタイムラインに新しい投稿を反映させる
+                closeRepostModal();
                 checkRouting();
             } catch(e) { alert("エラー: " + e.message); }
         }
+
 
         window.submitReply = async function(postId) {
             if (await isUserRestricted(myProfile.id)) return;
