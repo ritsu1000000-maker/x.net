@@ -3,27 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 絵文字ピッカー＆トレンド搭載版</title>
+    <title>簡易SNS - 動画専用投稿欄＆全機能搭載版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1"></script>
     <style>
         body { font-family: sans-serif; background-color: #000000; margin: 0; padding: 0; color: #e7e9ea; }
         
-        .layout-wrapper { display: flex; justify-content: center; max-width: 950px; margin: 0 auto; gap: 30px; }
-        .container { width: 100%; max-width: 600px; background: #000000; min-height: 100vh; border-left: 1px solid #2f3336; border-right: 1px solid #2f3336; flex-shrink: 0; position: relative; }
+        .container { max-width: 600px; margin: 0 auto; background: #000000; min-height: 100vh; border-left: 1px solid #2f3336; border-right: 1px solid #2f3336; position: relative; }
         
-        .sidebar { width: 320px; padding-top: 15px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: none; }
-        @media (min-width: 950px) { .sidebar { display: block; } }
-        
-        .sidebar-box { background-color: #16181c; border-radius: 16px; padding: 15px; border: 1px solid #2f3336; margin-bottom: 20px; }
-        .sidebar-box h3 { margin-top: 0; margin-bottom: 15px; font-size: 20px; color: #e7e9ea; }
-        
-        .sidebar-trend-item { padding: 10px 12px; margin: 0 -12px; cursor: pointer; transition: background-color 0.2s; border-radius: 8px; }
-        .sidebar-trend-item:hover { background-color: #1d9bf011; }
-        .sidebar-trend-rank { color: #71767b; font-size: 13px; margin-bottom: 2px; }
-        .sidebar-trend-name { font-weight: bold; font-size: 15px; color: #e7e9ea; margin-bottom: 2px; word-break: break-all; }
-        .sidebar-trend-count { color: #71767b; font-size: 13px; }
-
         .header-bar { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #2f3336; background-color: rgba(0, 0, 0, 0.85); position: sticky; top: 0; backdrop-filter: blur(5px); z-index: 10; font-weight: bold; font-size: 18px; }
         .back-btn { background: none; border: none; cursor: pointer; margin-right: 15px; padding: 5px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #e7e9ea; }
         .back-btn:hover { background-color: #181818; }
@@ -37,6 +24,9 @@
         .post-box-right { flex: 1; display: flex; flex-direction: column; }
         textarea { width: 100%; border: none; resize: none; font-size: 18px; outline: none; margin-bottom: 10px; box-sizing: border-box; background: transparent; color: #e7e9ea; }
         
+        .video-input-field { width: 100%; border: 1px solid #2f3336; border-radius: 8px; padding: 10px; background: transparent; color: #e7e9ea; margin-bottom: 10px; box-sizing: border-box; display: none; font-size: 14px; }
+        .video-input-field:focus { border-color: #1d9bf0; outline: none; }
+
         .toolbar-btn { background: transparent; border: 1px solid #2f3336; color: #1d9bf0; font-size: 13px; font-weight: bold; cursor: pointer; padding: 6px 12px; border-radius: 20px; transition: 0.2s; white-space: nowrap; }
         .toolbar-btn:hover { background-color: #031018; }
 
@@ -108,7 +98,7 @@
         .trend-tag-name { color: #1d9bf0; font-weight: bold; font-size: 15px; margin-bottom: 4px; word-break: break-all; }
         .trend-tag-count { color: #71767b; font-size: 12px; }
 
-        /* 💡 絵文字ピッカーのダークテーマ対応 */
+        /* 絵文字ピッカーのダークテーマ対応 */
         emoji-picker {
             --background: #16181c;
             --border-color: #2f3336;
@@ -124,91 +114,83 @@
 
     <div id="customToast" class="toast"></div>
 
-    <div class="layout-wrapper">
+    <div class="container">
         
-        <div class="container">
-            <div id="navContainer"></div>
+        <div id="navContainer"></div>
 
-            <div id="homeView" class="view-section">
-                <div class="post-box">
-                    <div onclick="showUserProfile(myProfile.id, event)" style="cursor:pointer;"><img src="" class="user-icon my-current-icon"></div>
-                    <div class="post-box-right">
-                        <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
-                        <div id="postAttachments" style="font-size: 13px; color: #1d9bf0; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px;"></div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                <button class="toolbar-btn" onclick="openEmojiPicker('postText', event)">😀</button>
-                                <button class="toolbar-btn" onclick="openAITextModal('postText')">🤖 AI文章</button>
-                                <button class="toolbar-btn" onclick="openAIGenModal('postText')">✨ AI画像</button>
-                                <button class="toolbar-btn" onclick="openScheduleModal()">🕒 予約</button>
-                                <button class="toolbar-btn" onclick="openPollModal()">📊 投票</button>
-                                <button class="toolbar-btn" onclick="openMapModal('postText')">📍 地図</button>
-                            </div>
-                            <button class="post-btn" onclick="submitPost()">ポスト</button>
+        <div id="homeView" class="view-section">
+            <div class="post-box">
+                <div onclick="showUserProfile(myProfile.id, event)" style="cursor:pointer;"><img src="" class="user-icon my-current-icon"></div>
+                <div class="post-box-right">
+                    <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
+                    
+                    <input type="text" id="postVideoUrl" class="video-input-field" placeholder="🎥 動画のURLを貼り付け (YouTube, ニコニコ動画, ツイキャス, X等)...">
+
+                    <div id="postAttachments" style="font-size: 13px; color: #1d9bf0; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px;"></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button class="toolbar-btn" onclick="openEmojiPicker('postText', event)" title="絵文字">😀</button>
+                            <button class="toolbar-btn" onclick="toggleVideoInput('postVideoUrl', event)" title="動画追加">🎥 動画</button>
+                            <button class="toolbar-btn" onclick="openAITextModal('postText')">🤖 AI文章</button>
+                            <button class="toolbar-btn" onclick="openAIGenModal('postText')">✨ AI画像</button>
+                            <button class="toolbar-btn" onclick="openScheduleModal()">🕒 予約</button>
+                            <button class="toolbar-btn" onclick="openPollModal()">📊 投票</button>
+                            <button class="toolbar-btn" onclick="openMapModal('postText')">📍 地図</button>
                         </div>
+                        <button class="post-btn" onclick="submitPost()">ポスト</button>
                     </div>
                 </div>
-                <div id="timeline"></div>
             </div>
-
-            <div id="searchView" class="view-section">
-                <div class="search-input-box">
-                    <input type="text" id="searchInput" class="search-input" placeholder="キーワードや #ハッシュタグ を検索" onkeydown="if(event.key==='Enter') executeSearch(this.value)">
-                    <button class="post-btn" onclick="executeSearch(document.getElementById('searchInput').value)">検索</button>
-                </div>
-                
-                <div id="popularHashtagsContainer" style="padding: 15px; border-bottom: 1px solid #2f3336; display: none;">
-                    <div style="font-weight: bold; color: #e7e9ea; margin-bottom: 12px; font-size: 16px;">🔥 人気のハッシュタグ</div>
-                    <div id="popularHashtagsList" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
-                </div>
-
-                <div id="searchResults">
-                    <div style="padding:30px; text-align:center; color:#71767b;">検索したい言葉を入力してください。</div>
-                </div>
-            </div>
-
-            <div id="detailView" class="view-section">
-                <div id="detailContentArea"></div>
-            </div>
-
-            <div id="notificationView" class="view-section">
-                <div id="notificationList"></div>
-            </div>
-
-            <div id="userProfileView" class="view-section">
-                <div id="userProfileHeader"></div>
-                <div id="userProfileTimeline"></div>
-            </div>
-
-            <div id="settingsView" class="view-section">
-                <div style="padding: 20px; display: flex; flex-direction: column; gap: 20px;">
-                    <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
-                        <img src="" id="profileIconPreview" class="user-icon" style="width: 80px; height: 80px; margin-bottom: 10px;">
-                        <label for="profileFile" style="background-color: #1d9bf0; color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer;">画像をアップロード</label>
-                        <input type="file" id="profileFile" accept="image/*" onchange="handleImageUpload(event)" style="display:none;">
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-weight: bold; color: #71767b;">ニックネーム</label>
-                        <input type="text" id="profileName" style="padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #e7e9ea;">
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-weight: bold; color: #71767b;">または画像のURL</label>
-                        <input type="text" id="profileIcon" style="padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #e7e9ea;" oninput="document.getElementById('profileIconPreview').src = this.value">
-                    </div>
-                    <button class="post-btn" onclick="saveSettings()">設定を保存</button>
-                </div>
-            </div>
+            <div id="timeline"></div>
         </div>
-        
-        <div class="sidebar">
-            <div class="sidebar-box">
-                <h3>🔥 トレンド</h3>
-                <div id="sidebarTrendsList">
-                    <div style="color: #71767b; font-size: 14px;">読み込み中...</div>
-                </div>
+
+        <div id="searchView" class="view-section">
+            <div class="search-input-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="キーワードや #ハッシュタグ を検索" onkeydown="if(event.key==='Enter') executeSearch(this.value)">
+                <button class="post-btn" onclick="executeSearch(document.getElementById('searchInput').value)">検索</button>
+            </div>
+            
+            <div id="popularHashtagsContainer" style="padding: 15px; border-bottom: 1px solid #2f3336; display: none;">
+                <div style="font-weight: bold; color: #e7e9ea; margin-bottom: 12px; font-size: 16px;">🔥 人気のハッシュタグ</div>
+                <div id="popularHashtagsList" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+            </div>
+
+            <div id="searchResults">
+                <div style="padding:30px; text-align:center; color:#71767b;">検索したい言葉を入力してください。</div>
             </div>
         </div>
 
+        <div id="detailView" class="view-section">
+            <div id="detailContentArea"></div>
+        </div>
+
+        <div id="notificationView" class="view-section">
+            <div id="notificationList"></div>
+        </div>
+
+        <div id="userProfileView" class="view-section">
+            <div id="userProfileHeader"></div>
+            <div id="userProfileTimeline"></div>
+        </div>
+
+        <div id="settingsView" class="view-section">
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 20px;">
+                <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
+                    <img src="" id="profileIconPreview" class="user-icon" style="width: 80px; height: 80px; margin-bottom: 10px;">
+                    <label for="profileFile" style="background-color: #1d9bf0; color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer;">画像をアップロード</label>
+                    <input type="file" id="profileFile" accept="image/*" onchange="handleImageUpload(event)" style="display:none;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-weight: bold; color: #71767b;">ニックネーム</label>
+                    <input type="text" id="profileName" style="padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #e7e9ea;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-weight: bold; color: #71767b;">または画像のURL</label>
+                    <input type="text" id="profileIcon" style="padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #e7e9ea;" oninput="document.getElementById('profileIconPreview').src = this.value">
+                </div>
+                <button class="post-btn" onclick="saveSettings()">設定を保存</button>
+            </div>
+        </div>
     </div>
 
     <div id="emojiPickerContainer" style="display: none; position: absolute; z-index: 10000; box-shadow: 0 0 15px rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden;" onclick="event.stopPropagation()">
@@ -292,7 +274,20 @@
         
         let currentScheduleTime = null; let currentPollOptions = null; let uploadedImageBase64 = "";
 
-        // 💡 絵文字ピッカーの処理
+        // 💡 動画URL入力欄の表示切り替え
+        window.toggleVideoInput = function(targetId, event) {
+            if (event) { event.stopPropagation(); event.cancelBubble = true; }
+            const inputEl = document.getElementById(targetId);
+            if (inputEl.style.display === 'none' || inputEl.style.display === '') {
+                inputEl.style.display = 'block';
+                inputEl.focus();
+            } else {
+                inputEl.style.display = 'none';
+                inputEl.value = '';
+            }
+        }
+
+        // 絵文字ピッカーの処理
         let currentEmojiTargetId = '';
         window.openEmojiPicker = function(targetId, event) {
             if (event) { event.stopPropagation(); event.cancelBubble = true; }
@@ -305,7 +300,6 @@
             container.style.display = 'block';
             let topPos = rect.bottom + window.scrollY + 5;
             
-            // 下にはみ出る場合は上に出す
             if (topPos + 350 > window.innerHeight + window.scrollY) {
                 topPos = rect.top + window.scrollY - 355;
             }
@@ -343,6 +337,13 @@
                 if (mapsMatch) { return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📍 地図を開く</a><br><iframe width="100%" height="250" src="https://maps.google.com/maps?q=${mapsMatch[1]}&output=embed" frameborder="0" style="border-radius:12px; margin-top:10px;"></iframe>`; }
                 const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
                 if (ytMatch) { return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a><br><iframe width="100%" height="315" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allowfullscreen style="border-radius:12px; margin-top:10px;"></iframe>`; }
+                const nicoMatch = url.match(/nicovideo\.jp\/watch\/([a-zA-Z0-9]+)/);
+                if (nicoMatch) { return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a><br><iframe width="100%" height="315" src="https://embed.nicovideo.jp/watch/${nicoMatch[1]}" frameborder="0" allowfullscreen style="border-radius:12px; margin-top:10px;"></iframe>`; }
+                const twitcasMatch = url.match(/twitcasting\.tv\/([a-zA-Z0-9_-]+)/);
+                if (twitcasMatch) {
+                    const user = twitcasMatch[1];
+                    return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a><br><iframe width="100%" height="315" src="https://twitcasting.tv/${user}/iframe" frameborder="0" allowfullscreen style="border-radius:12px; margin-top:10px;"></iframe>`;
+                }
                 if (url.match(/(?:twitter\.com|x\.com)\/[a-zA-Z0-9_]+\/status\/[0-9]+/)) {
                     return `<blockquote class="twitter-tweet" data-theme="dark"><a href="${url}"></a></blockquote>`;
                 }
@@ -370,8 +371,6 @@
             const view = params.get('view'); const id = params.get('id'); const user = params.get('user');
             document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
             closeAllMenus(); updateMyIconDisplays();
-            
-            loadSidebarTrends();
 
             if (id) {
                 renderNav('', 'ポスト', true); document.getElementById('detailView').style.display = 'block'; await renderPostDetail(id);
@@ -424,7 +423,7 @@
             } catch(e) { list.innerHTML = `<div class="error-box">検索エラー: ${e.message}</div>`; }
         }
 
-        // 人気ハッシュタグの読み込み (検索画面用)
+        // 人気ハッシュタグの読み込み
         window.loadPopularHashtags = async function() {
             const container = document.getElementById('popularHashtagsContainer');
             const list = document.getElementById('popularHashtagsList');
@@ -455,47 +454,6 @@
                     list.appendChild(div);
                 });
             } catch (e) { list.innerHTML = `<div style="color:#f91880; font-size:13px;">読み込みエラー: ${e.message}</div>`; }
-        }
-
-        // サイドバー用のトレンド読み込み関数
-        window.loadSidebarTrends = async function() {
-            const list = document.getElementById('sidebarTrendsList');
-            if(!list) return;
-            try {
-                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-                const snap = await getDocs(q);
-                let hashtagCounts = {};
-                snap.forEach(docSnap => {
-                    const post = docSnap.data();
-                    if (post.content) {
-                        const regex = /(?:^|\s)([#＃][^\s<]+)/g;
-                        let match; let postTags = new Set();
-                        while ((match = regex.exec(post.content)) !== null) { postTags.add(match[1]); }
-                        postTags.forEach(tag => { hashtagCounts[tag] = (hashtagCounts[tag] || 0) + 1; });
-                    }
-                });
-
-                const sortedTags = Object.entries(hashtagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                if (sortedTags.length === 0) {
-                    list.innerHTML = '<div style="color:#71767b; font-size:14px;">トレンドはまだありません。</div>';
-                    return;
-                }
-
-                list.innerHTML = '';
-                sortedTags.forEach(([tag, count], index) => {
-                    const div = document.createElement('div');
-                    div.className = 'sidebar-trend-item';
-                    div.onclick = () => { window.history.pushState({}, '', `?view=search&q=${encodeURIComponent(tag)}`); checkRouting(); };
-                    div.innerHTML = `
-                        <div class="sidebar-trend-rank">トレンド ${index + 1}</div>
-                        <div class="sidebar-trend-name">${tag}</div>
-                        <div class="sidebar-trend-count">${count} 件のポスト</div>
-                    `;
-                    list.appendChild(div);
-                });
-            } catch (e) {
-                list.innerHTML = `<div style="color:#f91880; font-size:13px;">エラー: ${e.message}</div>`;
-            }
         }
 
         // JS AI API (テキスト生成)
@@ -624,16 +582,31 @@
             return div;
         }
 
-        // メイン処理
+        // 💡 投稿送信処理（動画URLの結合対応）
         window.submitPost = async function() {
-            const txt = document.getElementById('postText').value.trim(); if (!txt) return;
+            let txt = document.getElementById('postText').value.trim();
+            const videoUrl = document.getElementById('postVideoUrl').value.trim();
+            
+            // 動画URLが入力されていれば本文の末尾に追加する
+            if (videoUrl) {
+                txt += (txt ? '\n\n' : '') + videoUrl;
+            }
+
+            if (!txt) return;
+
             let data = { content: txt, createdAt: currentScheduleTime ? currentScheduleTime : new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isRepost: false, views: 0, likes: 0, reposts: 0 };
             if (currentPollOptions) data.poll = currentPollOptions;
+            
             try {
                 await addDoc(collection(db, "posts"), data);
-                document.getElementById('postText').value = ''; showToast(currentScheduleTime ? "予約しました！" : "ポストしました！");
+                
+                // 入力欄のリセット
+                document.getElementById('postText').value = ''; 
+                document.getElementById('postVideoUrl').value = '';
+                document.getElementById('postVideoUrl').style.display = 'none';
+                
+                showToast(currentScheduleTime ? "予約しました！" : "ポストしました！");
                 currentScheduleTime = null; currentPollOptions = null; updateAttachmentUI(); renderPosts();
-                loadSidebarTrends();
             } catch (e) { customAlert("エラー", e.message); }
         }
 
@@ -665,9 +638,11 @@
                             <div><img src="${myProfile.icon}" class="user-icon"></div>
                             <div class="post-box-right">
                                 <textarea id="detailReplyText" rows="2" placeholder="返信をポスト..."></textarea>
+                                <input type="text" id="detailReplyVideoUrl" class="video-input-field" placeholder="🎥 動画のURLを貼り付け...">
                                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                                     <div style="display:flex; gap:8px;">
                                         <button class="toolbar-btn" onclick="openEmojiPicker('detailReplyText', event)">😀</button>
+                                        <button class="toolbar-btn" onclick="toggleVideoInput('detailReplyVideoUrl', event)">🎥 動画</button>
                                         <button class="toolbar-btn" onclick="openAITextModal('detailReplyText')">🤖</button>
                                     </div>
                                     <button class="post-btn" onclick="submitReply('${postId}')">返信</button>
@@ -697,10 +672,25 @@
             } catch(e) {}
         }
 
+        // 💡 返信送信処理（動画URLの結合対応）
         window.submitReply = async function(postId) {
-            const txt = document.getElementById('detailReplyText').value.trim(); if (!txt) return;
-            try { await addDoc(collection(db, "replies"), { postId: postId, content: txt, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon });
-                document.getElementById('detailReplyText').value=''; loadReplies(postId); showToast("返信しました！");
+            let txt = document.getElementById('detailReplyText').value.trim();
+            const videoUrl = document.getElementById('detailReplyVideoUrl').value.trim();
+            
+            if (videoUrl) {
+                txt += (txt ? '\n\n' : '') + videoUrl;
+            }
+
+            if (!txt) return;
+
+            try { 
+                await addDoc(collection(db, "replies"), { postId: postId, content: txt, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon });
+                
+                document.getElementById('detailReplyText').value = ''; 
+                document.getElementById('detailReplyVideoUrl').value = ''; 
+                document.getElementById('detailReplyVideoUrl').style.display = 'none';
+
+                loadReplies(postId); showToast("返信しました！");
             } catch (e) {}
         }
 
