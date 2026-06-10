@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - いいね取り消し対応＆全機能搭載版</title>
+    <title>簡易SNS - MP4再生対応＆全機能搭載版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1"></script>
     <style>
@@ -123,7 +123,7 @@
                 <div class="post-box-right">
                     <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
                     
-                    <input type="text" id="postVideoUrl" class="video-input-field" placeholder="🎥 動画のURLを貼り付け (YouTube, ニコニコ動画, ツイキャス, X等)...">
+                    <input type="text" id="postVideoUrl" class="video-input-field" placeholder="🎥 動画のURLを貼り付け (YouTube, MP4, X等)...">
 
                     <div id="postAttachments" style="font-size: 13px; color: #1d9bf0; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px;"></div>
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -311,17 +311,27 @@
             }
         });
 
-        // 共通関数
+        // 💡 修正箇所：MP4と音声ファイルのパース処理を追加
         function parseContent(text) {
-            let safe = (text || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+            let safe = (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            
             safe = safe.replace(/(^|\s)([#＃][^\s<]+)/g, function(match, space, tag) {
                 const pureTag = tag.replace(/'/g, "\\'");
                 return `${space}<span class="hashtag" onclick="executeSearch('${pureTag}', event)">${tag}</span>`;
             });
+
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return safe.replace(urlRegex, function(url) {
                 if (url.match(/^https:\/\/image\.pollinations\.ai\//) || url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
                     return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📸 画像を開く</a><br><img src="${url}" style="max-width: 100%; border-radius: 12px; margin-top: 10px; object-fit: cover;">`;
+                }
+                // MP4などの動画ファイル
+                if (url.match(/\.(mp4|webm|ogg|mov)$/i)) {
+                    return `<a href="${url}" target="_blank" style="color:#1d9bf0;">🎥 動画を開く</a><br><video src="${url}" controls style="max-width: 100%; max-height: 400px; border-radius: 12px; margin-top: 10px; background: #000; outline: none;"></video>`;
+                }
+                // MP3などの音声ファイル
+                if (url.match(/\.(mp3|wav|m4a)$/i)) {
+                    return `<a href="${url}" target="_blank" style="color:#1d9bf0;">🎵 音声を開く</a><br><audio src="${url}" controls style="width: 100%; margin-top: 10px; outline: none;"></audio>`;
                 }
                 const mapsMatch = url.match(/maps\.google\.com\/maps\?q=([^&\s]+)/);
                 if (mapsMatch) { return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📍 地図を開く</a><br><iframe width="100%" height="250" src="https://maps.google.com/maps?q=${mapsMatch[1]}&output=embed" frameborder="0" style="border-radius:12px; margin-top:10px;"></iframe>`; }
@@ -473,7 +483,7 @@
         let currentMapTargetId=''; window.openMapModal=function(id){ currentMapTargetId=id; document.getElementById('mapKeyword').value=''; document.getElementById('mapModal').style.display='flex'; }
         window.attachMapLink=function(){ const k=document.getElementById('mapKeyword').value.trim(); if(!k)return; document.getElementById(currentMapTargetId).value += ` https://maps.google.com/maps?q=$${encodeURIComponent(k)}`; document.getElementById('mapModal').style.display='none'; showToast("地図を添付しました"); }
 
-        // DOM Constructor (エラー回避処理を追加 ＆ いいね色の反映)
+        // DOM Constructor
         function createPostElement(postId, post, uId) {
             const safeUid = uId || "";
             const isMuted = (JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []).includes(safeUid) || (JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []).includes(safeUid);
@@ -510,7 +520,6 @@
             const schedLabel = dObj > now ? `<span style="color:#1d9bf0; font-size:12px; margin-left:8px; border:1px solid #1d9bf0; padding:2px 4px; border-radius:4px;">予約投稿</span>` : "";
             const timeAgo = formatTimeAgo(dObj);
 
-            // 💡 自分がいいねしたかどうかの判定
             const likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
             const isLiked = likedPosts.includes(postId);
             const likeStyle = isLiked ? 'color: #f91880;' : '';
@@ -548,7 +557,6 @@
             return div;
         }
 
-        // DB Data fetching
         window.submitPost = async function() {
             let txt = document.getElementById('postText').value.trim();
             const videoUrl = document.getElementById('postVideoUrl').value.trim();
@@ -591,12 +599,10 @@
                     const temp = createPostElement(postId, post, post.userId);
                     temp.style.borderBottom = 'none'; temp.className = '';
                     
-                    // 💡 自分がいいねしたかどうかの判定（詳細画面用）
                     const likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
                     const isLiked = likedPosts.includes(postId);
                     const likeStyle = isLiked ? 'color: #f91880;' : '';
 
-                    // temp の中にある like ボタンの ID を書き換えて色も反映
                     const tempHtml = temp.innerHTML.replace(`id="like-count-${postId}"`, `id="detail-like-count-${postId}"`);
 
                     area.innerHTML = `
@@ -675,7 +681,6 @@
                     const timeAgo = formatTimeAgo(dObj);
                     const safeUid = r.userId || "unknown";
                     
-                    // 💡 返信に対するいいね判定
                     const isLikedReply = likedReplies.includes(r.id);
                     const likeStyle = isLikedReply ? 'color: #f91880;' : '';
 
@@ -708,7 +713,6 @@
             } catch(e) {}
         }
 
-        // 💡 修正箇所：いいねをトグル（切り替え）できるように変更
         window.likePost = async function(pid, uid, ev) {
             if(ev)ev.stopPropagation(); 
             if(uid === myProfile.id){ customAlert("","自分のポストはいいねできません"); return;} 
@@ -719,19 +723,16 @@
             
             try {
                 if (isLiked) {
-                    // いいねを取り消す
                     await updateDoc(docRef, {likes: increment(-1)});
                     likedPosts = likedPosts.filter(id => id !== pid);
                     localStorage.setItem('mySNS_likedPosts', JSON.stringify(likedPosts));
                 } else {
-                    // いいねをする
                     await updateDoc(docRef, {likes: increment(1)});
                     likedPosts.push(pid);
                     localStorage.setItem('mySNS_likedPosts', JSON.stringify(likedPosts));
                     await addDoc(collection(db, "notifications"), { type: "like", postId: pid, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: uid, createdAt: new Date() });
                 }
 
-                // 画面上の数字と色をその場で更新
                 const countSpans = document.querySelectorAll(`#like-count-${pid}, #detail-like-count-${pid}`);
                 countSpans.forEach(span => {
                     let current = parseInt(span.innerText) || 0;
@@ -742,7 +743,6 @@
             } catch(e){}
         }
 
-        // 💡 修正箇所：返信のいいねをトグルできるように変更
         window.likeReply = async function(replyId, ev) {
             if(ev)ev.stopPropagation(); 
             let likedReplies = JSON.parse(localStorage.getItem('mySNS_likedReplies')) || [];
@@ -770,7 +770,6 @@
             } catch(e){} 
         }
 
-        // Action Interactions
         window.votePoll = async function(postId, optIdx, ev) {
             if(ev)ev.stopPropagation(); try{ const ref = doc(db, "posts", postId); const snap = await getDoc(ref); if(!snap.exists())return;
             let p = snap.data().poll; p.votes[myProfile.id] = optIdx; await updateDoc(ref, { "poll.votes": p.votes }); checkRouting(); }catch(e){}
@@ -796,7 +795,6 @@
         }
         window.sharePost=function(pid,enc,ev){ if(ev)ev.stopPropagation(); closeAllMenus(); navigator.clipboard.writeText(`${decodeURIComponent(enc)}\n${window.location.origin}${window.location.pathname}?id=${pid}`).then(()=>showToast("コピーしました"));}
 
-        // Settings / Mute Management
         window.updateMyIconDisplays = function(){ document.querySelectorAll('.my-current-icon').forEach(i=>i.src=myProfile.icon); }
         window.renderSettings=function(){ 
             document.getElementById('profileName').value=myProfile.name; 
