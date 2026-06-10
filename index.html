@@ -205,6 +205,11 @@
         const svgMenu     = `<svg class="icon" viewBox="0 0 24 24"><path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>`;
         const svgLink     = `<svg class="icon" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.31 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>`;
         const svgBack     = `<svg class="icon" style="width:22px; height:22px;" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>`;
+        const svgDislike  = `<svg class="icon" viewBox="0 0 24 24"><path d="M10.8 21h-4.3c-.6 0-1-.4-1-1v-8.6c0-.3.1-.5.3-.7l5.4-5.4c.4-.4 1-.4 1.4 0l.5.5c.3.3.4.7.2 1.1l-1.1 3.1h5.2c.6 0 1 .4 1 1v2.2c0 .2 0 .3-.1.5l-2.9 6.7c-.2.5-.7.8-1.2.8z"/></svg>`;
+        const svgMute     = `<svg class="icon" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`;
+        const svgRestrict = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg>`;
+        const svgBlock    = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm4.9-3.1L5.69 5.69C7.04 4.63 8.74 4 12 4c4.41 0 8 3.59 8 8 0 1.85-.63 3.55-1.69 4.9z"/></svg>`;
+        const svgWarning  = `<svg class="icon" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`;
         
         // UI Helpers
         window.showToast = function(msg) { const toast = document.getElementById('customToast'); toast.innerText = msg; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
@@ -222,40 +227,32 @@
         
         let currentScheduleTime = null; let currentPollOptions = null; let uploadedImageBase64 = "";
 
-        // 💡 ハッシュタグ＆URLパース処理
+        // ハッシュタグ＆URLパース処理
         function parseContent(text) {
-            // HTMLエスケープ
             let safe = (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
             
-            // 1. ハッシュタグの変換 (#〇〇 または ＃〇〇)
             safe = safe.replace(/(^|\s)([#＃][^\s<]+)/g, function(match, space, tag) {
-                const pureTag = tag.replace(/'/g, "\\'"); // シングルクォート対策
+                const pureTag = tag.replace(/'/g, "\\'");
                 return `${space}<span class="hashtag" onclick="executeSearch('${pureTag}', event)">${tag}</span>`;
             });
 
-            // 2. 外部URLの埋め込み処理
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return safe.replace(urlRegex, function(url) {
-                // 画像判定
                 if (url.match(/^https:\/\/image\.pollinations\.ai\//) || url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
                     return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📸 画像を開く</a><br><img src="${url}" style="max-width: 100%; border-radius: 12px; margin-top: 10px; object-fit: cover;">`;
                 }
-                // Googleマップ
                 const mapsMatch = url.match(/maps\.google\.com\/maps\?q=([^&\s]+)/);
                 if (mapsMatch) { return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📍 地図を開く</a><br><iframe width="100%" height="250" src="https://maps.google.com/maps?q=${mapsMatch[1]}&output=embed" frameborder="0" style="border-radius:12px; margin-top:10px;"></iframe>`; }
-                // YouTube
                 const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
                 if (ytMatch) { return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a><br><iframe width="100%" height="315" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allowfullscreen style="border-radius:12px; margin-top:10px;"></iframe>`; }
-                // Twitter/X
                 if (url.match(/(?:twitter\.com|x\.com)\/[a-zA-Z0-9_]+\/status\/[0-9]+/)) {
                     return `<blockquote class="twitter-tweet" data-theme="dark"><a href="${url}"></a></blockquote>`;
                 }
-                // 通常リンク
                 return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a>`;
             });
         }
 
-        // 💡 共通ナビゲーション描画
+        // 共通ナビゲーション描画
         function renderNav(activeTab, title = "ホーム", showBack = false) {
             const backBtn = showBack ? `<button class="back-btn" onclick="window.history.back()">${svgBack}</button>` : '';
             document.getElementById('navContainer').innerHTML = `
@@ -269,7 +266,7 @@
             `;
         }
 
-        // --- ルーティングと画面切り替え ---
+        // ルーティングと画面切り替え
         window.checkRouting = async function() {
             const params = new URLSearchParams(window.location.search);
             const view = params.get('view'); const id = params.get('id'); const user = params.get('user');
@@ -300,7 +297,7 @@
         window.showPostDetail = function(pid) { window.history.pushState({}, '', `?id=${pid}`); checkRouting(); }
         window.addEventListener('popstate', checkRouting);
 
-        // 💡 検索実行
+        // 検索実行
         window.executeSearch = function(keyword, event) {
             if(event) { event.stopPropagation(); event.cancelBubble=true; }
             const kw = keyword.trim(); if(!kw) return;
@@ -310,12 +307,10 @@
         window.renderSearchResults = async function(keyword) {
             const list = document.getElementById('searchResults'); list.innerHTML = '<div style="padding:20px; color:#71767b;">検索中...</div>';
             try {
-                // ※簡易的なローカルフィルタリング（Firebaseのクライアント機能制限のため全件取得してJSで検索）
                 const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
                 const snap = await getDocs(q); let found = 0; list.innerHTML = '';
                 snap.forEach(docSnap => {
                     const post = docSnap.data();
-                    // 検索ロジック（本文またはユーザー名にキーワードが含まれるか）
                     if (post.content && post.content.toLowerCase().includes(keyword.toLowerCase()) || post.userName && post.userName.toLowerCase().includes(keyword.toLowerCase())) {
                         const pid = docSnap.id; found++;
                         list.appendChild(createPostElement(pid, post, post.userId));
@@ -326,7 +321,7 @@
             } catch(e) { list.innerHTML = `<div class="error-box">検索エラー: ${e.message}</div>`; }
         }
 
-        // 💡 新機能：JS AI API (テキスト生成)
+        // JS AI API (テキスト生成)
         let currentTextTargetId = 'postText';
         window.openAITextModal = function(targetId) {
             currentTextTargetId = targetId;
@@ -339,7 +334,6 @@
             
             showToast("⏳ AIが文章を考えています...");
             try {
-                // Pollinationsの無料テキストAPIを使用 (システムプロンプトでSNS風の短い文章を指定)
                 const sysPrompt = "あなたはSNSのユーザーです。以下の内容について、絵文字を少し交えた自然な日本語の短いSNS投稿文（140文字以内）を作成してください。";
                 const url = `https://text.pollinations.ai/prompt/${encodeURIComponent(sysPrompt + "\nお題:" + prompt)}`;
                 
@@ -356,7 +350,7 @@
             }
         }
 
-        // 既存：AI画像生成
+        // AI画像生成
         let currentImgTargetId = 'postText'; let currentGeneratedImgUrl = "";
         window.openAIGenModal = function(targetId) { currentImgTargetId = targetId; document.getElementById('aiPrompt').value = ''; document.getElementById('aiPreviewArea').style.display = 'none'; document.getElementById('aiModal').style.display = 'flex'; }
         window.generateImage = async function() {
@@ -377,7 +371,7 @@
         }
         window.attachGeneratedImage = function() { if (currentGeneratedImgUrl) { const txt = document.getElementById(currentImgTargetId); txt.value += (txt.value ? '\n' : '') + currentGeneratedImgUrl; document.getElementById('aiModal').style.display = 'none'; showToast("画像を添付しました！"); } }
 
-        // 既存：予約・投票・地図のアタッチ系
+        // 予約・投票・地図のアタッチ系
         window.updateAttachmentUI = function() {
             let html = "";
             if (currentScheduleTime) html += `<div style="background:#031018; padding:5px 10px; border-radius:15px; border:1px solid #1d9bf0;">⏳ ${currentScheduleTime.toLocaleString()} 予約済 <span onclick="currentScheduleTime=null; updateAttachmentUI()" style="color:#f91880; cursor:pointer;">✖</span></div>`;
@@ -391,13 +385,13 @@
         let currentMapTargetId=''; window.openMapModal=function(id){ currentMapTargetId=id; document.getElementById('mapKeyword').value=''; document.getElementById('mapModal').style.display='flex'; }
         window.attachMapLink=function(){ const k=document.getElementById('mapKeyword').value.trim(); if(!k)return; document.getElementById(currentMapTargetId).value += ` https://maps.google.com/maps?q=$${encodeURIComponent(k)}`; document.getElementById('mapModal').style.display='none'; showToast("地図を添付しました"); }
 
-        // DOM構築補助（createPostHTMLをエレメントとして返す）
+        // DOM構築補助
         function createPostElement(postId, post, uId) {
             const isMuted = (JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []).includes(uId) || (JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []).includes(uId);
             if (isMuted) { const d=document.createElement('div'); d.style.display='none'; return d; }
 
             const now = new Date(); const dObj = post.createdAt ? post.createdAt.toDate() : new Date(0);
-            if (dObj > now && uId !== myProfile.id) { const d=document.createElement('div'); d.style.display='none'; return d; } // 他人の予約非表示
+            if (dObj > now && uId !== myProfile.id) { const d=document.createElement('div'); d.style.display='none'; return d; }
 
             const safeContent = parseContent(post.content);
             const encodedContent = encodeURIComponent(post.content || "");
@@ -458,7 +452,7 @@
             return div;
         }
 
-        // --- メイン処理 ---
+        // メイン処理
         window.submitPost = async function() {
             const txt = document.getElementById('postText').value.trim(); if (!txt) return;
             let data = { content: txt, createdAt: currentScheduleTime ? currentScheduleTime : new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isRepost: false, views: 0, likes: 0, reposts: 0 };
@@ -489,7 +483,6 @@
                     const post = docSnap.data(); const dObj = post.createdAt ? post.createdAt.toDate() : new Date(0);
                     if (dObj > new Date() && post.userId !== myProfile.id) { area.innerHTML = '<div style="padding:20px;">まだ公開されていません。</div>'; return; }
                     
-                    // DOMを再利用して詳細描画
                     const temp = createPostElement(postId, post, post.userId);
                     temp.style.borderBottom = 'none'; temp.className = '';
                     
@@ -549,7 +542,7 @@
             } catch(e){}
         }
 
-        // --- その他の機能（投票、いいね、メニュー等） ---
+        // その他の機能（投票、いいね、メニュー等）
         window.votePoll = async function(postId, optIdx, ev) {
             if(ev)ev.stopPropagation(); try{ const ref = doc(db, "posts", postId); const snap = await getDoc(ref); if(!snap.exists())return;
             let p = snap.data().poll; p.votes[myProfile.id] = optIdx; await updateDoc(ref, { "poll.votes": p.votes }); checkRouting(); }catch(e){}
