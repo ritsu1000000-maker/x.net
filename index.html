@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 動画専用投稿欄＆全機能搭載版</title>
+    <title>簡易SNS - 返信見やすさ改善＆全機能搭載版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1"></script>
     <style>
@@ -108,6 +108,10 @@
             --indicator-color: #1d9bf0;
             --button-hover-background: #2f3336;
         }
+
+        /* 💡 返信を見やすくするための専用スタイル */
+        .reply-item { padding: 15px; border-bottom: 1px solid #2f3336; display: flex; transition: background-color 0.2s; }
+        .reply-item:hover { background-color: #080808; }
     </style>
 </head>
 <body onclick="closeAllMenus()">
@@ -115,7 +119,6 @@
     <div id="customToast" class="toast"></div>
 
     <div class="container">
-        
         <div id="navContainer"></div>
 
         <div id="homeView" class="view-section">
@@ -274,20 +277,16 @@
         
         let currentScheduleTime = null; let currentPollOptions = null; let uploadedImageBase64 = "";
 
-        // 💡 動画URL入力欄の表示切り替え
         window.toggleVideoInput = function(targetId, event) {
             if (event) { event.stopPropagation(); event.cancelBubble = true; }
             const inputEl = document.getElementById(targetId);
             if (inputEl.style.display === 'none' || inputEl.style.display === '') {
-                inputEl.style.display = 'block';
-                inputEl.focus();
+                inputEl.style.display = 'block'; inputEl.focus();
             } else {
-                inputEl.style.display = 'none';
-                inputEl.value = '';
+                inputEl.style.display = 'none'; inputEl.value = '';
             }
         }
 
-        // 絵文字ピッカーの処理
         let currentEmojiTargetId = '';
         window.openEmojiPicker = function(targetId, event) {
             if (event) { event.stopPropagation(); event.cancelBubble = true; }
@@ -319,7 +318,6 @@
             }
         });
 
-        // ハッシュタグ＆URLパース処理
         function parseContent(text) {
             let safe = (text || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
             
@@ -351,7 +349,6 @@
             });
         }
 
-        // 共通ナビゲーション描画
         function renderNav(activeTab, title = "ホーム", showBack = false) {
             const backBtn = showBack ? `<button class="back-btn" onclick="window.history.back()">${svgBack}</button>` : '';
             document.getElementById('navContainer').innerHTML = `
@@ -365,7 +362,6 @@
             `;
         }
 
-        // ルーティングと画面切り替え
         window.checkRouting = async function() {
             const params = new URLSearchParams(window.location.search);
             const view = params.get('view'); const id = params.get('id'); const user = params.get('user');
@@ -399,7 +395,6 @@
         window.showPostDetail = function(pid) { window.history.pushState({}, '', `?id=${pid}`); checkRouting(); }
         window.addEventListener('popstate', checkRouting);
 
-        // 検索実行
         window.executeSearch = function(keyword, event) {
             if(event) { event.stopPropagation(); event.cancelBubble=true; }
             const kw = keyword.trim(); if(!kw) return;
@@ -423,7 +418,6 @@
             } catch(e) { list.innerHTML = `<div class="error-box">検索エラー: ${e.message}</div>`; }
         }
 
-        // 人気ハッシュタグの読み込み
         window.loadPopularHashtags = async function() {
             const container = document.getElementById('popularHashtagsContainer');
             const list = document.getElementById('popularHashtagsList');
@@ -456,7 +450,6 @@
             } catch (e) { list.innerHTML = `<div style="color:#f91880; font-size:13px;">読み込みエラー: ${e.message}</div>`; }
         }
 
-        // JS AI API (テキスト生成)
         let currentTextTargetId = 'postText';
         window.openAITextModal = function(targetId) {
             currentTextTargetId = targetId;
@@ -480,7 +473,6 @@
             } catch (e) { customAlert("エラー", "文章の生成に失敗しました。"); }
         }
 
-        // AI画像生成
         let currentImgTargetId = 'postText'; let currentGeneratedImgUrl = "";
         window.openAIGenModal = function(targetId) { currentImgTargetId = targetId; document.getElementById('aiPrompt').value = ''; document.getElementById('aiPreviewArea').style.display = 'none'; document.getElementById('aiModal').style.display = 'flex'; }
         window.generateImage = async function() {
@@ -501,7 +493,6 @@
         }
         window.attachGeneratedImage = function() { if (currentGeneratedImgUrl) { const txt = document.getElementById(currentImgTargetId); txt.value += (txt.value ? '\n' : '') + currentGeneratedImgUrl; document.getElementById('aiModal').style.display = 'none'; showToast("画像を添付しました！"); } }
 
-        // 予約・投票・地図のアタッチ系
         window.updateAttachmentUI = function() {
             let html = "";
             if (currentScheduleTime) html += `<div style="background:#031018; padding:5px 10px; border-radius:15px; border:1px solid #1d9bf0;">⏳ ${currentScheduleTime.toLocaleString()} 予約済 <span onclick="currentScheduleTime=null; updateAttachmentUI()" style="color:#f91880; cursor:pointer;">✖</span></div>`;
@@ -515,7 +506,6 @@
         let currentMapTargetId=''; window.openMapModal=function(id){ currentMapTargetId=id; document.getElementById('mapKeyword').value=''; document.getElementById('mapModal').style.display='flex'; }
         window.attachMapLink=function(){ const k=document.getElementById('mapKeyword').value.trim(); if(!k)return; document.getElementById(currentMapTargetId).value += ` https://maps.google.com/maps?q=$${encodeURIComponent(k)}`; document.getElementById('mapModal').style.display='none'; showToast("地図を添付しました"); }
 
-        // DOM構築補助
         function createPostElement(postId, post, uId) {
             const isMuted = (JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []).includes(uId) || (JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []).includes(uId);
             if (isMuted) { const d=document.createElement('div'); d.style.display='none'; return d; }
@@ -582,12 +572,10 @@
             return div;
         }
 
-        // 💡 投稿送信処理（動画URLの結合対応）
         window.submitPost = async function() {
             let txt = document.getElementById('postText').value.trim();
             const videoUrl = document.getElementById('postVideoUrl').value.trim();
             
-            // 動画URLが入力されていれば本文の末尾に追加する
             if (videoUrl) {
                 txt += (txt ? '\n\n' : '') + videoUrl;
             }
@@ -600,7 +588,6 @@
             try {
                 await addDoc(collection(db, "posts"), data);
                 
-                // 入力欄のリセット
                 document.getElementById('postText').value = ''; 
                 document.getElementById('postVideoUrl').value = '';
                 document.getElementById('postVideoUrl').style.display = 'none';
@@ -672,7 +659,6 @@
             } catch(e) {}
         }
 
-        // 💡 返信送信処理（動画URLの結合対応）
         window.submitReply = async function(postId) {
             let txt = document.getElementById('detailReplyText').value.trim();
             const videoUrl = document.getElementById('detailReplyVideoUrl').value.trim();
@@ -694,21 +680,43 @@
             } catch (e) {}
         }
 
+        // 💡 修正箇所：返信部分を見やすく調整
         window.loadReplies = async function(postId) {
             const list = document.getElementById('detailReplyList'); list.innerHTML = '<div style="padding:15px;">読込中...</div>';
             try {
                 const snap = await getDocs(query(collection(db, "replies"), where("postId", "==", postId)));
                 let arr = []; snap.forEach(d => arr.push(d.data())); arr.sort((a,b)=>a.createdAt.toDate()-b.createdAt.toDate());
-                list.innerHTML=''; if(arr.length===0) list.innerHTML='<div style="padding:15px;">返信なし</div>';
+                
+                list.innerHTML = ''; 
+                if (arr.length === 0) { 
+                    list.innerHTML = '<div style="padding:20px; color:#71767b; text-align:center;">返信はまだありません。</div>'; 
+                    return; 
+                }
+                
                 arr.forEach(r => {
-                    const div = document.createElement('div'); div.className='reply-item';
-                    div.innerHTML=`<div class="post-left"><img src="${r.userIcon}" class="user-icon" style="width:38px;height:38px;"></div><div class="post-right"><div class="post-header"><span class="user-name">${r.userName}</span></div><div>${parseContent(r.content)}</div></div>`;
+                    const dateStr = r.createdAt ? r.createdAt.toDate().toLocaleString() : '';
+                    const div = document.createElement('div'); 
+                    div.className = 'reply-item';
+                    
+                    div.innerHTML = `
+                        <div class="post-left" style="margin-right: 12px; cursor: pointer;" onclick="showUserProfile('${r.userId}', event)">
+                            <img src="${r.userIcon}" class="user-icon" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        </div>
+                        <div class="post-right" style="flex: 1;">
+                            <div class="post-header" style="margin-bottom: 4px; display: flex; align-items: center; flex-wrap: wrap;">
+                                <span class="user-name" onclick="showUserProfile('${r.userId}', event)" style="font-weight: bold; font-size: 15px; cursor: pointer;">${r.userName}</span>
+                                <span class="post-time" style="color: #71767b; font-size: 13px; margin-left: 8px;">${dateStr}</span>
+                            </div>
+                            <div class="post-content" style="font-size: 15px; line-height: 1.4; color: #e7e9ea; white-space: pre-wrap; word-break: break-all; margin-bottom: 0;">
+                                ${parseContent(r.content)}
+                            </div>
+                        </div>
+                    `;
                     list.appendChild(div);
                 });
-            } catch(e){}
+            } catch(e) {}
         }
 
-        // その他の機能（投票、いいね、メニュー等）
         window.votePoll = async function(postId, optIdx, ev) {
             if(ev)ev.stopPropagation(); try{ const ref = doc(db, "posts", postId); const snap = await getDoc(ref); if(!snap.exists())return;
             let p = snap.data().poll; p.votes[myProfile.id] = optIdx; await updateDoc(ref, { "poll.votes": p.votes }); checkRouting(); }catch(e){}
