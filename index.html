@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 絵文字＆動画アップロード修正版</title>
+    <title>簡易SNS - 絵文字＆動画完全修正版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1"></script>
     <style>
@@ -59,6 +59,7 @@
         .quote-content { font-size: 14px; color: #e7e9ea; white-space: pre-wrap; line-height: 1.4; word-break: break-all; }
 
         .icon { width: 18px; height: 18px; fill: currentColor; display: inline-block; vertical-align: middle; }
+        .icon-sm { width: 16px; height: 16px; fill: currentColor; display: inline-block; vertical-align: middle; }
 
         .post-actions { display: flex; justify-content: space-between; max-width: 450px; margin-top: 5px; }
         .action-btn { background: none; border: none; color: #71767b; font-size: 13px; cursor: pointer; padding: 6px 10px; border-radius: 15px; display: flex; align-items: center; gap: 6px; transition: background-color 0.2s, color 0.2s; }
@@ -276,40 +277,37 @@
         const svgLocation = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
         const svgTrend    = `<svg class="icon" viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>`;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('btn-file').innerHTML = `${svgImage} 画像/動画`;
-            document.getElementById('btn-video').innerHTML = `${svgVideo} 動画URL`;
-            document.getElementById('btn-ai-text').innerHTML = `${svgRobot} AI文章`;
-            document.getElementById('btn-ai-img').innerHTML = `${svgImage} AI画像`;
-            document.getElementById('btn-schedule').innerHTML = `${svgClock} 予約`;
-            document.getElementById('btn-poll').innerHTML = `${svgPoll} 投票`;
-            document.getElementById('btn-map').innerHTML = `${svgLocation} 地図`;
-            document.getElementById('icon-trend-title').innerHTML = svgTrend;
-            document.getElementById('modal-ai-text-title').innerHTML = `${svgRobot} AI文章アシスト`;
-            document.getElementById('modal-ai-img-title').innerHTML = `${svgImage} AI画像生成`;
-            document.getElementById('modal-schedule-title').innerHTML = `${svgClock} 予約投稿`;
-            document.getElementById('modal-poll-title').innerHTML = `${svgPoll} 投票を作成`;
-            document.getElementById('modal-map-title').innerHTML = `${svgLocation} 場所を検索して添付`;
-        });
-        
-        // 💡 修正箇所：絵文字ピッカーのイベントリスナーをDOMContentLoaded内に移動
-        document.addEventListener('DOMContentLoaded', () => {
-            const picker = document.querySelector('emoji-picker');
-            if (picker) {
-                picker.addEventListener('emoji-click', event => {
-                    const textarea = document.getElementById(currentEmojiTargetId);
-                    if (textarea) {
-                        const start = textarea.selectionStart || textarea.value.length;
-                        const end = textarea.selectionEnd || textarea.value.length;
-                        const text = textarea.value;
-                        textarea.value = text.slice(0, start) + event.detail.unicode + text.slice(end);
-                        textarea.selectionStart = textarea.selectionEnd = start + event.detail.unicode.length;
-                        textarea.focus();
-                    }
-                });
-            }
-        });
+        // 初期化処理（ボタンのアイコン設定と絵文字ピッカーの準備）
+        document.getElementById('btn-file').innerHTML = `${svgImage} 画像/動画`;
+        document.getElementById('btn-video').innerHTML = `${svgVideo} 動画URL`;
+        document.getElementById('btn-ai-text').innerHTML = `${svgRobot} AI文章`;
+        document.getElementById('btn-ai-img').innerHTML = `${svgImage} AI画像`;
+        document.getElementById('btn-schedule').innerHTML = `${svgClock} 予約`;
+        document.getElementById('btn-poll').innerHTML = `${svgPoll} 投票`;
+        document.getElementById('btn-map').innerHTML = `${svgLocation} 地図`;
+        document.getElementById('icon-trend-title').innerHTML = svgTrend;
+        document.getElementById('modal-ai-text-title').innerHTML = `${svgRobot} AI文章アシスト`;
+        document.getElementById('modal-ai-img-title').innerHTML = `${svgImage} AI画像生成`;
+        document.getElementById('modal-schedule-title').innerHTML = `${svgClock} 予約投稿`;
+        document.getElementById('modal-poll-title').innerHTML = `${svgPoll} 投票を作成`;
+        document.getElementById('modal-map-title').innerHTML = `${svgLocation} 場所を検索して添付`;
 
+        // 💡 修正箇所：絵文字ピッカーをスクリプト内ですぐに登録
+        const picker = document.querySelector('emoji-picker');
+        if (picker) {
+            picker.addEventListener('emoji-click', event => {
+                const textarea = document.getElementById(currentEmojiTargetId);
+                if (textarea) {
+                    const start = textarea.selectionStart || textarea.value.length;
+                    const end = textarea.selectionEnd || textarea.value.length;
+                    const text = textarea.value;
+                    textarea.value = text.slice(0, start) + event.detail.unicode + text.slice(end);
+                    textarea.selectionStart = textarea.selectionEnd = start + event.detail.unicode.length;
+                    textarea.focus();
+                }
+            });
+        }
+        
         window.showToast = function(msg) { const toast = document.getElementById('customToast'); toast.innerText = msg; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
         window.customAlert = function(title, msg) { document.getElementById('alertModalTitle').innerText = title || "お知らせ"; document.getElementById('alertModalMessage').innerText = msg; document.getElementById('alertModal').style.display = 'flex'; }
         
@@ -404,7 +402,6 @@
             container.style.left = Math.max(10, rect.left) + 'px';
         }
 
-        // 💡 修正箇所：URLパース処理で拡張子を判定する際にクエリパラメーターを無視するように対応
         function parseContent(text) {
             let safe = (text || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
             
@@ -648,7 +645,7 @@
             return div;
         }
 
-        // 💡 修正箇所：メタデータを付与してアップロードするように変更
+        // 💡 修正箇所：アップロード時のMIMEタイプの付与
         window.submitPost = async function() {
             let txt = document.getElementById('postText').value.trim();
             const videoUrl = document.getElementById('postVideoUrl').value.trim();
@@ -662,7 +659,7 @@
                     const fileName = `media_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
                     const sRef = storageRef(storage, 'uploads/' + fileName);
                     
-                    // 💡 MIMEタイプを明示的に指定してアップロード
+                    // 💡 contentTypeを確実に指定してアップロード
                     const metadata = { contentType: selectedPostFile.type };
                     await uploadBytes(sRef, selectedPostFile, metadata);
                     
@@ -670,7 +667,7 @@
                     txt += (txt ? '\n\n' : '') + fileUrl;
                 } catch (e) {
                     customAlert("アップロードエラー", "メディアのアップロードに失敗しました。\n" + e.message);
-                    return;
+                    return; // エラー時はここで止める
                 }
             }
 
@@ -765,7 +762,7 @@
             } catch(e) {}
         }
 
-        // 💡 返信送信処理（ファイルアップロード対応・メタデータ付与）
+        // 💡 修正箇所：アップロード時のMIMEタイプの付与
         window.submitReply = async function(postId) {
             let txt = document.getElementById('detailReplyText').value.trim();
             const videoUrl = document.getElementById('detailReplyVideoUrl').value.trim();
@@ -779,7 +776,7 @@
                     const fileName = `media_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
                     const sRef = storageRef(storage, 'uploads/' + fileName);
                     
-                    // 💡 MIMEタイプを明示的に指定
+                    // 💡 contentTypeを確実に指定してアップロード
                     const metadata = { contentType: selectedReplyFile.type };
                     await uploadBytes(sRef, selectedReplyFile, metadata);
                     
