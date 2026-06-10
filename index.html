@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 完全修正版</title>
+    <title>簡易SNS - 自動更新＆新着通知搭載版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1"></script>
     <style>
@@ -79,6 +79,11 @@
         .close-modal { background: none; border: none; color: #e7e9ea; font-size: 24px; cursor: pointer; padding: 0 5px; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background-color: #1d9bf0; color: white; padding: 12px 24px; border-radius: 25px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-weight: bold; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .toast.show { opacity: 1; }
+        
+        /* 💡 新着通知（上部）用のスタイル */
+        .top-notification { position: fixed; top: -60px; left: 50%; transform: translateX(-50%); background-color: #1d9bf0; color: white; padding: 12px 24px; border-radius: 25px; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.4); font-weight: bold; transition: top 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); pointer-events: none; display: flex; align-items: center; gap: 8px; }
+        .top-notification.show { top: 20px; }
+
         .search-input-box { display: flex; padding: 15px; border-bottom: 1px solid #2f3336; gap: 10px; }
         .search-input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #2f3336; background: transparent; color: #e7e9ea; font-size: 16px; outline: none; }
         .search-input:focus { border-color: #1d9bf0; }
@@ -94,7 +99,10 @@
     </style>
 </head>
 <body onclick="closeAllMenus()">
+
     <div id="customToast" class="toast"></div>
+    
+    <div id="topNotification" class="top-notification"></div>
 
     <div class="layout-wrapper">
         <div class="container">
@@ -225,9 +233,7 @@
     </div>
 
     <div id="scheduleModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span style="display:flex; align-items:center; gap:6px;" id="modal-schedule-title"></span><button class="close-modal" onclick="document.getElementById('scheduleModal').style.display='none'">×</button></div><input type="datetime-local" id="scheduleInput" style="width:100%; padding:12px; border:1px solid #2f3336; border-radius:8px; font-size:16px; outline:none; background:#000; color:#e7e9ea; box-sizing:border-box; color-scheme:dark;"><button class="post-btn" onclick="attachSchedule()" style="width:100%; margin-top:15px;">時間を設定する</button></div></div>
-    
     <div id="pollModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span style="display:flex; align-items:center; gap:6px;" id="modal-poll-title"></span><button class="close-modal" onclick="document.getElementById('pollModal').style.display='none'">×</button></div><input type="text" id="pollOpt1" placeholder="選択肢 1" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #2f3336; border-radius:8px; background:transparent; color:#e7e9ea;"><input type="text" id="pollOpt2" placeholder="選択肢 2" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #2f3336; border-radius:8px; background:transparent; color:#e7e9ea;"><input type="text" id="pollOpt3" placeholder="選択肢 3 (任意)" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #2f3336; border-radius:8px; background:transparent; color:#e7e9ea;"><input type="text" id="pollOpt4" placeholder="選択肢 4 (任意)" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #2f3336; border-radius:8px; background:transparent; color:#e7e9ea;"><button class="post-btn" onclick="attachPoll()" style="width:100%;">投票を設定する</button></div></div>
-    
     <div id="mapModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span style="display:flex; align-items:center; gap:6px;" id="modal-map-title"></span><button class="close-modal" onclick="document.getElementById('mapModal').style.display='none'">×</button></div><input type="text" id="mapKeyword" placeholder="例: 東京駅" style="width:100%; padding:12px; border:1px solid #2f3336; border-radius:8px; background:transparent; color:#e7e9ea;"><button class="post-btn" onclick="attachMapLink()" style="width:100%; margin-top:10px;">地図を添付する</button></div></div>
 
     <div id="repostModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>リポスト / 引用</span><button class="close-modal" onclick="closeRepostModal()">×</button></div><textarea id="quoteText" rows="3" placeholder="コメントを追加して引用..." style="width:100%; border:none; background:transparent; color:#e7e9ea; resize:none; outline:none; font-size:16px;"></textarea><div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
@@ -242,9 +248,11 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDoc, getDocs, doc, query, orderBy, where, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+        // 💡 修正箇所：自動更新のために onSnapshot を追加インポート
+        import { getFirestore, collection, addDoc, getDoc, getDocs, doc, query, orderBy, where, updateDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
         import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-storage.js";
 
+        // SVG Icons
         const svgReply    = `<svg class="icon" viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg>`;
         const svgRepost   = `<svg class="icon" viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>`;
         const svgLike     = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
@@ -280,7 +288,9 @@
         document.getElementById('modal-poll-title').innerHTML = `${svgPoll} 投票を作成`;
         document.getElementById('modal-map-title').innerHTML = `${svgLocation} 場所を検索して添付`;
 
-        // 💡 絵文字ピッカーの初期化と確実な登録
+        // 💡 グローバル変数として監視用リスナーを準備（自動更新のため）
+        window.unsubscribePosts = null;
+
         const picker = document.querySelector('emoji-picker');
         if (picker) {
             picker.addEventListener('emoji-click', event => {
@@ -295,8 +305,16 @@
                 }
             });
         }
-
+        
         window.showToast = function(msg) { const toast = document.getElementById('customToast'); toast.innerText = msg; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
+        // 💡 上部の通知用
+        window.showTopNotification = function(msg) { 
+            const topAlert = document.getElementById('topNotification'); 
+            topAlert.innerHTML = `${svgRobot} ` + msg; 
+            topAlert.classList.add('show'); 
+            setTimeout(() => { topAlert.classList.remove('show'); }, 4000); 
+        }
+
         window.customAlert = function(title, msg) { document.getElementById('alertModalTitle').innerText = title || "お知らせ"; document.getElementById('alertModalMessage').innerText = msg; document.getElementById('alertModal').style.display = 'flex'; }
         window.closeAllMenus = function() { 
             document.querySelectorAll('.dropdown-menu').forEach(menu => { menu.style.display = 'none'; }); 
@@ -391,7 +409,6 @@
                 const pureTag = tag.replace(/'/g, "\\'");
                 return `${space}<span class="hashtag" onclick="executeSearch('${pureTag}', event)">${tag}</span>`;
             });
-
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return safe.replace(urlRegex, function(url) {
                 const urlWithoutQuery = url.split('?')[0];
@@ -445,7 +462,13 @@
             `;
         }
 
+        // 💡 画面遷移時にリスナーをリセット
         window.checkRouting = async function() {
+            if (window.unsubscribePosts) {
+                window.unsubscribePosts();
+                window.unsubscribePosts = null;
+            }
+
             const params = new URLSearchParams(window.location.search);
             const view = params.get('view'); const id = params.get('id'); const user = params.get('user');
             document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
@@ -466,9 +489,10 @@
             } else if (view === 'settings') {
                 renderNav('settings', '設定'); document.getElementById('settingsView').style.display = 'block'; renderSettings();
             } else {
-                renderNav('home', 'ホーム'); document.getElementById('homeView').style.display = 'block'; await renderPosts();
+                renderNav('home', 'ホーム'); document.getElementById('homeView').style.display = 'block'; window.renderPosts();
             }
         }
+        
         window.showHome = function() { window.history.pushState({}, '', window.location.pathname); checkRouting(); }
         window.showSearch = function() { window.history.pushState({}, '', '?view=search'); checkRouting(); }
         window.showNotifications = function() { window.history.pushState({}, '', '?view=notifications'); checkRouting(); }
@@ -505,7 +529,6 @@
             const list = document.getElementById('popularHashtagsList');
             list.innerHTML = '<div style="color:#71767b; font-size:13px;">読み込み中...</div>';
             container.style.display = 'block';
-
             try {
                 const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
                 const snap = await getDocs(q);
@@ -521,7 +544,6 @@
                 });
                 const sortedTags = Object.entries(hashtagCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
                 if (sortedTags.length === 0) { list.innerHTML = '<div style="color:#71767b; font-size:13px;">トレンドはまだありません。</div>'; return; }
-
                 list.innerHTML = '';
                 sortedTags.forEach(([tag, count]) => {
                     const div = document.createElement('div'); div.className = 'trend-tag';
@@ -548,16 +570,15 @@
                         postTags.forEach(tag => { hashtagCounts[tag] = (hashtagCounts[tag] || 0) + 1; });
                     }
                 });
-
                 const sortedTags = Object.entries(hashtagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
                 if (sortedTags.length === 0) {
                     list.innerHTML = '<div style="color:#71767b; font-size:14px;">トレンドはまだありません。</div>';
                     return;
                 }
-
                 list.innerHTML = '';
                 sortedTags.forEach(([tag, count], index) => {
-                    const div = document.createElement('div'); div.className = 'sidebar-trend-item';
+                    const div = document.createElement('div');
+                    div.className = 'sidebar-trend-item';
                     div.onclick = () => { window.history.pushState({}, '', `?view=search&q=${encodeURIComponent(tag)}`); checkRouting(); };
                     div.innerHTML = `
                         <div class="sidebar-trend-rank">トレンド ${index + 1}</div>
@@ -695,30 +716,30 @@
             return div;
         }
 
-        // 💡 修正箇所：ファイルのアップロード処理（タイムアウト付き）
+        // 💡 投稿・ファイルアップロード処理
         window.submitPost = async function() {
             let txt = document.getElementById('postText').value.trim();
             const videoUrl = document.getElementById('postVideoUrl').value.trim();
             if (videoUrl) { txt += (txt ? '\n\n' : '') + videoUrl; }
             if (!txt && !selectedPostFile) return;
 
+            // タイムアウト上限撤廃（時間無制限で待機）
             if (selectedPostFile) {
-                showToast("⏳ メディアをアップロード中... (最大15秒)");
+                showToast("⏳ アップロード中... (動画の場合は時間がかかります)");
                 try {
                     const ext = selectedPostFile.name.split('.').pop() || 'png';
                     const fileName = `media_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
                     const sRef = storageRef(storage, 'uploads/' + fileName);
                     
                     const metadata = { contentType: selectedPostFile.type };
-                    const uploadPromise = uploadBytes(sRef, selectedPostFile, metadata);
-                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("タイムアウト：FirebaseのStorage(保存)設定が許可されていないか、ファイルが大きすぎます。")), 15000));
                     
-                    await Promise.race([uploadPromise, timeoutPromise]);
+                    // 制限時間を設けずに完全にアップロードを待つ
+                    await uploadBytes(sRef, selectedPostFile, metadata);
                     const fileUrl = await getDownloadURL(sRef);
                     txt += (txt ? '\n\n' : '') + fileUrl;
                 } catch (e) {
-                    customAlert("アップロードエラー", "失敗しました。\n" + e.message);
-                    return;
+                    customAlert("アップロードエラー", "Firebase Storage(保存)の権限設定が許可されていない可能性があります。\n詳細: " + e.message);
+                    return; 
                 }
             }
 
@@ -733,18 +754,73 @@
                 clearPostFile(); 
                 
                 showToast(currentScheduleTime ? "予約しました！" : "ポストしました！");
-                currentScheduleTime = null; currentPollOptions = null; updateAttachmentUI(); renderPosts();
+                currentScheduleTime = null; currentPollOptions = null; updateAttachmentUI(); 
+                loadSidebarTrends();
             } catch (e) { customAlert("エラー", e.message); }
         }
 
-        window.renderPosts = async function() {
-            const tl = document.getElementById('timeline'); tl.innerHTML = '<div style="padding:15px; color:#71767b;">通信中...</div>';
-            try {
-                const snap = await getDocs(query(collection(db, "posts"), orderBy("createdAt", "desc")));
-                tl.innerHTML = ''; if (snap.empty) { tl.innerHTML = '<div style="padding:15px; color:#71767b;">まだ投稿がありません。</div>'; return; }
-                snap.forEach(docSnap => tl.appendChild(createPostElement(docSnap.id, docSnap.data(), docSnap.data().userId)));
-                setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
-            } catch (e) { tl.innerHTML = `<div class="error-box">エラー: ${e.message}</div>`; }
+        // 💡 リアルタイム自動更新（onSnapshot）の組み込み
+        window.renderPosts = function() {
+            const tl = document.getElementById('timeline');
+            if (!window.unsubscribePosts) {
+                tl.innerHTML = '<div style="padding:15px; color:#71767b;">通信中...</div>';
+            }
+            if (window.unsubscribePosts) {
+                window.unsubscribePosts();
+            }
+
+            const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+            let isFirstLoad = true;
+
+            window.unsubscribePosts = onSnapshot(q, (snapshot) => {
+                if (isFirstLoad) {
+                    tl.innerHTML = '';
+                    if (snapshot.empty) { 
+                        tl.innerHTML = '<div id="empty-timeline-msg" style="padding:15px; color:#71767b;">まだ投稿がありません。</div>'; 
+                    } else {
+                        snapshot.forEach(docSnap => tl.appendChild(createPostElement(docSnap.id, docSnap.data(), docSnap.data().userId)));
+                    }
+                    setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
+                    isFirstLoad = false;
+                } else {
+                    let hasNewPost = false;
+                    snapshot.docChanges().forEach((change) => {
+                        const post = change.doc.data();
+                        const pid = change.doc.id;
+                        
+                        if (change.type === "added") {
+                            const emptyMsg = document.getElementById('empty-timeline-msg');
+                            if (emptyMsg) emptyMsg.remove();
+                            
+                            const newEl = createPostElement(pid, post, post.userId);
+                            if (newEl.style.display !== 'none') {
+                                tl.insertBefore(newEl, tl.firstChild);
+                                hasNewPost = true;
+                                if (post.userId !== myProfile.id) {
+                                    showTopNotification("✨ 新着ポストが投稿されました！");
+                                }
+                            }
+                        }
+                        if (change.type === "modified") {
+                            const oldEl = document.getElementById(`postDom-${pid}`);
+                            if (oldEl) {
+                                const newEl = createPostElement(pid, post, post.userId);
+                                tl.replaceChild(newEl, oldEl);
+                            }
+                        }
+                        if (change.type === "removed") {
+                            const oldEl = document.getElementById(`postDom-${pid}`);
+                            if (oldEl) oldEl.remove();
+                        }
+                    });
+                    
+                    if (hasNewPost) {
+                        setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
+                    }
+                }
+            }, (error) => {
+                tl.innerHTML = `<div class="error-box">エラー: ${error.message}</div>`;
+            });
         }
 
         window.renderPostDetail = async function(postId) {
@@ -762,6 +838,7 @@
                     const likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
                     const isLiked = likedPosts.includes(postId);
                     const likeStyle = isLiked ? 'color: #f91880;' : '';
+
                     const tempHtml = temp.innerHTML.replace(`id="like-count-${postId}"`, `id="detail-like-count-${postId}"`);
 
                     area.innerHTML = `
@@ -812,6 +889,7 @@
             } catch(e) {}
         }
 
+        // 💡 返信もタイムアウトなしでアップロード
         window.submitReply = async function(postId) {
             let txt = document.getElementById('detailReplyText').value.trim();
             const videoUrl = document.getElementById('detailReplyVideoUrl').value.trim();
@@ -819,31 +897,31 @@
             if (!txt && !selectedReplyFile) return;
 
             if (selectedReplyFile) {
-                showToast("⏳ メディアをアップロード中... (最大15秒)");
+                showToast("⏳ アップロード中... (動画の場合は時間がかかります)");
                 try {
                     const ext = selectedReplyFile.name.split('.').pop() || 'png';
                     const fileName = `media_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
                     const sRef = storageRef(storage, 'uploads/' + fileName);
+                    
                     const metadata = { contentType: selectedReplyFile.type };
+                    await uploadBytes(sRef, selectedReplyFile, metadata);
                     
-                    const uploadPromise = uploadBytes(sRef, selectedReplyFile, metadata);
-                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("タイムアウト：FirebaseのStorage(保存)設定が許可されていないか、ファイルが大きすぎます。")), 15000));
-                    
-                    await Promise.race([uploadPromise, timeoutPromise]);
                     const fileUrl = await getDownloadURL(sRef);
                     txt += (txt ? '\n\n' : '') + fileUrl;
                 } catch (e) {
-                    customAlert("アップロードエラー", "失敗しました。\n" + e.message);
+                    customAlert("アップロードエラー", "Firebase Storage(保存)の権限設定が許可されていない可能性があります。\n詳細: " + e.message);
                     return;
                 }
             }
 
             try { 
                 await addDoc(collection(db, "replies"), { postId: postId, content: txt, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, likes: 0 });
+                
                 document.getElementById('detailReplyText').value = ''; 
                 document.getElementById('detailReplyVideoUrl').value = ''; 
                 document.getElementById('detailReplyVideoUrl').style.display = 'none';
                 clearReplyFile();
+
                 loadReplies(postId); showToast("返信しました！");
             } catch (e) {}
         }
@@ -866,14 +944,16 @@
                     const dObj = r.createdAt ? r.createdAt.toDate() : new Date();
                     const timeAgo = formatTimeAgo(dObj);
                     const safeUid = r.userId || "unknown";
+                    
                     const isLikedReply = likedReplies.includes(r.id);
                     const likeStyle = isLikedReply ? 'color: #f91880;' : '';
 
                     const div = document.createElement('div'); 
                     div.className = 'reply-item';
+                    
                     div.innerHTML = `
                         <div class="post-left" style="cursor: pointer;" onclick="showUserProfile('${safeUid}', event)">
-                            <img src="${r.userIcon || defaultIcon}" class="user-icon">
+                            <img src="${r.userIcon || defaultIcon}" class="user-icon" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                         </div>
                         <div class="post-right">
                             <div class="post-header">
@@ -900,9 +980,11 @@
         window.likePost = async function(pid, uid, ev) {
             if(ev)ev.stopPropagation(); 
             if(uid === myProfile.id){ customAlert("","自分のポストはいいねできません"); return;} 
+            
             let likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
             const isLiked = likedPosts.includes(pid);
             const docRef = doc(db, "posts", pid);
+            
             try {
                 if (isLiked) {
                     await updateDoc(docRef, {likes: increment(-1)});
@@ -912,7 +994,10 @@
                     await updateDoc(docRef, {likes: increment(1)});
                     likedPosts.push(pid);
                     localStorage.setItem('mySNS_likedPosts', JSON.stringify(likedPosts));
+                    await addDoc(collection(db, "notifications"), { type: "like", postId: pid, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: uid, createdAt: new Date() });
                 }
+
+                // onSnapshotがDOMを上書きするため、一時的な見た目の更新でOK
                 const countSpans = document.querySelectorAll(`#like-count-${pid}, #detail-like-count-${pid}`);
                 countSpans.forEach(span => {
                     let current = parseInt(span.innerText) || 0;
@@ -928,6 +1013,7 @@
             let likedReplies = JSON.parse(localStorage.getItem('mySNS_likedReplies')) || [];
             const isLiked = likedReplies.includes(replyId);
             const docRef = doc(db, "replies", replyId);
+
             try{ 
                 if (isLiked) {
                     await updateDoc(docRef, {likes: increment(-1)}); 
@@ -938,6 +1024,7 @@
                     likedReplies.push(replyId);
                     localStorage.setItem('mySNS_likedReplies', JSON.stringify(likedReplies));
                 }
+                
                 const span = document.getElementById(`reply-like-${replyId}`);
                 if (span) {
                     let current = parseInt(span.innerText) || 0;
@@ -950,7 +1037,7 @@
 
         window.votePoll = async function(postId, optIdx, ev) {
             if(ev)ev.stopPropagation(); try{ const ref = doc(db, "posts", postId); const snap = await getDoc(ref); if(!snap.exists())return;
-            let p = snap.data().poll; p.votes[myProfile.id] = optIdx; await updateDoc(ref, { "poll.votes": p.votes }); checkRouting(); }catch(e){}
+            let p = snap.data().poll; p.votes[myProfile.id] = optIdx; await updateDoc(ref, { "poll.votes": p.votes }); }catch(e){}
         }
         let currentRepId=""; window.repostPost=function(pid,ev){if(ev)ev.stopPropagation(); currentRepId=pid; document.getElementById('repostModal').style.display='flex';}
         window.submitRepost=async function(isQuote){
@@ -960,7 +1047,7 @@
                 let d={content:isQuote?txt:orig.content, createdAt:new Date(), userId:myProfile.id, userName:myProfile.name, userIcon:myProfile.icon, views:0,likes:0,reposts:0};
                 if(isQuote){ d.isQuoteRepost=true; d.originalPost={postId:currentRepId, userName:orig.userName, userIcon:orig.userIcon, content:orig.content}; }
                 else { d.isRepost=true; d.repostedBy=myProfile.name; }
-                await addDoc(collection(db,"posts"),d); document.getElementById('repostModal').style.display='none'; showToast("リポストしました"); checkRouting();
+                await addDoc(collection(db,"posts"),d); document.getElementById('repostModal').style.display='none'; showToast("リポストしました"); 
             }catch(e){}
         }
         window.closeRepostModal=function(){document.getElementById('repostModal').style.display='none';currentRepId="";}
@@ -974,24 +1061,54 @@
         window.sharePost=function(pid,enc,ev){ if(ev)ev.stopPropagation(); closeAllMenus(); navigator.clipboard.writeText(`${decodeURIComponent(enc)}\n${window.location.origin}${window.location.pathname}?id=${pid}`).then(()=>showToast("コピーしました"));}
 
         window.updateMyIconDisplays = function(){ document.querySelectorAll('.my-current-icon').forEach(i=>i.src=myProfile.icon); }
-        window.renderSettings=function(){ document.getElementById('profileName').value=myProfile.name; document.getElementById('profileIconPreview').src=myProfile.icon; renderMuteBlockList(); }
+        window.renderSettings=function(){ 
+            document.getElementById('profileName').value=myProfile.name; 
+            document.getElementById('profileIconPreview').src=myProfile.icon; 
+            renderMuteBlockList();
+        }
         window.saveSettings=function(){ myProfile.name=document.getElementById('profileName').value; const u=document.getElementById('profileIcon').value; if(u)myProfile.icon=u; localStorage.setItem('mySNS_profile',JSON.stringify(myProfile)); showToast("保存しました"); checkRouting(); }
 
         window.renderMuteBlockList = function() {
             const muted = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
             const blocked = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
-            let html = `<div style="font-weight:bold; margin-bottom:10px;">🔇 ミュート中のユーザー (${muted.length})</div>`;
+            let html = '';
+
+            html += `<div style="font-weight:bold; margin-bottom:10px;">🔇 ミュート中のユーザー (${muted.length})</div>`;
             if (muted.length === 0) html += `<div style="color:#71767b; font-size:14px; margin-bottom:20px;">なし</div>`;
-            muted.forEach(uid => { const safeUid = uid || ""; html += `<div class="manage-list-item"><span>@${safeUid.substring(0,8)}...</span><button onclick="unmuteUser('${safeUid}')" class="toolbar-btn">解除</button></div>`; });
+            muted.forEach(uid => {
+                const safeUid = uid || "";
+                html += `<div class="manage-list-item"><span>@${safeUid.substring(0,8)}...</span><button onclick="unmuteUser('${safeUid}')" class="toolbar-btn">解除</button></div>`;
+            });
+
             html += `<div style="font-weight:bold; margin-top:20px; margin-bottom:10px;">🚫 ブロック中のユーザー (${blocked.length})</div>`;
             if (blocked.length === 0) html += `<div style="color:#71767b; font-size:14px; margin-bottom:20px;">なし</div>`;
-            blocked.forEach(uid => { const safeUid = uid || ""; html += `<div class="manage-list-item"><span>@${safeUid.substring(0,8)}...</span><button onclick="unblockUser('${safeUid}')" class="toolbar-btn">解除</button></div>`; });
+            blocked.forEach(uid => {
+                const safeUid = uid || "";
+                html += `<div class="manage-list-item"><span>@${safeUid.substring(0,8)}...</span><button onclick="unblockUser('${safeUid}')" class="toolbar-btn">解除</button></div>`;
+            });
+
             document.getElementById('muteBlockManageArea').innerHTML = html;
         }
 
-        window.unmuteUser = function(uid) { let l = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; l = l.filter(id => id !== uid); localStorage.setItem('mySNS_mutedUsers', JSON.stringify(l)); showToast("ミュートを解除しました"); renderMuteBlockList(); checkRouting(); }
-        window.unblockUser = function(uid) { let l = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; l = l.filter(id => id !== uid); localStorage.setItem('mySNS_blockedUsers', JSON.stringify(l)); showToast("ブロックを解除しました"); renderMuteBlockList(); checkRouting(); }
+        window.unmuteUser = function(uid) {
+            let l = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
+            l = l.filter(id => id !== uid);
+            localStorage.setItem('mySNS_mutedUsers', JSON.stringify(l));
+            showToast("ミュートを解除しました");
+            renderMuteBlockList();
+            checkRouting();
+        }
 
+        window.unblockUser = function(uid) {
+            let l = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
+            l = l.filter(id => id !== uid);
+            localStorage.setItem('mySNS_blockedUsers', JSON.stringify(l));
+            showToast("ブロックを解除しました");
+            renderMuteBlockList();
+            checkRouting();
+        }
+
+        // Initialize App
         checkRouting();
     </script>
 </body>
