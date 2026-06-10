@@ -1123,6 +1123,48 @@
         window.sharePost=function(pid,enc,ev){ if(ev)ev.stopPropagation(); closeAllMenus(); navigator.clipboard.writeText(`${decodeURIComponent(enc)}\n${window.location.origin}${window.location.pathname}?id=${pid}`).then(()=>showToast("コピーしました"));}
 
         window.updateMyIconDisplays = function(){ document.querySelectorAll('.my-current-icon').forEach(i=>i.src=myProfile.icon); }
+
+        // 💡 プロフィール画像のアップロード機能
+        window.handleImageUpload = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // ファイルサイズのチェック (例: 最大5MB)
+            if (file.size > 5 * 1024 * 1024) { 
+                customAlert("エラー", "ファイルサイズが大きすぎます(最大5MB)"); 
+                return; 
+            }
+
+            showToast("⏳ 画像をアップロード中...");
+            
+            try {
+                // 拡張子を取得し、一意のファイル名を生成
+                const ext = file.name.split('.').pop() || 'png';
+                const fileName = `profile_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+                
+                // Firebase Storageの保存先リファレンスを作成 (profilesフォルダに保存)
+                const sRef = storageRef(storage, 'profiles/' + fileName);
+                const metadata = { contentType: file.type };
+                
+                // Storageへアップロード
+                await uploadBytes(sRef, file, metadata);
+                
+                // アップロードした画像のURLを取得
+                const fileUrl = await getDownloadURL(sRef);
+                
+                // プレビュー画像と、画像URL入力欄に反映
+                document.getElementById('profileIconPreview').src = fileUrl;
+                document.getElementById('profileIcon').value = fileUrl;
+                
+                showToast("✨ アップロード完了！「設定を保存」を押してください。");
+            } catch (e) {
+                customAlert("アップロードエラー", "画像のアップロードに失敗しました。\n詳細: " + e.message);
+            } finally {
+                // 同じファイルを連続で選択できるようにinputの値をリセット
+                event.target.value = '';
+            }
+        }
+
         window.renderSettings=function(){ 
             document.getElementById('profileName').value=myProfile.name; 
             document.getElementById('profileIconPreview').src=myProfile.icon; 
