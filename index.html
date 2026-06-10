@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - エラー修正＆全機能搭載版</title>
+    <title>簡易SNS - いいね取り消し対応＆全機能搭載版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1"></script>
     <style>
@@ -176,6 +176,10 @@
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <label style="font-weight: bold; color: #71767b;">ニックネーム</label>
                     <input type="text" id="profileName" style="padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #e7e9ea;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-weight: bold; color: #71767b;">または画像のURL</label>
+                    <input type="text" id="profileIcon" style="padding: 12px; border: 1px solid #2f3336; border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: #e7e9ea;" oninput="document.getElementById('profileIconPreview').src = this.value">
                 </div>
                 <button class="post-btn" onclick="saveSettings()">設定を保存</button>
 
@@ -469,7 +473,7 @@
         let currentMapTargetId=''; window.openMapModal=function(id){ currentMapTargetId=id; document.getElementById('mapKeyword').value=''; document.getElementById('mapModal').style.display='flex'; }
         window.attachMapLink=function(){ const k=document.getElementById('mapKeyword').value.trim(); if(!k)return; document.getElementById(currentMapTargetId).value += ` https://maps.google.com/maps?q=$${encodeURIComponent(k)}`; document.getElementById('mapModal').style.display='none'; showToast("地図を添付しました"); }
 
-        // DOM Constructor (エラー回避処理を追加)
+        // DOM Constructor (エラー回避処理を追加 ＆ いいね色の反映)
         function createPostElement(postId, post, uId) {
             const safeUid = uId || "";
             const isMuted = (JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []).includes(safeUid) || (JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []).includes(safeUid);
@@ -506,6 +510,11 @@
             const schedLabel = dObj > now ? `<span style="color:#1d9bf0; font-size:12px; margin-left:8px; border:1px solid #1d9bf0; padding:2px 4px; border-radius:4px;">予約投稿</span>` : "";
             const timeAgo = formatTimeAgo(dObj);
 
+            // 💡 自分がいいねしたかどうかの判定
+            const likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
+            const isLiked = likedPosts.includes(postId);
+            const likeStyle = isLiked ? 'color: #f91880;' : '';
+
             const div = document.createElement('div'); div.className = 'post'; div.id = `postDom-${postId}`; div.setAttribute('onclick', `showPostDetail('${postId}')`);
             div.innerHTML = `
                 <div class="post-right" style="padding-left:0; width:100%;">
@@ -529,7 +538,7 @@
                             <div class="post-actions">
                                 <button class="action-btn reply">${svgReply} <span class="count-span"></span></button>
                                 <button class="action-btn repost" onclick="repostPost('${postId}', event)">${svgRepost} <span class="count-span" id="repost-count-${postId}">${post.reposts>0?post.reposts:''}</span></button>
-                                <button class="action-btn like" onclick="likePost('${postId}', '${safeUid}', event)">${svgLike} <span class="count-span" id="like-count-${postId}">${post.likes>0?post.likes:''}</span></button>
+                                <button class="action-btn like" style="${likeStyle}" onclick="likePost('${postId}', '${safeUid}', event)">${svgLike} <span class="count-span" id="like-count-${postId}">${post.likes>0?post.likes:''}</span></button>
                                 <div class="action-btn view">${svgView} <span class="count-span">${post.views>0?post.views:''}</span></div>
                             </div>
                         </div>
@@ -582,8 +591,16 @@
                     const temp = createPostElement(postId, post, post.userId);
                     temp.style.borderBottom = 'none'; temp.className = '';
                     
+                    // 💡 自分がいいねしたかどうかの判定（詳細画面用）
+                    const likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
+                    const isLiked = likedPosts.includes(postId);
+                    const likeStyle = isLiked ? 'color: #f91880;' : '';
+
+                    // temp の中にある like ボタンの ID を書き換えて色も反映
+                    const tempHtml = temp.innerHTML.replace(`id="like-count-${postId}"`, `id="detail-like-count-${postId}"`);
+
                     area.innerHTML = `
-                        <div style="padding:15px; border-bottom: 1px solid #2f3336;">${temp.innerHTML}</div>
+                        <div style="padding:15px; border-bottom: 1px solid #2f3336;">${tempHtml}</div>
                         <div class="detail-reply-box">
                             <div><img src="${myProfile.icon}" class="user-icon"></div>
                             <div class="post-box-right">
@@ -639,7 +656,6 @@
             } catch (e) {}
         }
 
-        // 💡 修正箇所：エラー回避のため r.userId をチェック
         window.loadReplies = async function(postId) {
             const list = document.getElementById('detailReplyList'); list.innerHTML = '<div style="padding:15px;">読込中...</div>';
             try {
@@ -652,10 +668,17 @@
                     return; 
                 }
                 
+                const likedReplies = JSON.parse(localStorage.getItem('mySNS_likedReplies')) || [];
+
                 arr.forEach(r => {
                     const dObj = r.createdAt ? r.createdAt.toDate() : new Date();
                     const timeAgo = formatTimeAgo(dObj);
-                    const safeUid = r.userId || "unknown"; // 💡 ここでundefinedを回避
+                    const safeUid = r.userId || "unknown";
+                    
+                    // 💡 返信に対するいいね判定
+                    const isLikedReply = likedReplies.includes(r.id);
+                    const likeStyle = isLikedReply ? 'color: #f91880;' : '';
+
                     const div = document.createElement('div'); 
                     div.className = 'reply-item';
                     
@@ -674,7 +697,7 @@
                             <div class="post-actions" style="margin-top: 10px;">
                                 <button class="action-btn reply">${svgReply}</button>
                                 <button class="action-btn repost">${svgRepost}</button>
-                                <button class="action-btn like" onclick="likeReply('${r.id}', event)">${svgLike} <span class="count-span" id="reply-like-${r.id}">${r.likes>0?r.likes:''}</span></button>
+                                <button class="action-btn like" style="${likeStyle}" onclick="likeReply('${r.id}', event)">${svgLike} <span class="count-span" id="reply-like-${r.id}">${r.likes>0?r.likes:''}</span></button>
                                 <div class="action-btn view">${svgView}</div>
                                 <button class="action-btn share">${svgShare}</button>
                             </div>
@@ -685,12 +708,65 @@
             } catch(e) {}
         }
 
+        // 💡 修正箇所：いいねをトグル（切り替え）できるように変更
+        window.likePost = async function(pid, uid, ev) {
+            if(ev)ev.stopPropagation(); 
+            if(uid === myProfile.id){ customAlert("","自分のポストはいいねできません"); return;} 
+            
+            let likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
+            const isLiked = likedPosts.includes(pid);
+            const docRef = doc(db, "posts", pid);
+            
+            try {
+                if (isLiked) {
+                    // いいねを取り消す
+                    await updateDoc(docRef, {likes: increment(-1)});
+                    likedPosts = likedPosts.filter(id => id !== pid);
+                    localStorage.setItem('mySNS_likedPosts', JSON.stringify(likedPosts));
+                } else {
+                    // いいねをする
+                    await updateDoc(docRef, {likes: increment(1)});
+                    likedPosts.push(pid);
+                    localStorage.setItem('mySNS_likedPosts', JSON.stringify(likedPosts));
+                    await addDoc(collection(db, "notifications"), { type: "like", postId: pid, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: uid, createdAt: new Date() });
+                }
+
+                // 画面上の数字と色をその場で更新
+                const countSpans = document.querySelectorAll(`#like-count-${pid}, #detail-like-count-${pid}`);
+                countSpans.forEach(span => {
+                    let current = parseInt(span.innerText) || 0;
+                    let newVal = isLiked ? Math.max(0, current - 1) : current + 1;
+                    span.innerText = newVal > 0 ? newVal : '';
+                    span.parentElement.style.color = isLiked ? '' : '#f91880';
+                });
+            } catch(e){}
+        }
+
+        // 💡 修正箇所：返信のいいねをトグルできるように変更
         window.likeReply = async function(replyId, ev) {
             if(ev)ev.stopPropagation(); 
+            let likedReplies = JSON.parse(localStorage.getItem('mySNS_likedReplies')) || [];
+            const isLiked = likedReplies.includes(replyId);
+            const docRef = doc(db, "replies", replyId);
+
             try{ 
-                await updateDoc(doc(db,"replies",replyId), {likes:increment(1)}); 
+                if (isLiked) {
+                    await updateDoc(docRef, {likes: increment(-1)}); 
+                    likedReplies = likedReplies.filter(id => id !== replyId);
+                    localStorage.setItem('mySNS_likedReplies', JSON.stringify(likedReplies));
+                } else {
+                    await updateDoc(docRef, {likes: increment(1)}); 
+                    likedReplies.push(replyId);
+                    localStorage.setItem('mySNS_likedReplies', JSON.stringify(likedReplies));
+                }
+                
                 const span = document.getElementById(`reply-like-${replyId}`);
-                if (span) span.innerText = (parseInt(span.innerText) || 0) + 1;
+                if (span) {
+                    let current = parseInt(span.innerText) || 0;
+                    let newVal = isLiked ? Math.max(0, current - 1) : current + 1;
+                    span.innerText = newVal > 0 ? newVal : '';
+                    span.parentElement.style.color = isLiked ? '' : '#f91880';
+                }
             } catch(e){} 
         }
 
@@ -699,7 +775,6 @@
             if(ev)ev.stopPropagation(); try{ const ref = doc(db, "posts", postId); const snap = await getDoc(ref); if(!snap.exists())return;
             let p = snap.data().poll; p.votes[myProfile.id] = optIdx; await updateDoc(ref, { "poll.votes": p.votes }); checkRouting(); }catch(e){}
         }
-        window.likePost = async function(pid, uid, ev) { if(ev)ev.stopPropagation(); if(uid===myProfile.id){ customAlert("","自分のポストはいいねできません"); return;} try{ await updateDoc(doc(db,"posts",pid),{likes:increment(1)}); checkRouting(); }catch(e){} }
         let currentRepId=""; window.repostPost=function(pid,ev){if(ev)ev.stopPropagation(); currentRepId=pid; document.getElementById('repostModal').style.display='flex';}
         window.submitRepost=async function(isQuote){
             if(!currentRepId)return; const txt=document.getElementById('quoteText').value.trim();
@@ -730,7 +805,6 @@
         }
         window.saveSettings=function(){ myProfile.name=document.getElementById('profileName').value; const u=document.getElementById('profileIcon').value; if(u)myProfile.icon=u; localStorage.setItem('mySNS_profile',JSON.stringify(myProfile)); showToast("保存しました"); checkRouting(); }
 
-        // 💡 修正箇所：エラー回避のため uid をチェック
         window.renderMuteBlockList = function() {
             const muted = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
             const blocked = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
@@ -739,14 +813,14 @@
             html += `<div style="font-weight:bold; margin-bottom:10px;">🔇 ミュート中のユーザー (${muted.length})</div>`;
             if (muted.length === 0) html += `<div style="color:#71767b; font-size:14px; margin-bottom:20px;">なし</div>`;
             muted.forEach(uid => {
-                const safeUid = uid || ""; // 💡 ここでundefinedを回避
+                const safeUid = uid || "";
                 html += `<div class="manage-list-item"><span>@${safeUid.substring(0,8)}...</span><button onclick="unmuteUser('${safeUid}')" class="toolbar-btn">解除</button></div>`;
             });
 
             html += `<div style="font-weight:bold; margin-top:20px; margin-bottom:10px;">🚫 ブロック中のユーザー (${blocked.length})</div>`;
             if (blocked.length === 0) html += `<div style="color:#71767b; font-size:14px; margin-bottom:20px;">なし</div>`;
             blocked.forEach(uid => {
-                const safeUid = uid || ""; // 💡 ここでundefinedを回避
+                const safeUid = uid || "";
                 html += `<div class="manage-list-item"><span>@${safeUid.substring(0,8)}...</span><button onclick="unblockUser('${safeUid}')" class="toolbar-btn">解除</button></div>`;
             });
 
@@ -759,7 +833,7 @@
             localStorage.setItem('mySNS_mutedUsers', JSON.stringify(l));
             showToast("ミュートを解除しました");
             renderMuteBlockList();
-            checkRouting(); // 解除後にタイムラインを再描画
+            checkRouting();
         }
 
         window.unblockUser = function(uid) {
@@ -768,7 +842,7 @@
             localStorage.setItem('mySNS_blockedUsers', JSON.stringify(l));
             showToast("ブロックを解除しました");
             renderMuteBlockList();
-            checkRouting(); // 解除後にタイムラインを再描画
+            checkRouting();
         }
 
         checkRouting();
