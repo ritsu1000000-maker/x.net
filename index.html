@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 検索・ハッシュタグ・AIアシスト搭載版</title>
+    <title>簡易SNS - 検索・トレンド・AIアシスト搭載版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <style>
         body { font-family: sans-serif; background-color: #000000; margin: 0; padding: 0; color: #e7e9ea; }
@@ -87,6 +87,12 @@
         .search-input-box { display: flex; padding: 15px; border-bottom: 1px solid #2f3336; gap: 10px; }
         .search-input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #2f3336; background: transparent; color: #e7e9ea; font-size: 16px; outline: none; }
         .search-input:focus { border-color: #1d9bf0; }
+        
+        /* トレンドタグ用のスタイル */
+        .trend-tag { background-color: #16181c; padding: 10px 15px; border-radius: 12px; cursor: pointer; border: 1px solid #2f3336; transition: background-color 0.2s, border-color 0.2s; flex: 1; min-width: 120px; box-sizing: border-box; }
+        .trend-tag:hover { background-color: #1d9bf011; border-color: #1d9bf0; }
+        .trend-tag-name { color: #1d9bf0; font-weight: bold; font-size: 15px; margin-bottom: 4px; word-break: break-all; }
+        .trend-tag-count { color: #71767b; font-size: 12px; }
     </style>
 </head>
 <body onclick="closeAllMenus()">
@@ -123,6 +129,12 @@
                 <input type="text" id="searchInput" class="search-input" placeholder="キーワードや #ハッシュタグ を検索" onkeydown="if(event.key==='Enter') executeSearch(this.value)">
                 <button class="post-btn" onclick="executeSearch(document.getElementById('searchInput').value)">検索</button>
             </div>
+            
+            <div id="popularHashtagsContainer" style="padding: 15px; border-bottom: 1px solid #2f3336; display: none;">
+                <div style="font-weight: bold; color: #e7e9ea; margin-bottom: 12px; font-size: 16px;">🔥 人気のハッシュタグ</div>
+                <div id="popularHashtagsList" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+            </div>
+
             <div id="searchResults">
                 <div style="padding:30px; text-align:center; color:#71767b;">検索したい言葉を入力してください。</div>
             </div>
@@ -229,7 +241,7 @@
 
         // ハッシュタグ＆URLパース処理
         function parseContent(text) {
-            let safe = (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            let safe = (text || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
             
             safe = safe.replace(/(^|\s)([#＃][^\s<]+)/g, function(match, space, tag) {
                 const pureTag = tag.replace(/'/g, "\\'");
@@ -280,6 +292,10 @@
             } else if (view === 'search') {
                 renderNav('search', '検索'); document.getElementById('searchView').style.display = 'block';
                 const q = params.get('q') || ''; document.getElementById('searchInput').value = q;
+                
+                // トレンドのハッシュタグを読み込む
+                loadPopularHashtags();
+                
                 if(q) { renderSearchResults(q); } else { document.getElementById('searchResults').innerHTML = '<div style="padding:30px; text-align:center; color:#71767b;">検索したい言葉を入力してください。</div>'; }
             } else if (view === 'notifications') {
                 renderNav('notify', '通知'); document.getElementById('notificationView').style.display = 'block'; await renderNotifications();
@@ -319,6 +335,63 @@
                 if(found === 0) list.innerHTML = '<div style="padding:30px; text-align:center; color:#71767b;">見つかりませんでした。</div>';
                 setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
             } catch(e) { list.innerHTML = `<div class="error-box">検索エラー: ${e.message}</div>`; }
+        }
+
+        // 🔥 人気ハッシュタグの読み込み
+        window.loadPopularHashtags = async function() {
+            const container = document.getElementById('popularHashtagsContainer');
+            const list = document.getElementById('popularHashtagsList');
+            list.innerHTML = '<div style="color:#71767b; font-size:13px;">読み込み中...</div>';
+            container.style.display = 'block';
+
+            try {
+                // 投稿を取得してハッシュタグを集計
+                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+                const snap = await getDocs(q);
+                let hashtagCounts = {};
+                
+                snap.forEach(docSnap => {
+                    const post = docSnap.data();
+                    if (post.content) {
+                        const regex = /(?:^|\s)([#＃][^\s<]+)/g;
+                        let match;
+                        let postTags = new Set(); // 1つの投稿で複数同じタグがあっても1カウントとする
+                        while ((match = regex.exec(post.content)) !== null) {
+                            postTags.add(match[1]);
+                        }
+                        postTags.forEach(tag => {
+                            hashtagCounts[tag] = (hashtagCounts[tag] || 0) + 1;
+                        });
+                    }
+                });
+
+                // 件数順にソートして上位10件を取得
+                const sortedTags = Object.entries(hashtagCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+
+                if (sortedTags.length === 0) {
+                    list.innerHTML = '<div style="color:#71767b; font-size:13px;">トレンドはまだありません。</div>';
+                    return;
+                }
+
+                list.innerHTML = '';
+                sortedTags.forEach(([tag, count]) => {
+                    const div = document.createElement('div');
+                    div.className = 'trend-tag';
+                    div.onclick = () => {
+                        document.getElementById('searchInput').value = tag;
+                        executeSearch(tag);
+                    };
+                    div.innerHTML = `
+                        <div class="trend-tag-name">${tag}</div>
+                        <div class="trend-tag-count">${count} 件のポスト</div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (e) {
+                list.innerHTML = `<div style="color:#f91880; font-size:13px;">読み込みエラー: ${e.message}</div>`;
+            }
         }
 
         // JS AI API (テキスト生成)
