@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 動画アップロード修正版</title>
+    <title>簡易SNS - 完全修正版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1"></script>
     <style>
@@ -253,62 +253,185 @@
         const svgMenu     = `<svg class="icon" viewBox="0 0 24 24"><path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>`;
         const svgLink     = `<svg class="icon" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.31 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>`;
         const svgBack     = `<svg class="icon" style="width:22px; height:22px;" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>`;
-        
-        // UI Helpers
+        const svgDislike  = `<svg class="icon" viewBox="0 0 24 24"><path d="M10.8 21h-4.3c-.6 0-1-.4-1-1v-8.6c0-.3.1-.5.3-.7l5.4-5.4c.4-.4 1-.4 1.4 0l.5.5c.3.3.4.7.2 1.1l-1.1 3.1h5.2c.6 0 1 .4 1 1v2.2c0 .2 0 .3-.1.5l-2.9 6.7c-.2.5-.7.8-1.2.8z"/></svg>`;
+        const svgMute     = `<svg class="icon" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`;
+        const svgRestrict = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg>`;
+        const svgBlock    = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm4.9-3.1L5.69 5.69C7.04 4.63 8.74 4 12 4c4.41 0 8 3.59 8 8 0 1.85-.63 3.55-1.69 4.9z"/></svg>`;
+        const svgWarning  = `<svg class="icon" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`;
+        const svgVideo    = `<svg class="icon" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>`;
+        const svgRobot    = `<svg class="icon" viewBox="0 0 24 24"><path d="M19 9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2H9c-1.1 0-2 .9-2 2v2H5c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h2v2c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-2h2c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2zM9 13c-.83 0-1.5-.67-1.5-1.5S8.17 10 9 10s1.5.67 1.5 1.5S9.83 13 9 13zm6 0c-.83 0-1.5-.67-1.5-1.5S14.17 10 15 10s1.5.67 1.5 1.5S15.83 13 15 13z"/></svg>`;
+        const svgImage    = `<svg class="icon" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>`;
+        const svgClock    = `<svg class="icon" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>`;
+        const svgPoll     = `<svg class="icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>`;
+        const svgLocation = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+        const svgTrend    = `<svg class="icon" viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>`;
+
+        document.getElementById('btn-file').innerHTML = `${svgImage} 画像/動画`;
+        document.getElementById('btn-video').innerHTML = `${svgVideo} 動画URL`;
+        document.getElementById('btn-ai-text').innerHTML = `${svgRobot} AI文章`;
+        document.getElementById('btn-ai-img').innerHTML = `${svgImage} AI画像`;
+        document.getElementById('btn-schedule').innerHTML = `${svgClock} 予約`;
+        document.getElementById('btn-poll').innerHTML = `${svgPoll} 投票`;
+        document.getElementById('btn-map').innerHTML = `${svgLocation} 地図`;
+        document.getElementById('icon-trend-title').innerHTML = svgTrend;
+        document.getElementById('modal-ai-text-title').innerHTML = `${svgRobot} AI文章アシスト`;
+        document.getElementById('modal-ai-img-title').innerHTML = `${svgImage} AI画像生成`;
+        document.getElementById('modal-schedule-title').innerHTML = `${svgClock} 予約投稿`;
+        document.getElementById('modal-poll-title').innerHTML = `${svgPoll} 投票を作成`;
+        document.getElementById('modal-map-title').innerHTML = `${svgLocation} 場所を検索して添付`;
+
+        // 💡 絵文字ピッカーの初期化と確実な登録
+        const picker = document.querySelector('emoji-picker');
+        if (picker) {
+            picker.addEventListener('emoji-click', event => {
+                const textarea = document.getElementById(currentEmojiTargetId);
+                if (textarea) {
+                    const start = textarea.selectionStart !== undefined ? textarea.selectionStart : textarea.value.length;
+                    const end = textarea.selectionEnd !== undefined ? textarea.selectionEnd : textarea.value.length;
+                    const text = textarea.value;
+                    textarea.value = text.slice(0, start) + event.detail.unicode + text.slice(end);
+                    textarea.selectionStart = textarea.selectionEnd = start + event.detail.unicode.length;
+                    textarea.focus();
+                }
+            });
+        }
+
         window.showToast = function(msg) { const toast = document.getElementById('customToast'); toast.innerText = msg; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
         window.customAlert = function(title, msg) { document.getElementById('alertModalTitle').innerText = title || "お知らせ"; document.getElementById('alertModalMessage').innerText = msg; document.getElementById('alertModal').style.display = 'flex'; }
-        window.closeAllMenus = function() { document.querySelectorAll('.dropdown-menu').forEach(menu => { menu.style.display = 'none'; }); }
+        window.closeAllMenus = function() { 
+            document.querySelectorAll('.dropdown-menu').forEach(menu => { menu.style.display = 'none'; }); 
+            const pickerContainer = document.getElementById('emojiPickerContainer');
+            if(pickerContainer) pickerContainer.style.display = 'none';
+        }
 
-        // Firebase Config
         const firebaseConfig = { apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM", authDomain: "sabopennet.firebaseapp.com", projectId: "sabopennet", storageBucket: "sabopennet.firebasestorage.app", messagingSenderId: "284308308452", appId: "1:284308308452:web:e36dd991e55a0e60e4c7f1" };
-        const app = initializeApp(firebaseConfig); const db = getFirestore(app); const storage = getStorage(app);
+        const app = initializeApp(firebaseConfig); 
+        const db = getFirestore(app);
+        const storage = getStorage(app); 
 
-        // User Data
         const defaultIcon = "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&h=150&fit=crop";
         let myProfile = JSON.parse(localStorage.getItem('mySNS_profile')) || {};
         if (!myProfile.id) { myProfile.id = "user_" + Math.random().toString(36).substring(2, 12); myProfile.name = "ゲストユーザー"; myProfile.icon = defaultIcon; localStorage.setItem('mySNS_profile', JSON.stringify(myProfile)); }
         
         let currentScheduleTime = null; let currentPollOptions = null; let uploadedImageBase64 = "";
 
-        // 💡 ハッシュタグ＆URLパース処理
-        function parseContent(text) {
-            // HTMLエスケープ
-            let safe = (text || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+        window.toggleVideoInput = function(targetId, event) {
+            if (event) { event.stopPropagation(); event.cancelBubble = true; }
+            const inputEl = document.getElementById(targetId);
+            if (inputEl.style.display === 'none' || inputEl.style.display === '') {
+                inputEl.style.display = 'block'; inputEl.focus();
+            } else {
+                inputEl.style.display = 'none'; inputEl.value = '';
+            }
+        }
+
+        let currentEmojiTargetId = '';
+        window.openEmojiPicker = function(targetId, event) {
+            if (event) { event.stopPropagation(); event.cancelBubble = true; }
+            closeAllMenus();
+            currentEmojiTargetId = targetId;
+            const container = document.getElementById('emojiPickerContainer');
+            const btn = event.currentTarget;
+            const rect = btn.getBoundingClientRect();
             
-            // ハッシュタグの変換
+            container.style.display = 'block';
+            let topPos = rect.bottom + window.scrollY + 5;
+            if (topPos + 350 > window.innerHeight + window.scrollY) { topPos = rect.top + window.scrollY - 355; }
+            container.style.top = topPos + 'px';
+            container.style.left = Math.max(10, rect.left) + 'px';
+        }
+
+        let selectedPostFile = null;
+        window.handlePostFileSelect = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.size > 50 * 1024 * 1024) { customAlert("エラー", "ファイルサイズが大きすぎます(最大50MB)"); return; }
+            selectedPostFile = file;
+            const previewContent = document.getElementById('postFilePreviewContent');
+            previewContent.innerHTML = '';
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img'); img.src = URL.createObjectURL(file); img.style.maxWidth = '100%'; img.style.maxHeight = '200px'; img.style.borderRadius = '12px'; previewContent.appendChild(img);
+            } else if (file.type.startsWith('video/')) {
+                const video = document.createElement('video'); video.src = URL.createObjectURL(file); video.controls = true; video.style.maxWidth = '100%'; video.style.maxHeight = '200px'; video.style.borderRadius = '12px'; previewContent.appendChild(video);
+            }
+            document.getElementById('postFilePreview').style.display = 'block';
+        }
+        window.clearPostFile = function() {
+            selectedPostFile = null;
+            const fi = document.getElementById('postFileInput'); if(fi) fi.value = '';
+            document.getElementById('postFilePreview').style.display = 'none';
+            document.getElementById('postFilePreviewContent').innerHTML = '';
+        }
+
+        let selectedReplyFile = null;
+        window.handleReplyFileSelect = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.size > 50 * 1024 * 1024) { customAlert("エラー", "ファイルサイズが大きすぎます(最大50MB)"); return; }
+            selectedReplyFile = file;
+            const previewContent = document.getElementById('replyFilePreviewContent');
+            previewContent.innerHTML = '';
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img'); img.src = URL.createObjectURL(file); img.style.maxWidth = '100%'; img.style.maxHeight = '150px'; img.style.borderRadius = '12px'; previewContent.appendChild(img);
+            } else if (file.type.startsWith('video/')) {
+                const video = document.createElement('video'); video.src = URL.createObjectURL(file); video.controls = true; video.style.maxWidth = '100%'; video.style.maxHeight = '150px'; video.style.borderRadius = '12px'; previewContent.appendChild(video);
+            }
+            document.getElementById('replyFilePreview').style.display = 'block';
+        }
+        window.clearReplyFile = function() {
+            selectedReplyFile = null;
+            const fi = document.getElementById('replyFileInput'); if(fi) fi.value = '';
+            const pa = document.getElementById('replyFilePreview'); if(pa) pa.style.display = 'none';
+            const pc = document.getElementById('replyFilePreviewContent'); if(pc) pc.innerHTML = '';
+        }
+
+        function parseContent(text) {
+            let safe = (text || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
             safe = safe.replace(/(^|\s)([#＃][^\s<]+)/g, function(match, space, tag) {
                 const pureTag = tag.replace(/'/g, "\\'");
                 return `${space}<span class="hashtag" onclick="executeSearch('${pureTag}', event)">${tag}</span>`;
             });
 
-            // URLの埋め込み処理
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return safe.replace(urlRegex, function(url) {
                 const urlWithoutQuery = url.split('?')[0];
-
-                // 画像
                 if (url.match(/^https:\/\/image\.pollinations\.ai\//) || urlWithoutQuery.match(/\.(jpeg|jpg|gif|png|webp)$/i) || url.includes('firebasestorage.googleapis.com') && urlWithoutQuery.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
-                    return `<a href="${url}" target="_blank" style="color:#1d9bf0;">📸 画像を開く</a><br><img src="${url}" style="max-width: 100%; border-radius: 12px; margin-top: 10px; object-fit: cover;">`;
+                    return `<a href="${url}" target="_blank" style="color:#1d9bf0; display:inline-flex; align-items:center; gap:4px;">${svgImage} 画像を開く</a><br><img src="${url}" style="max-width: 100%; border-radius: 12px; margin-top: 10px; object-fit: cover;">`;
                 }
-                // 💡 MP4などの動画ファイル
                 if (urlWithoutQuery.match(/\.(mp4|webm|ogg|mov)$/i) || url.includes('firebasestorage.googleapis.com') && urlWithoutQuery.match(/\.(mp4|webm|ogg|mov)$/i)) {
-                    return `<a href="${url}" target="_blank" style="color:#1d9bf0;">🎥 動画を開く</a><br><video src="${url}" controls style="max-width: 100%; max-height: 400px; border-radius: 12px; margin-top: 10px; background: #000; outline: none;" playsinline></video>`;
+                    return `<a href="${url}" target="_blank" style="color:#1d9bf0; display:inline-flex; align-items:center; gap:4px;">${svgVideo} 動画を開く</a><br><video src="${url}" controls style="max-width: 100%; max-height: 400px; border-radius: 12px; margin-top: 10px; background: #000; outline: none;" playsinline></video>`;
                 }
-                // 💡 音声ファイル
                 if (urlWithoutQuery.match(/\.(mp3|wav|m4a)$/i) || url.includes('firebasestorage.googleapis.com') && urlWithoutQuery.match(/\.(mp3|wav|m4a)$/i)) {
                     return `<a href="${url}" target="_blank" style="color:#1d9bf0;">🎵 音声を開く</a><br><audio src="${url}" controls style="width: 100%; margin-top: 10px; outline: none;"></audio>`;
                 }
-                // YouTube・その他
+                const mapsMatch = url.match(/maps\.google\.com\/maps\?q=([^&\s]+)/);
+                if (mapsMatch) { return `<a href="${url}" target="_blank" style="color:#1d9bf0; display:inline-flex; align-items:center; gap:4px;">${svgLocation} 地図を開く</a><br><iframe width="100%" height="250" src="https://maps.google.com/maps?q=${mapsMatch[1]}&output=embed" frameborder="0" style="border-radius:12px; margin-top:10px;"></iframe>`; }
                 const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-                if (ytMatch) { return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a><br><iframe width="100%" height="315" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allowfullscreen style="border-radius:12px; margin-top:10px;"></iframe>`; }
+                if (ytMatch) { return `<a href="${url}" target="_blank" style="color:#1d9bf0; display:inline-flex; align-items:center; gap:4px;">${svgVideo} YouTubeを開く</a><br><iframe width="100%" height="315" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allowfullscreen style="border-radius:12px; margin-top:10px;"></iframe>`; }
+                const nicoMatch = url.match(/nicovideo\.jp\/watch\/([a-zA-Z0-9]+)/);
+                if (nicoMatch) { return `<a href="${url}" target="_blank" style="color:#1d9bf0; display:inline-flex; align-items:center; gap:4px;">${svgVideo} ニコニコ動画を開く</a><br><iframe width="100%" height="315" src="https://embed.nicovideo.jp/watch/${nicoMatch[1]}" frameborder="0" allowfullscreen style="border-radius:12px; margin-top:10px;"></iframe>`; }
+                const twitcasMatch = url.match(/twitcasting\.tv\/([a-zA-Z0-9_-]+)/);
+                if (twitcasMatch) {
+                    const user = twitcasMatch[1];
+                    return `<a href="${url}" target="_blank" style="color:#1d9bf0; display:inline-flex; align-items:center; gap:4px;">${svgVideo} ツイキャスを開く</a><br><iframe width="100%" height="315" src="https://twitcasting.tv/${user}/iframe" frameborder="0" allowfullscreen style="border-radius:12px; margin-top:10px;"></iframe>`;
+                }
                 if (url.match(/(?:twitter\.com|x\.com)\/[a-zA-Z0-9_]+\/status\/[0-9]+/)) {
                     return `<blockquote class="twitter-tweet" data-theme="dark"><a href="${url}"></a></blockquote>`;
                 }
-                return `<a href="${url}" target="_blank" style="color:#1d9bf0;">${url}</a>`;
+                return `<a href="${url}" target="_blank" style="color:#1d9bf0; display:inline-flex; align-items:center; gap:4px;">${svgLink} ${url}</a>`;
             });
         }
 
-        // 💡 共通ナビゲーション描画
+        function formatTimeAgo(dateObj) {
+            const now = new Date();
+            const diffMs = now - dateObj;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffMins < 60) return `${diffMins}分前`;
+            if (diffHours < 24) return `${diffHours}時間前`;
+            return `${dateObj.getMonth()+1}月${dateObj.getDate()}日`;
+        }
+
         function renderNav(activeTab, title = "ホーム", showBack = false) {
             const backBtn = showBack ? `<button class="back-btn" onclick="window.history.back()">${svgBack}</button>` : '';
             document.getElementById('navContainer').innerHTML = `
@@ -322,12 +445,12 @@
             `;
         }
 
-        // --- ルーティングと画面切り替え ---
         window.checkRouting = async function() {
             const params = new URLSearchParams(window.location.search);
             const view = params.get('view'); const id = params.get('id'); const user = params.get('user');
             document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
-            closeAllMenus(); updateMyIconDisplays(); loadSidebarTrends();
+            closeAllMenus(); updateMyIconDisplays();
+            loadSidebarTrends();
 
             if (id) {
                 renderNav('', 'ポスト', true); document.getElementById('detailView').style.display = 'block'; await renderPostDetail(id);
@@ -377,12 +500,79 @@
             } catch(e) { list.innerHTML = `<div class="error-box">検索エラー: ${e.message}</div>`; }
         }
 
-        // JS AI API (テキスト生成)
+        window.loadPopularHashtags = async function() {
+            const container = document.getElementById('popularHashtagsContainer');
+            const list = document.getElementById('popularHashtagsList');
+            list.innerHTML = '<div style="color:#71767b; font-size:13px;">読み込み中...</div>';
+            container.style.display = 'block';
+
+            try {
+                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+                const snap = await getDocs(q);
+                let hashtagCounts = {};
+                snap.forEach(docSnap => {
+                    const post = docSnap.data();
+                    if (post.content) {
+                        const regex = /(?:^|\s)([#＃][^\s<]+)/g;
+                        let match; let postTags = new Set();
+                        while ((match = regex.exec(post.content)) !== null) { postTags.add(match[1]); }
+                        postTags.forEach(tag => { hashtagCounts[tag] = (hashtagCounts[tag] || 0) + 1; });
+                    }
+                });
+                const sortedTags = Object.entries(hashtagCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+                if (sortedTags.length === 0) { list.innerHTML = '<div style="color:#71767b; font-size:13px;">トレンドはまだありません。</div>'; return; }
+
+                list.innerHTML = '';
+                sortedTags.forEach(([tag, count]) => {
+                    const div = document.createElement('div'); div.className = 'trend-tag';
+                    div.onclick = () => { document.getElementById('searchInput').value = tag; executeSearch(tag); };
+                    div.innerHTML = `<div class="trend-tag-name">${tag}</div><div class="trend-tag-count">${count} 件のポスト</div>`;
+                    list.appendChild(div);
+                });
+            } catch (e) { list.innerHTML = `<div style="color:#f91880; font-size:13px;">読み込みエラー: ${e.message}</div>`; }
+        }
+
+        window.loadSidebarTrends = async function() {
+            const list = document.getElementById('sidebarTrendsList');
+            if(!list) return;
+            try {
+                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+                const snap = await getDocs(q);
+                let hashtagCounts = {};
+                snap.forEach(docSnap => {
+                    const post = docSnap.data();
+                    if (post.content) {
+                        const regex = /(?:^|\s)([#＃][^\s<]+)/g;
+                        let match; let postTags = new Set();
+                        while ((match = regex.exec(post.content)) !== null) { postTags.add(match[1]); }
+                        postTags.forEach(tag => { hashtagCounts[tag] = (hashtagCounts[tag] || 0) + 1; });
+                    }
+                });
+
+                const sortedTags = Object.entries(hashtagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                if (sortedTags.length === 0) {
+                    list.innerHTML = '<div style="color:#71767b; font-size:14px;">トレンドはまだありません。</div>';
+                    return;
+                }
+
+                list.innerHTML = '';
+                sortedTags.forEach(([tag, count], index) => {
+                    const div = document.createElement('div'); div.className = 'sidebar-trend-item';
+                    div.onclick = () => { window.history.pushState({}, '', `?view=search&q=${encodeURIComponent(tag)}`); checkRouting(); };
+                    div.innerHTML = `
+                        <div class="sidebar-trend-rank">トレンド ${index + 1}</div>
+                        <div class="sidebar-trend-name">${tag}</div>
+                        <div class="sidebar-trend-count">${count} 件のポスト</div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (e) {}
+        }
+
         let currentTextTargetId = 'postText';
         window.openAITextModal = function(targetId) {
             currentTextTargetId = targetId;
-            document.getElementById('aiTextPrompt').value = '';
-            document.getElementById('aiTextModal').style.display = 'flex';
+            document.getElementById('aiTextPrompt').value = ''; document.getElementById('aiTextModal').style.display = 'flex';
         }
         window.generateTextAI = async function() {
             const prompt = document.getElementById('aiTextPrompt').value.trim();
@@ -399,7 +589,6 @@
             } catch (e) { customAlert("エラー", "文章の生成に失敗しました。"); }
         }
 
-        // AI画像生成
         let currentImgTargetId = 'postText'; let currentGeneratedImgUrl = "";
         window.openAIGenModal = function(targetId) { currentImgTargetId = targetId; document.getElementById('aiPrompt').value = ''; document.getElementById('aiPreviewArea').style.display = 'none'; document.getElementById('aiModal').style.display = 'flex'; }
         window.generateImage = async function() {
@@ -420,11 +609,10 @@
         }
         window.attachGeneratedImage = function() { if (currentGeneratedImgUrl) { const txt = document.getElementById(currentImgTargetId); txt.value += (txt.value ? '\n' : '') + currentGeneratedImgUrl; document.getElementById('aiModal').style.display = 'none'; showToast("画像を添付しました！"); } }
 
-        // 既存：予約・投票・地図のアタッチ系
         window.updateAttachmentUI = function() {
             let html = "";
-            if (currentScheduleTime) html += `<div style="background:#031018; padding:5px 10px; border-radius:15px; border:1px solid #1d9bf0;">⏳ ${currentScheduleTime.toLocaleString()} 予約済 <span onclick="currentScheduleTime=null; updateAttachmentUI()" style="color:#f91880; cursor:pointer;">✖</span></div>`;
-            if (currentPollOptions) html += `<div style="background:#05140c; padding:5px 10px; border-radius:15px; border:1px solid #00ba7c; color:#00ba7c;">📊 投票追加済 <span onclick="currentPollOptions=null; updateAttachmentUI()" style="color:#f91880; cursor:pointer;">✖</span></div>`;
+            if (currentScheduleTime) html += `<div style="background:#031018; padding:5px 10px; border-radius:15px; border:1px solid #1d9bf0; display:flex; align-items:center; gap:4px;">${svgClock} ${currentScheduleTime.toLocaleString()} 予約済 <span onclick="currentScheduleTime=null; updateAttachmentUI()" style="color:#f91880; cursor:pointer;">✖</span></div>`;
+            if (currentPollOptions) html += `<div style="background:#05140c; padding:5px 10px; border-radius:15px; border:1px solid #00ba7c; color:#00ba7c; display:flex; align-items:center; gap:4px;">${svgPoll} 投票追加済 <span onclick="currentPollOptions=null; updateAttachmentUI()" style="color:#f91880; cursor:pointer;">✖</span></div>`;
             document.getElementById('postAttachments').innerHTML = html;
         }
         window.openScheduleModal = function() { document.getElementById('scheduleInput').value = ''; document.getElementById('scheduleModal').style.display = 'flex'; }
@@ -434,7 +622,6 @@
         let currentMapTargetId=''; window.openMapModal=function(id){ currentMapTargetId=id; document.getElementById('mapKeyword').value=''; document.getElementById('mapModal').style.display='flex'; }
         window.attachMapLink=function(){ const k=document.getElementById('mapKeyword').value.trim(); if(!k)return; document.getElementById(currentMapTargetId).value += ` https://maps.google.com/maps?q=$${encodeURIComponent(k)}`; document.getElementById('mapModal').style.display='none'; showToast("地図を添付しました"); }
 
-        // DOM構築補助
         function createPostElement(postId, post, uId) {
             const safeUid = uId || "";
             const isMuted = (JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []).includes(safeUid) || (JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []).includes(safeUid);
@@ -468,7 +655,8 @@
             }
 
             const repLabel = post.isRepost ? `<div class="repost-label">${svgRepost} ${post.repostedBy} さんがリポスト</div>` : '';
-            const schedLabel = dObj > now ? `<span style="color:#1d9bf0; font-size:12px; margin-left:8px; border:1px solid #1d9bf0; padding:2px 4px; border-radius:4px;">予約投稿</span>` : "";
+            const schedLabel = dObj > now ? `<span style="color:#1d9bf0; font-size:12px; margin-left:8px; border:1px solid #1d9bf0; padding:2px 4px; border-radius:4px; display:inline-flex; align-items:center; gap:2px;">${svgClock} 予約投稿</span>` : "";
+            const timeAgo = formatTimeAgo(dObj);
 
             const likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
             const isLiked = likedPosts.includes(postId);
@@ -484,7 +672,7 @@
                             <div class="post-header">
                                 <span class="user-name" onclick="showUserProfile('${safeUid}', event)" style="z-index:2; position:relative; cursor:pointer;">${post.userName||'名無し'}</span>
                                 <span class="user-handle">@${safeUid.substring(0,8)}</span>
-                                <span class="post-time" style="margin-left:4px;">・ ${formatTimeAgo(dObj)}</span>${schedLabel}
+                                <span class="post-time" style="margin-left:4px;">・ ${timeAgo}</span>${schedLabel}
                                 <button class="menu-trigger" onclick="togglePostMenu('${postId}', event)">${svgMenu}</button>
                                 <div id="postMenu-${postId}" class="dropdown-menu">
                                     <div class="menu-item" onclick="sharePost('${postId}', '${encodedContent}', event)">${svgLink} リンクをコピー</div>
@@ -507,30 +695,30 @@
             return div;
         }
 
-        // 💡 投稿処理（タイムアウト削除）
+        // 💡 修正箇所：ファイルのアップロード処理（タイムアウト付き）
         window.submitPost = async function() {
             let txt = document.getElementById('postText').value.trim();
             const videoUrl = document.getElementById('postVideoUrl').value.trim();
             if (videoUrl) { txt += (txt ? '\n\n' : '') + videoUrl; }
             if (!txt && !selectedPostFile) return;
 
-            // 💡 タイムアウトなしでアップロードを待機
             if (selectedPostFile) {
-                showToast("⏳ アップロード中... (動画の場合は時間がかかります)");
+                showToast("⏳ メディアをアップロード中... (最大15秒)");
                 try {
                     const ext = selectedPostFile.name.split('.').pop() || 'png';
                     const fileName = `media_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
                     const sRef = storageRef(storage, 'uploads/' + fileName);
                     
                     const metadata = { contentType: selectedPostFile.type };
-                    // 制限時間を設けずアップロード完了を待つ
-                    await uploadBytes(sRef, selectedPostFile, metadata);
+                    const uploadPromise = uploadBytes(sRef, selectedPostFile, metadata);
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("タイムアウト：FirebaseのStorage(保存)設定が許可されていないか、ファイルが大きすぎます。")), 15000));
                     
+                    await Promise.race([uploadPromise, timeoutPromise]);
                     const fileUrl = await getDownloadURL(sRef);
                     txt += (txt ? '\n\n' : '') + fileUrl;
                 } catch (e) {
-                    customAlert("アップロードエラー", "Firebase Storage(保存)の権限設定が許可されていない可能性があります。\n詳細: " + e.message);
-                    return; // 失敗時は投稿キャンセル
+                    customAlert("アップロードエラー", "失敗しました。\n" + e.message);
+                    return;
                 }
             }
 
@@ -546,7 +734,6 @@
                 
                 showToast(currentScheduleTime ? "予約しました！" : "ポストしました！");
                 currentScheduleTime = null; currentPollOptions = null; updateAttachmentUI(); renderPosts();
-                loadSidebarTrends();
             } catch (e) { customAlert("エラー", e.message); }
         }
 
@@ -575,7 +762,6 @@
                     const likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
                     const isLiked = likedPosts.includes(postId);
                     const likeStyle = isLiked ? 'color: #f91880;' : '';
-
                     const tempHtml = temp.innerHTML.replace(`id="like-count-${postId}"`, `id="detail-like-count-${postId}"`);
 
                     area.innerHTML = `
@@ -626,7 +812,6 @@
             } catch(e) {}
         }
 
-        // 💡 返信処理（タイムアウト削除）
         window.submitReply = async function(postId) {
             let txt = document.getElementById('detailReplyText').value.trim();
             const videoUrl = document.getElementById('detailReplyVideoUrl').value.trim();
@@ -634,31 +819,31 @@
             if (!txt && !selectedReplyFile) return;
 
             if (selectedReplyFile) {
-                showToast("⏳ アップロード中... (動画の場合は時間がかかります)");
+                showToast("⏳ メディアをアップロード中... (最大15秒)");
                 try {
                     const ext = selectedReplyFile.name.split('.').pop() || 'png';
                     const fileName = `media_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
                     const sRef = storageRef(storage, 'uploads/' + fileName);
-                    
                     const metadata = { contentType: selectedReplyFile.type };
-                    await uploadBytes(sRef, selectedReplyFile, metadata);
                     
+                    const uploadPromise = uploadBytes(sRef, selectedReplyFile, metadata);
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("タイムアウト：FirebaseのStorage(保存)設定が許可されていないか、ファイルが大きすぎます。")), 15000));
+                    
+                    await Promise.race([uploadPromise, timeoutPromise]);
                     const fileUrl = await getDownloadURL(sRef);
                     txt += (txt ? '\n\n' : '') + fileUrl;
                 } catch (e) {
-                    customAlert("アップロードエラー", "Firebase Storage(保存)の権限設定が許可されていない可能性があります。\n詳細: " + e.message);
+                    customAlert("アップロードエラー", "失敗しました。\n" + e.message);
                     return;
                 }
             }
 
             try { 
                 await addDoc(collection(db, "replies"), { postId: postId, content: txt, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, likes: 0 });
-                
                 document.getElementById('detailReplyText').value = ''; 
                 document.getElementById('detailReplyVideoUrl').value = ''; 
                 document.getElementById('detailReplyVideoUrl').style.display = 'none';
                 clearReplyFile();
-
                 loadReplies(postId); showToast("返信しました！");
             } catch (e) {}
         }
@@ -679,23 +864,22 @@
 
                 arr.forEach(r => {
                     const dObj = r.createdAt ? r.createdAt.toDate() : new Date();
+                    const timeAgo = formatTimeAgo(dObj);
                     const safeUid = r.userId || "unknown";
-                    
                     const isLikedReply = likedReplies.includes(r.id);
                     const likeStyle = isLikedReply ? 'color: #f91880;' : '';
 
                     const div = document.createElement('div'); 
                     div.className = 'reply-item';
-                    
                     div.innerHTML = `
                         <div class="post-left" style="cursor: pointer;" onclick="showUserProfile('${safeUid}', event)">
-                            <img src="${r.userIcon || defaultIcon}" class="user-icon" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                            <img src="${r.userIcon || defaultIcon}" class="user-icon">
                         </div>
                         <div class="post-right">
                             <div class="post-header">
                                 <span class="user-name" onclick="showUserProfile('${safeUid}', event)" style="cursor: pointer;">${r.userName || '名無し'}</span>
                                 <span class="user-handle">@${safeUid.substring(0,8)}</span>
-                                <span class="post-time" style="margin-left:4px;">・ ${formatTimeAgo(dObj)}</span>
+                                <span class="post-time" style="margin-left:4px;">・ ${timeAgo}</span>
                             </div>
                             <div class="post-content" style="margin-bottom:0;">${parseContent(r.content)}</div>
                             
@@ -790,95 +974,23 @@
         window.sharePost=function(pid,enc,ev){ if(ev)ev.stopPropagation(); closeAllMenus(); navigator.clipboard.writeText(`${decodeURIComponent(enc)}\n${window.location.origin}${window.location.pathname}?id=${pid}`).then(()=>showToast("コピーしました"));}
 
         window.updateMyIconDisplays = function(){ document.querySelectorAll('.my-current-icon').forEach(i=>i.src=myProfile.icon); }
-        window.renderSettings=function(){ 
-            document.getElementById('profileName').value=myProfile.name; 
-            document.getElementById('profileIconPreview').src=myProfile.icon; 
-            renderMuteBlockList();
-        }
+        window.renderSettings=function(){ document.getElementById('profileName').value=myProfile.name; document.getElementById('profileIconPreview').src=myProfile.icon; renderMuteBlockList(); }
         window.saveSettings=function(){ myProfile.name=document.getElementById('profileName').value; const u=document.getElementById('profileIcon').value; if(u)myProfile.icon=u; localStorage.setItem('mySNS_profile',JSON.stringify(myProfile)); showToast("保存しました"); checkRouting(); }
 
         window.renderMuteBlockList = function() {
             const muted = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
             const blocked = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
-            let html = '';
-            html += `<div style="font-weight:bold; margin-bottom:10px;">🔇 ミュート中のユーザー (${muted.length})</div>`;
+            let html = `<div style="font-weight:bold; margin-bottom:10px;">🔇 ミュート中のユーザー (${muted.length})</div>`;
             if (muted.length === 0) html += `<div style="color:#71767b; font-size:14px; margin-bottom:20px;">なし</div>`;
             muted.forEach(uid => { const safeUid = uid || ""; html += `<div class="manage-list-item"><span>@${safeUid.substring(0,8)}...</span><button onclick="unmuteUser('${safeUid}')" class="toolbar-btn">解除</button></div>`; });
-
             html += `<div style="font-weight:bold; margin-top:20px; margin-bottom:10px;">🚫 ブロック中のユーザー (${blocked.length})</div>`;
             if (blocked.length === 0) html += `<div style="color:#71767b; font-size:14px; margin-bottom:20px;">なし</div>`;
             blocked.forEach(uid => { const safeUid = uid || ""; html += `<div class="manage-list-item"><span>@${safeUid.substring(0,8)}...</span><button onclick="unblockUser('${safeUid}')" class="toolbar-btn">解除</button></div>`; });
-
             document.getElementById('muteBlockManageArea').innerHTML = html;
         }
+
         window.unmuteUser = function(uid) { let l = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; l = l.filter(id => id !== uid); localStorage.setItem('mySNS_mutedUsers', JSON.stringify(l)); showToast("ミュートを解除しました"); renderMuteBlockList(); checkRouting(); }
         window.unblockUser = function(uid) { let l = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; l = l.filter(id => id !== uid); localStorage.setItem('mySNS_blockedUsers', JSON.stringify(l)); showToast("ブロックを解除しました"); renderMuteBlockList(); checkRouting(); }
-
-        window.loadPopularHashtags = async function() {
-            const container = document.getElementById('popularHashtagsContainer');
-            const list = document.getElementById('popularHashtagsList');
-            list.innerHTML = '<div style="color:#71767b; font-size:13px;">読み込み中...</div>';
-            container.style.display = 'block';
-            try {
-                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-                const snap = await getDocs(q);
-                let hashtagCounts = {};
-                snap.forEach(docSnap => {
-                    const post = docSnap.data();
-                    if (post.content) {
-                        const regex = /(?:^|\s)([#＃][^\s<]+)/g;
-                        let match; let postTags = new Set();
-                        while ((match = regex.exec(post.content)) !== null) { postTags.add(match[1]); }
-                        postTags.forEach(tag => { hashtagCounts[tag] = (hashtagCounts[tag] || 0) + 1; });
-                    }
-                });
-                const sortedTags = Object.entries(hashtagCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
-                if (sortedTags.length === 0) { list.innerHTML = '<div style="color:#71767b; font-size:13px;">トレンドはまだありません。</div>'; return; }
-                list.innerHTML = '';
-                sortedTags.forEach(([tag, count]) => {
-                    const div = document.createElement('div'); div.className = 'trend-tag';
-                    div.onclick = () => { document.getElementById('searchInput').value = tag; executeSearch(tag); };
-                    div.innerHTML = `<div class="trend-tag-name">${tag}</div><div class="trend-tag-count">${count} 件のポスト</div>`;
-                    list.appendChild(div);
-                });
-            } catch (e) { list.innerHTML = `<div style="color:#f91880; font-size:13px;">読み込みエラー: ${e.message}</div>`; }
-        }
-
-        window.loadSidebarTrends = async function() {
-            const list = document.getElementById('sidebarTrendsList');
-            if(!list) return;
-            try {
-                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-                const snap = await getDocs(q);
-                let hashtagCounts = {};
-                snap.forEach(docSnap => {
-                    const post = docSnap.data();
-                    if (post.content) {
-                        const regex = /(?:^|\s)([#＃][^\s<]+)/g;
-                        let match; let postTags = new Set();
-                        while ((match = regex.exec(post.content)) !== null) { postTags.add(match[1]); }
-                        postTags.forEach(tag => { hashtagCounts[tag] = (hashtagCounts[tag] || 0) + 1; });
-                    }
-                });
-                const sortedTags = Object.entries(hashtagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                if (sortedTags.length === 0) {
-                    list.innerHTML = '<div style="color:#71767b; font-size:14px;">トレンドはまだありません。</div>';
-                    return;
-                }
-                list.innerHTML = '';
-                sortedTags.forEach(([tag, count], index) => {
-                    const div = document.createElement('div');
-                    div.className = 'sidebar-trend-item';
-                    div.onclick = () => { window.history.pushState({}, '', `?view=search&q=${encodeURIComponent(tag)}`); checkRouting(); };
-                    div.innerHTML = `
-                        <div class="sidebar-trend-rank">トレンド ${index + 1}</div>
-                        <div class="sidebar-trend-name">${tag}</div>
-                        <div class="sidebar-trend-count">${count} 件のポスト</div>
-                    `;
-                    list.appendChild(div);
-                });
-            } catch (e) {}
-        }
 
         checkRouting();
     </script>
