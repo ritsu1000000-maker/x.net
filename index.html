@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - ファイルアップロード対応版</title>
+    <title>簡易SNS - 絵文字＆動画アップロード修正版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1"></script>
     <style>
@@ -59,7 +59,6 @@
         .quote-content { font-size: 14px; color: #e7e9ea; white-space: pre-wrap; line-height: 1.4; word-break: break-all; }
 
         .icon { width: 18px; height: 18px; fill: currentColor; display: inline-block; vertical-align: middle; }
-        .icon-sm { width: 16px; height: 16px; fill: currentColor; display: inline-block; vertical-align: middle; }
 
         .post-actions { display: flex; justify-content: space-between; max-width: 450px; margin-top: 5px; }
         .action-btn { background: none; border: none; color: #71767b; font-size: 13px; cursor: pointer; padding: 6px 10px; border-radius: 15px; display: flex; align-items: center; gap: 6px; transition: background-color 0.2s, color 0.2s; }
@@ -252,7 +251,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDoc, getDocs, doc, query, orderBy, where, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-        // 💡 Firebase Storageをインポート（ファイルアップロードに必要）
         import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-storage.js";
 
         // SVG Icons
@@ -294,6 +292,24 @@
             document.getElementById('modal-map-title').innerHTML = `${svgLocation} 場所を検索して添付`;
         });
         
+        // 💡 修正箇所：絵文字ピッカーのイベントリスナーをDOMContentLoaded内に移動
+        document.addEventListener('DOMContentLoaded', () => {
+            const picker = document.querySelector('emoji-picker');
+            if (picker) {
+                picker.addEventListener('emoji-click', event => {
+                    const textarea = document.getElementById(currentEmojiTargetId);
+                    if (textarea) {
+                        const start = textarea.selectionStart || textarea.value.length;
+                        const end = textarea.selectionEnd || textarea.value.length;
+                        const text = textarea.value;
+                        textarea.value = text.slice(0, start) + event.detail.unicode + text.slice(end);
+                        textarea.selectionStart = textarea.selectionEnd = start + event.detail.unicode.length;
+                        textarea.focus();
+                    }
+                });
+            }
+        });
+
         window.showToast = function(msg) { const toast = document.getElementById('customToast'); toast.innerText = msg; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
         window.customAlert = function(title, msg) { document.getElementById('alertModalTitle').innerText = title || "お知らせ"; document.getElementById('alertModalMessage').innerText = msg; document.getElementById('alertModal').style.display = 'flex'; }
         
@@ -306,7 +322,7 @@
         const firebaseConfig = { apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM", authDomain: "sabopennet.firebaseapp.com", projectId: "sabopennet", storageBucket: "sabopennet.firebasestorage.app", messagingSenderId: "284308308452", appId: "1:284308308452:web:e36dd991e55a0e60e4c7f1" };
         const app = initializeApp(firebaseConfig); 
         const db = getFirestore(app);
-        const storage = getStorage(app); // 💡 Storageを初期化
+        const storage = getStorage(app); 
 
         const defaultIcon = "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&h=150&fit=crop";
         let myProfile = JSON.parse(localStorage.getItem('mySNS_profile')) || {};
@@ -314,7 +330,6 @@
         
         let currentScheduleTime = null; let currentPollOptions = null; let uploadedImageBase64 = "";
 
-        // 💡 投稿用ファイルの処理
         let selectedPostFile = null;
         window.handlePostFileSelect = function(event) {
             const file = event.target.files[0];
@@ -337,7 +352,6 @@
             document.getElementById('postFilePreviewContent').innerHTML = '';
         }
 
-        // 💡 返信用ファイルの処理
         let selectedReplyFile = null;
         window.handleReplyFileSelect = function(event) {
             const file = event.target.files[0];
@@ -390,19 +404,7 @@
             container.style.left = Math.max(10, rect.left) + 'px';
         }
 
-        document.querySelector('emoji-picker').addEventListener('emoji-click', event => {
-            const textarea = document.getElementById(currentEmojiTargetId);
-            if (textarea) {
-                const start = textarea.selectionStart || textarea.value.length;
-                const end = textarea.selectionEnd || textarea.value.length;
-                const text = textarea.value;
-                textarea.value = text.slice(0, start) + event.detail.unicode + text.slice(end);
-                textarea.selectionStart = textarea.selectionEnd = start + event.detail.unicode.length;
-                textarea.focus();
-            }
-        });
-
-        // 💡 拡張子判定にクエリパラメーターを無視するよう修正（StorageURL対応）
+        // 💡 修正箇所：URLパース処理で拡張子を判定する際にクエリパラメーターを無視するように対応
         function parseContent(text) {
             let safe = (text || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
             
@@ -646,21 +648,24 @@
             return div;
         }
 
-        // 💡 投稿送信処理（ファイルアップロード対応）
+        // 💡 修正箇所：メタデータを付与してアップロードするように変更
         window.submitPost = async function() {
             let txt = document.getElementById('postText').value.trim();
             const videoUrl = document.getElementById('postVideoUrl').value.trim();
             if (videoUrl) { txt += (txt ? '\n\n' : '') + videoUrl; }
             if (!txt && !selectedPostFile) return;
 
-            // 💡 ファイルがあれば Storage へアップロード
             if (selectedPostFile) {
                 showToast("⏳ メディアをアップロード中...");
                 try {
                     const ext = selectedPostFile.name.split('.').pop() || 'png';
                     const fileName = `media_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
                     const sRef = storageRef(storage, 'uploads/' + fileName);
-                    await uploadBytes(sRef, selectedPostFile);
+                    
+                    // 💡 MIMEタイプを明示的に指定してアップロード
+                    const metadata = { contentType: selectedPostFile.type };
+                    await uploadBytes(sRef, selectedPostFile, metadata);
+                    
                     const fileUrl = await getDownloadURL(sRef);
                     txt += (txt ? '\n\n' : '') + fileUrl;
                 } catch (e) {
@@ -677,7 +682,7 @@
                 document.getElementById('postText').value = ''; 
                 document.getElementById('postVideoUrl').value = '';
                 document.getElementById('postVideoUrl').style.display = 'none';
-                clearPostFile(); // 💡 プレビューをクリア
+                clearPostFile(); 
                 
                 showToast(currentScheduleTime ? "予約しました！" : "ポストしました！");
                 currentScheduleTime = null; currentPollOptions = null; updateAttachmentUI(); renderPosts();
@@ -760,21 +765,24 @@
             } catch(e) {}
         }
 
-        // 💡 返信送信処理（ファイルアップロード対応）
+        // 💡 返信送信処理（ファイルアップロード対応・メタデータ付与）
         window.submitReply = async function(postId) {
             let txt = document.getElementById('detailReplyText').value.trim();
             const videoUrl = document.getElementById('detailReplyVideoUrl').value.trim();
             if (videoUrl) { txt += (txt ? '\n\n' : '') + videoUrl; }
             if (!txt && !selectedReplyFile) return;
 
-            // 💡 ファイルがあれば Storage へアップロード
             if (selectedReplyFile) {
                 showToast("⏳ メディアをアップロード中...");
                 try {
                     const ext = selectedReplyFile.name.split('.').pop() || 'png';
                     const fileName = `media_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
                     const sRef = storageRef(storage, 'uploads/' + fileName);
-                    await uploadBytes(sRef, selectedReplyFile);
+                    
+                    // 💡 MIMEタイプを明示的に指定
+                    const metadata = { contentType: selectedReplyFile.type };
+                    await uploadBytes(sRef, selectedReplyFile, metadata);
+                    
                     const fileUrl = await getDownloadURL(sRef);
                     txt += (txt ? '\n\n' : '') + fileUrl;
                 } catch (e) {
@@ -789,7 +797,7 @@
                 document.getElementById('detailReplyText').value = ''; 
                 document.getElementById('detailReplyVideoUrl').value = ''; 
                 document.getElementById('detailReplyVideoUrl').style.display = 'none';
-                clearReplyFile(); // 💡 プレビューをクリア
+                clearReplyFile();
 
                 loadReplies(postId); showToast("返信しました！");
             } catch (e) {}
