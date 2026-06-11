@@ -94,7 +94,6 @@
         .reply-item:hover { background-color: #080808; }
         .manage-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #2f3336; }
         
-        /* 自作絵文字ピッカーのスタイル */
         .emoji-picker-custom { display: none; position: absolute; z-index: 10000; background: #16181c; border: 1px solid #2f3336; border-radius: 12px; padding: 12px; width: 280px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .emoji-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
         .emoji-btn { background: transparent; border: none; font-size: 22px; cursor: pointer; padding: 5px; border-radius: 6px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
@@ -106,8 +105,10 @@
         .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; }
         .gallery-item { position: relative; aspect-ratio: 1/1; }
         .gallery-item img, .gallery-item video { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid #2f3336; }
-        .gallery-action { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.7); border:none; color:#fff; border-radius:50%; width:32px; height:32px; cursor:pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; }
-        .gallery-action:hover { background: rgba(0,0,0,0.9); transform: scale(1.1); }
+        /* ギャラリーアクションボタン群 */
+        .gallery-actions-container { position: absolute; top: 5px; right: 5px; display: flex; gap: 5px; }
+        .gallery-action-btn { background: rgba(0,0,0,0.7); border:none; color:#fff; border-radius:50%; width:32px; height:32px; cursor:pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; }
+        .gallery-action-btn:hover { background: rgba(0,0,0,0.9); transform: scale(1.1); }
     </style>
 </head>
 <body onclick="closeAllMenus()">
@@ -269,7 +270,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-        // 💡 削除機能のために deleteDoc を追加
         import { getFirestore, collection, addDoc, getDoc, getDocs, doc, query, orderBy, where, updateDoc, increment, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
         
         // SVG Icons
@@ -307,7 +307,6 @@
 
         window.unsubscribePosts = null;
         
-        // 💡 自作の絵文字ピッカーの初期化
         let currentEmojiTargetId = '';
         const emojis = ["😀","😂","🤣","😊","🥰","😍","😒","😭","😩","🥺","😡","🤯","😱","🤔","🤫","😑","😬","🙄","😪","😴","😷","🤧","🤮","🤑","😈","🤡","💩","👻","💀","👽","🤖","🎃","😺","🙈","💋","💌","💘","💝","💖","💗","💓","💞","💕","💟","❣️","💔","❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","💯","💢","💥","💫","💦","💨","💣","💬","👁️‍🗨️","💭","💤","👋","🤚","🖐️","✋","🖖","👌","🤏","✌️","🤞","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝️","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍️","💅","🤳","💪","🦾","🦿","🦵","🦶","👂","🦻","👃","🧠","🦷","👀","👁️","👅","👄","👶","🧒","👦","👧","🧑","👱","👨","🧔","👨‍🦰","👨‍🦱","👨‍🦳","👨‍🦲","👩","👩‍🦰","👩‍🦱","👩‍🦳","👩‍🦲","👱‍♀️","👱‍♂️","🧓","👴","👵","🙍","🙎","🙅","🙆","💁","🙋","🧏","🙇","🤦","🤷","👨‍⚕️","👩‍⚕️","👨‍🎓","👩‍🎓","👨‍🏫","👩‍🏫","👨‍⚖️","👩‍⚖️","👨‍🌾","👩‍🌾","👨‍🍳","👩‍🍳","👨‍🔧","👩‍🔧","👨‍🏭","👩‍🏭","👨‍💼","👩‍💼","👨‍🔬","👩‍🔬","👨‍💻","👩‍💻","👨‍🎤","👩‍🎤","👨‍🎨","👩‍🎨","👨‍✈️","👩‍✈️","👨‍🚀","👩‍🚀","👨‍🚒","👩‍🚒","👮","👮‍♂️","👮‍♀️","🕵️","💂","👷","🤴","👸","👳","👲","🧕","🤵","👰","🤰","🤱","👼","🎅","🤶","🦸","🦹","🧙","🧚","🧛","🧜","🧝","🧞","🧟","💆","💇","🚶","🧍","🧎","🏃","💃","🕺","🕴️","👯","🧖","🧗","🤺","🏇","⛷️","🏂","🏌️","🏄","🚣","🏊","⛹️","🏋️","🚴","🚵","🤸","🤼","🤽","🤾","🤹","🧘","🛀","🛌","🧑‍🤝‍🧑","👭","👫","👬","💏","💑","👪","🗣️","👤","👥","🫂","🐾","🐵","🐒","🦍","🦧","🐶","🐕","🐩","🐺","🦊","🦝","🐱","🐈","🦁","🐯","🐅","🐆","🐴","🐎","🦄","🦓","🦌","🦬","🐮","🐂","🐃","🐄","🐷","🐖","🐗","🐽","🐏","🐑","🐐","🐪","🐫","🦙","🦒","🐘","🦣","🦏","🦛","🐭","🐁","🐀","🐹","🐰","🐇","🐿️","🦫","🦔","🦇","🐻","🐨","🐼","🦥","🦦","🦨","🦘","🦡","🦃","🐔","🐓","🐣","🐤","🐥","🐦","🐧","🕊️","🦅","🦆","🦢","🦉","🦤","🪶","🦩","🦚","🦜","🐸","🐊","🐢","🦎","🐍","🐲","🐉","🦕","🦖","🐳","🐋","🐬","🦭","🐟","🐠","🐡","🦈","🐙","🐚","🐌","🦋","🐛","🐜","🐝","🪲","🐞","🦗","🪳","🕷️","🕸️","🦂","🦟","🪰","🪱","🦠","💐","🌸","💮","🏵️","🌹","🥀","🌺","🌻","🌼","🌷","🌱","🪴","🌲","🌳","🌴","🌵","🌾","🌿","☘️","🍀","🍁","🍂","🍃"];
         
@@ -484,7 +483,6 @@
             return `${dateObj.getMonth()+1}月${dateObj.getDate()}日`;
         }
 
-        // 💡 変更点：「画像保存」タブをナビゲーションに追加
         function renderNav(activeTab, title = "ホーム", showBack = false) {
             const backBtn = showBack ? `<button class="back-btn" onclick="window.history.back()">${svgBack}</button>` : '';
             document.getElementById('navContainer').innerHTML = `
@@ -521,7 +519,6 @@
                 loadPopularHashtags();
                 if(q) { renderSearchResults(q); } else { document.getElementById('searchResults').innerHTML = '<div style="padding:30px; text-align:center; color:#71767b;">検索したい言葉を入力してください。</div>'; }
             } else if (view === 'gallery') {
-                // 💡 変更点：画像保存（ギャラリー）画面の表示
                 renderNav('gallery', '画像保存'); document.getElementById('galleryView').style.display = 'block'; window.renderGallery();
             } else if (view === 'notifications') {
                 renderNav('notify', '通知'); document.getElementById('notificationView').style.display = 'block'; await renderNotifications();
@@ -534,7 +531,7 @@
         
         window.showHome = function() { window.history.pushState({}, '', window.location.pathname); checkRouting(); }
         window.showSearch = function() { window.history.pushState({}, '', '?view=search'); checkRouting(); }
-        window.showGallery = function() { window.history.pushState({}, '', '?view=gallery'); checkRouting(); } // 💡 画像保存タブ用
+        window.showGallery = function() { window.history.pushState({}, '', '?view=gallery'); checkRouting(); }
         window.showNotifications = function() { window.history.pushState({}, '', '?view=notifications'); checkRouting(); }
         window.showSettings = function() { window.history.pushState({}, '', '?view=settings'); checkRouting(); }
         window.showUserProfile = function(uid, ev) { if(ev){ev.stopPropagation();} window.history.pushState({}, '', `?user=${uid}`); checkRouting(); }
@@ -693,12 +690,25 @@
             }
         }
         
+        // 💡 変更点：AI画像を添付時に「画像保存」ギャラリーにもダイレクト保存
         window.attachGeneratedImage = async function() {
             if (window.currentGeneratedImgUrl) {
+                const fileUrl = window.currentGeneratedImgUrl;
+                
+                // ギャラリーへ自動保存
+                try {
+                    await addDoc(collection(db, "savedImages"), {
+                        userId: myProfile.id,
+                        url: fileUrl,
+                        createdAt: new Date(),
+                        type: 'image'
+                    });
+                } catch(e) {}
+
                 const txt = document.getElementById(currentImgTargetId);
-                txt.value += (txt.value ? '\n\n' : '') + window.currentGeneratedImgUrl;
+                txt.value += (txt.value ? '\n\n' : '') + fileUrl;
                 document.getElementById('aiModal').style.display = 'none';
-                showToast("画像を添付しました！");
+                showToast("画像を添付・保存しました！");
                 window.currentGeneratedImgUrl = "";
             }
         }
@@ -789,11 +799,14 @@
             return div;
         }
 
+        // 💡 変更点：ポスト投稿時に画像をギャラリーへダイレクト保存
         window.submitPost = async function() {
             let txt = document.getElementById('postText').value.trim();
             const videoUrl = document.getElementById('postVideoUrl').value.trim();
             if (videoUrl) { txt += (txt ? '\n\n' : '') + videoUrl; }
             if (!txt && !selectedPostFile) return;
+
+            let uploadedFileUrl = "";
 
             if (selectedPostFile) {
                 showToast("⏳ アップロード中... (動画の場合は時間がかかります)");
@@ -808,8 +821,8 @@
                     });
                     
                     if (!response.ok) throw new Error("APIサーバーエラー");
-                    const fileUrl = await response.text();
-                    txt += (txt ? '\n\n' : '') + fileUrl;
+                    uploadedFileUrl = await response.text();
+                    txt += (txt ? '\n\n' : '') + uploadedFileUrl;
                 } catch (e) {
                     customAlert("アップロードエラー", "ファイルのアップロードに失敗しました。\n詳細: " + e.message);
                     return; 
@@ -821,6 +834,17 @@
             
             try {
                 await addDoc(collection(db, "posts"), data);
+                
+                // 💡 ギャラリーへ自動ダイレクト保存
+                if (uploadedFileUrl && selectedPostFile) {
+                    await addDoc(collection(db, "savedImages"), {
+                        userId: myProfile.id,
+                        url: uploadedFileUrl,
+                        createdAt: new Date(),
+                        type: selectedPostFile.type.startsWith('video/') ? 'video' : 'image'
+                    });
+                }
+
                 document.getElementById('postText').value = ''; 
                 document.getElementById('postVideoUrl').value = '';
                 document.getElementById('postVideoUrl').style.display = 'none';
@@ -961,11 +985,14 @@
             } catch(e) {}
         }
 
+        // 💡 変更点：返信時にアップロードした画像もギャラリーにダイレクト保存
         window.submitReply = async function(postId) {
             let txt = document.getElementById('detailReplyText').value.trim();
             const videoUrl = document.getElementById('detailReplyVideoUrl').value.trim();
             if (videoUrl) { txt += (txt ? '\n\n' : '') + videoUrl; }
             if (!txt && !selectedReplyFile) return;
+
+            let uploadedFileUrl = "";
 
             if (selectedReplyFile) {
                 showToast("⏳ アップロード中... (動画の場合は時間がかかります)");
@@ -980,8 +1007,8 @@
                     });
                     
                     if (!response.ok) throw new Error("APIサーバーエラー");
-                    const fileUrl = await response.text();
-                    txt += (txt ? '\n\n' : '') + fileUrl;
+                    uploadedFileUrl = await response.text();
+                    txt += (txt ? '\n\n' : '') + uploadedFileUrl;
                 } catch (e) {
                     customAlert("アップロードエラー", "ファイルのアップロードに失敗しました。\n詳細: " + e.message);
                     return;
@@ -991,6 +1018,16 @@
             try { 
                 await addDoc(collection(db, "replies"), { postId: postId, content: txt, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, likes: 0 });
                 
+                // ギャラリーへ自動保存
+                if (uploadedFileUrl && selectedReplyFile) {
+                    await addDoc(collection(db, "savedImages"), {
+                        userId: myProfile.id,
+                        url: uploadedFileUrl,
+                        createdAt: new Date(),
+                        type: selectedReplyFile.type.startsWith('video/') ? 'video' : 'image'
+                    });
+                }
+
                 document.getElementById('detailReplyText').value = ''; 
                 document.getElementById('detailReplyVideoUrl').value = ''; 
                 document.getElementById('detailReplyVideoUrl').style.display = 'none';
@@ -1165,7 +1202,6 @@
             }
         }
 
-        // 💡 変更点：画像保存（ギャラリー）タブ用のアップロードと描画機能
         window.handleGalleryUpload = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1208,7 +1244,6 @@
                 let items = [];
                 snap.forEach(d => items.push({id: d.id, ...d.data()}));
                 
-                // 新しい順に並び替え
                 items.sort((a,b) => b.createdAt.toDate() - a.createdAt.toDate());
 
                 grid.innerHTML = '';
@@ -1228,16 +1263,30 @@
                         contentHtml = `<img src="${item.url}">`;
                     }
 
+                    // 💡 変更点：ギャラリー画面に「ポストする」ボタン（📝）を追加
                     div.innerHTML = `
                         <a href="${item.url}" target="_blank">${contentHtml}</a>
-                        <button class="gallery-action" onclick="deleteGalleryImage('${item.id}', event)" title="削除">🗑️</button>
-                        <button class="gallery-action" style="right: 42px;" onclick="copyGalleryUrl('${item.url}', event)" title="URLコピー">📋</button>
+                        <div class="gallery-actions-container">
+                            <button class="gallery-action-btn" onclick="postFromGallery('${item.url}', event)" title="この画像をポストする">📝</button>
+                            <button class="gallery-action-btn" onclick="copyGalleryUrl('${item.url}', event)" title="URLコピー">📋</button>
+                            <button class="gallery-action-btn" onclick="deleteGalleryImage('${item.id}', event)" title="削除">🗑️</button>
+                        </div>
                     `;
                     grid.appendChild(div);
                 });
             } catch(e) {
                 grid.innerHTML = `<div class="error-box">読み込みエラー: ${e.message}</div>`;
             }
+        }
+
+        // 💡 変更点：ギャラリーから直接ポスト投稿画面へ移動する機能
+        window.postFromGallery = function(url, ev) {
+            if(ev) ev.stopPropagation();
+            showHome(); // ホームタブへ移動
+            const txt = document.getElementById('postText');
+            txt.value += (txt.value ? '\n\n' : '') + url; // URLを入力欄に追加
+            txt.focus();
+            showToast("画像をポスト欄に添付しました！");
         }
 
         window.copyGalleryUrl = function(url, ev) {
