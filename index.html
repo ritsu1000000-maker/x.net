@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易SNS - 全機能統合版（DM・フォロー対応）</title>
+    <title>簡易SNS - 全機能統合版（グルチャ対応）</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <style>
         body { font-family: sans-serif; background-color: #000000; margin: 0; padding: 0; color: #e7e9ea; }
         .layout-wrapper { display: flex; justify-content: center; max-width: 950px; margin: 0 auto; gap: 30px; }
-        .container { width: 100%; max-width: 600px; background: #000000; min-height: 100vh; border-left: 1px solid #2f3336; border-right: 1px solid #2f3336; position: relative; }
+        .container { width: 100%; max-width: 600px; background: #000000; min-height: 100vh; border-left: 1px solid #2f3336; border-right: 1px solid #2f3336; position: relative; display: flex; flex-direction: column; }
         .sidebar { width: 320px; padding-top: 15px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: none; }
         @media (min-width: 950px) { .sidebar { display: block; } }
         .sidebar-box { background-color: #16181c; border-radius: 16px; padding: 15px; border: 1px solid #2f3336; margin-bottom: 20px; }
@@ -21,7 +21,7 @@
         .header-bar { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #2f3336; background-color: rgba(0, 0, 0, 0.85); position: sticky; top: 0; backdrop-filter: blur(5px); z-index: 10; font-weight: bold; font-size: 18px; }
         .back-btn { background: none; border: none; cursor: pointer; margin-right: 15px; padding: 5px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #e7e9ea; }
         .back-btn:hover { background-color: #181818; }
-        .tabs { display: flex; border-bottom: 1px solid #2f3336; overflow-x: auto; white-space: nowrap; }
+        .tabs { display: flex; border-bottom: 1px solid #2f3336; overflow-x: auto; white-space: nowrap; flex-shrink: 0; }
         .tab { flex: 1; text-align: center; padding: 15px 10px; text-decoration: none; color: #71767b; font-weight: bold; font-size: 15px; cursor: pointer; min-width: 80px; }
         .tab:hover { background-color: #181818; }
         .tab.active { color: #e7e9ea; border-bottom: 4px solid #1d9bf0; }
@@ -38,7 +38,7 @@
         .post:hover { background-color: #080808; }
         .post-left { margin-right: 12px; flex-shrink: 0; }
         .post-right { flex: 1; display: flex; flex-direction: column; position: relative; width: 100%; min-width: 0; }
-        .user-icon { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #2f3336; }
+        .user-icon { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #2f3336; flex-shrink: 0; }
         .user-name { font-weight: bold; font-size: 15px; color: #e7e9ea; }
         .user-name:hover { text-decoration: underline; }
         .user-handle { color: #71767b; font-size: 15px; margin-left: 4px; font-weight: normal; }
@@ -70,7 +70,7 @@
         .menu-item:hover { background-color: #16181c; }
         .menu-item.danger { color: #f91880; }
         .menu-item.danger:hover { background-color: #200914; }
-        .view-section { display: none; }
+        .view-section { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
         .error-box { padding: 20px; margin: 15px; border: 2px solid #f91880; background-color: #200914; color: #f91880; font-weight: bold; border-radius: 10px; }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(91, 112, 131, 0.4); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal-content { background: #000000; width: 90%; max-width: 600px; border-radius: 16px; border: 1px solid #2f3336; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 0 15px rgba(255,255,255,0.1); }
@@ -82,7 +82,7 @@
         .top-notification { position: fixed; top: -60px; left: 50%; transform: translateX(-50%); background-color: #1d9bf0; color: white; padding: 12px 24px; border-radius: 25px; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.4); font-weight: bold; transition: top 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); pointer-events: none; display: flex; align-items: center; gap: 8px; }
         .top-notification.show { top: 20px; }
 
-        .search-input-box { display: flex; padding: 15px; border-bottom: 1px solid #2f3336; gap: 10px; }
+        .search-input-box { display: flex; padding: 15px; border-bottom: 1px solid #2f3336; gap: 10px; flex-shrink: 0; }
         .search-input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #2f3336; background: transparent; color: #e7e9ea; font-size: 16px; outline: none; }
         .search-input:focus { border-color: #1d9bf0; }
         .trend-tag { background-color: #16181c; padding: 10px 15px; border-radius: 12px; cursor: pointer; border: 1px solid #2f3336; transition: background-color 0.2s, border-color 0.2s; flex: 1; min-width: 120px; box-sizing: border-box; }
@@ -94,19 +94,20 @@
         .reply-item:hover { background-color: #080808; }
         .manage-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #2f3336; }
         
-        /* 自作絵文字ピッカーのスタイル */
         .emoji-picker-custom { display: none; position: absolute; z-index: 10000; background: #16181c; border: 1px solid #2f3336; border-radius: 12px; padding: 12px; width: 280px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .emoji-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
         .emoji-btn { background: transparent; border: none; font-size: 22px; cursor: pointer; padding: 5px; border-radius: 6px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
         .emoji-btn:hover { background: #2f3336; }
-        /* スクロールバーのデザイン */
         .emoji-list::-webkit-scrollbar { width: 6px; }
         .emoji-list::-webkit-scrollbar-thumb { background: #2f3336; border-radius: 3px; }
 
-        /* 💡 新機能用：DM・チャット画面のスタイル */
+        /* 💡 新機能用：グルチャ＆DMのスタイル */
+        .dm-message-wrapper { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 6px; }
+        .dm-message-wrapper.mine { flex-direction: row-reverse; }
         .dm-bubble { max-width: 75%; padding: 10px 14px; border-radius: 20px; font-size: 15px; line-height: 1.4; word-break: break-all; }
-        .dm-bubble.mine { background-color: #1d9bf0; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-        .dm-bubble.other { background-color: #2f3336; color: #e7e9ea; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .dm-bubble.mine { background-color: #1d9bf0; color: white; border-bottom-right-radius: 4px; }
+        .dm-bubble.other { background-color: #2f3336; color: #e7e9ea; border-bottom-left-radius: 4px; }
+        .dm-sender-name { font-size: 12px; color: #71767b; margin-bottom: 4px; margin-left: 48px; }
     </style>
 </head>
 <body onclick="closeAllMenus()">
@@ -115,7 +116,7 @@
     <div id="topNotification" class="top-notification"></div>
 
     <div class="layout-wrapper">
-        <div class="container">
+        <div class="container" id="mainContainer">
             <div id="navContainer"></div>
 
             <div id="homeView" class="view-section">
@@ -176,9 +177,9 @@
                 <div id="dmListArea"></div>
             </div>
 
-            <div id="chatRoomView" class="view-section" style="display:flex; flex-direction:column; height: 100vh;">
-                <div id="chatMessages" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px;"></div>
-                <div class="search-input-box" style="background:#000; padding:10px 15px;">
+            <div id="chatRoomView" class="view-section" style="background:#000;">
+                <div id="chatMessages" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:8px;"></div>
+                <div class="search-input-box" style="background:#000; padding:10px 15px; border-top:1px solid #2f3336;">
                     <input type="text" id="dmInput" class="search-input" placeholder="メッセージを入力..." onkeydown="if(event.key==='Enter') sendDM()">
                     <button class="post-btn" onclick="sendDM()">送信</button>
                 </div>
@@ -255,23 +256,27 @@
         </div>
     </div>
 
+    <div id="createGroupModal" class="modal-overlay">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span>➕ 新しいグループを作成</span>
+                <button class="close-modal" onclick="document.getElementById('createGroupModal').style.display='none'">×</button>
+            </div>
+            <input type="text" id="groupNameInput" placeholder="グループ名を入力" style="width:100%; padding:12px; border:1px solid #2f3336; border-radius:8px; background:transparent; color:#e7e9ea; font-size:16px; outline:none;">
+            <div style="margin-top:10px; font-weight:bold; color:#71767b; font-size:14px;">メンバーを追加 (フォロー中から選択)</div>
+            <div id="groupMembersArea" style="max-height: 250px; overflow-y: auto; border: 1px solid #2f3336; border-radius: 8px; padding: 5px;"></div>
+            <button class="post-btn" onclick="submitCreateGroup()" style="width:100%; margin-top:15px;">作成する</button>
+        </div>
+    </div>
+
     <div id="scheduleModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span style="display:flex; align-items:center; gap:6px;" id="modal-schedule-title"></span><button class="close-modal" onclick="document.getElementById('scheduleModal').style.display='none'">×</button></div><input type="datetime-local" id="scheduleInput" style="width:100%; padding:12px; border:1px solid #2f3336; border-radius:8px; font-size:16px; outline:none; background:#000; color:#e7e9ea; box-sizing:border-box; color-scheme:dark;"><button class="post-btn" onclick="attachSchedule()" style="width:100%; margin-top:15px;">時間を設定する</button></div></div>
     <div id="pollModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span style="display:flex; align-items:center; gap:6px;" id="modal-poll-title"></span><button class="close-modal" onclick="document.getElementById('pollModal').style.display='none'">×</button></div><input type="text" id="pollOpt1" placeholder="選択肢 1" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #2f3336; border-radius:8px; background:transparent; color:#e7e9ea;"><input type="text" id="pollOpt2" placeholder="選択肢 2" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #2f3336; border-radius:8px; background:transparent; color:#e7e9ea;"><input type="text" id="pollOpt3" placeholder="選択肢 3 (任意)" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #2f3336; border-radius:8px; background:transparent; color:#e7e9ea;"><input type="text" id="pollOpt4" placeholder="選択肢 4 (任意)" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #2f3336; border-radius:8px; background:transparent; color:#e7e9ea;"><button class="post-btn" onclick="attachPoll()" style="width:100%;">投票を設定する</button></div></div>
     <div id="mapModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span style="display:flex; align-items:center; gap:6px;" id="modal-map-title"></span><button class="close-modal" onclick="document.getElementById('mapModal').style.display='none'">×</button></div><input type="text" id="mapKeyword" placeholder="例: 東京駅" style="width:100%; padding:12px; border:1px solid #2f3336; border-radius:8px; background:transparent; color:#e7e9ea;"><button class="post-btn" onclick="attachMapLink()" style="width:100%; margin-top:10px;">地図を添付する</button></div></div>
-
-    <div id="repostModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>リポスト / 引用</span><button class="close-modal" onclick="closeRepostModal()">×</button></div><textarea id="quoteText" rows="3" placeholder="コメントを追加して引用..." style="width:100%; border:none; background:transparent; color:#e7e9ea; resize:none; outline:none; font-size:16px;"></textarea><div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-        <button class="toolbar-btn" onclick="openEmojiPicker('quoteText', event)" style="font-size: 16px;">😀</button>
-        <div style="display:flex; gap:10px;">
-            <button class="post-btn" style="background:transparent; border:1px solid #00ba7c; color:#00ba7c;" onclick="submitRepost(false)">通常リポスト</button>
-            <button class="post-btn" onclick="submitRepost(true)">引用ポスト</button>
-        </div>
-    </div></div></div>
-
+    <div id="repostModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>リポスト / 引用</span><button class="close-modal" onclick="closeRepostModal()">×</button></div><textarea id="quoteText" rows="3" placeholder="コメントを追加して引用..." style="width:100%; border:none; background:transparent; color:#e7e9ea; resize:none; outline:none; font-size:16px;"></textarea><div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;"><button class="toolbar-btn" onclick="openEmojiPicker('quoteText', event)" style="font-size: 16px;">😀</button><div style="display:flex; gap:10px;"><button class="post-btn" style="background:transparent; border:1px solid #00ba7c; color:#00ba7c;" onclick="submitRepost(false)">通常リポスト</button><button class="post-btn" onclick="submitRepost(true)">引用ポスト</button></div></div></div></div>
     <div id="alertModal" class="modal-overlay" style="z-index: 10000;"><div class="modal-content" onclick="event.stopPropagation()" style="max-width:350px; text-align:center;"><div id="alertModalTitle" style="font-weight:bold; font-size:18px; margin-bottom:10px; color:#e7e9ea;"></div><div id="alertModalMessage" style="margin-bottom:20px; color:#e7e9ea; font-size:15px; white-space:pre-wrap; line-height:1.5;"></div><button class="post-btn" onclick="document.getElementById('alertModal').style.display='none'" style="width:100%;">OK</button></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-        // 💡 setDoc, deleteDoc を追加（ユーザー同期・フォロー用）
         import { getFirestore, collection, addDoc, getDoc, getDocs, doc, query, orderBy, where, updateDoc, increment, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
         
         // SVG Icons
@@ -371,18 +376,12 @@
         let myProfile = JSON.parse(localStorage.getItem('mySNS_profile')) || {};
         if (!myProfile.id) { myProfile.id = "user_" + Math.random().toString(36).substring(2, 12); myProfile.name = "ゲストユーザー"; myProfile.icon = defaultIcon; localStorage.setItem('mySNS_profile', JSON.stringify(myProfile)); }
         
-        // 💡 追加：ユーザー情報をFirestoreにも保存・更新する（メンションや検索でヒットさせるため）
         window.syncMyProfile = async function() {
             try {
-                await setDoc(doc(db, "users", myProfile.id), {
-                    id: myProfile.id,
-                    name: myProfile.name,
-                    icon: myProfile.icon,
-                    updatedAt: new Date()
-                }, { merge: true });
-            } catch(e) { console.error("Profile sync error", e); }
+                await setDoc(doc(db, "users", myProfile.id), { id: myProfile.id, name: myProfile.name, icon: myProfile.icon, updatedAt: new Date() }, { merge: true });
+            } catch(e) { console.error(e); }
         }
-        syncMyProfile(); // 起動時に同期
+        syncMyProfile();
 
         let currentScheduleTime = null; let currentPollOptions = null; let uploadedImageBase64 = "";
 
@@ -401,11 +400,7 @@
             const file = event.target.files[0];
             if (!file) return;
             if (file.size > 200 * 1024 * 1024) { customAlert("エラー", "ファイルサイズが大きすぎます(最大200MB)"); return; }
-            
-            if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-                customAlert("エラー", "画像または動画ファイルのみ選択可能です。");
-                return;
-            }
+            if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) { customAlert("エラー", "画像または動画ファイルのみ選択可能です。"); return; }
 
             selectedPostFile = file;
             const previewContent = document.getElementById('postFilePreviewContent');
@@ -416,7 +411,6 @@
             } else if (file.type.startsWith('video/')) {
                 const video = document.createElement('video'); video.src = URL.createObjectURL(file); video.controls = true; video.style.maxWidth = '100%'; video.style.maxHeight = '200px'; video.style.borderRadius = '12px'; previewContent.appendChild(video);
             }
-            
             document.getElementById('postFilePreview').style.display = 'block';
         }
         window.clearPostFile = function() {
@@ -430,12 +424,8 @@
         window.handleReplyFileSelect = function(event) {
             const file = event.target.files[0];
             if (!file) return;
-            if (file.size > 200 * 1024 * 1024) { customAlert("エラー", "ファイルサイズが大きすぎます(最大200MB)"); return; }
-            
-            if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-                customAlert("エラー", "画像または動画ファイルのみ選択可能です。");
-                return;
-            }
+            if (file.size > 200 * 1024 * 1024) { customAlert("エラー", "ファイルサイズが大きすぎます"); return; }
+            if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) { customAlert("エラー", "画像または動画のみ"); return; }
 
             selectedReplyFile = file;
             const previewContent = document.getElementById('replyFilePreviewContent');
@@ -446,7 +436,6 @@
             } else if (file.type.startsWith('video/')) {
                 const video = document.createElement('video'); video.src = URL.createObjectURL(file); video.controls = true; video.style.maxWidth = '100%'; video.style.maxHeight = '150px'; video.style.borderRadius = '12px'; previewContent.appendChild(video);
             }
-            
             document.getElementById('replyFilePreview').style.display = 'block';
         }
         window.clearReplyFile = function() {
@@ -457,12 +446,11 @@
         }
 
         function parseContent(text) {
-            let safe = (text || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+            let safe = (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
             safe = safe.replace(/(^|\s)([#＃][^\s<]+)/g, function(match, space, tag) {
                 const pureTag = tag.replace(/'/g, "\\'");
                 return `${space}<span class="hashtag" onclick="executeSearch('${pureTag}', event)">${tag}</span>`;
             });
-            // 💡 追加：メンション (@ユーザー名) をリンク化
             safe = safe.replace(/@([^\s<]+)/g, '<span class="hashtag" onclick="executeSearch(\'@$1\', event)">@$1</span>');
 
             const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -507,27 +495,22 @@
             document.getElementById('navContainer').innerHTML = `
                 <div class="header-bar">${backBtn}<span>${title}</span></div>
                 <div class="tabs">
-                    <div class="tab ${activeTab==='home'?'active':''}" onclick="showHome()">タイムライン</div>
+                    <div class="tab ${activeTab==='home'?'active':''}" onclick="showHome()">ホーム</div>
                     <div class="tab ${activeTab==='search'?'active':''}" onclick="showSearch()">検索</div>
                     <div class="tab ${activeTab==='notify'?'active':''}" onclick="showNotifications()">通知</div>
-                    <div class="tab ${activeTab==='messages'?'active':''}" onclick="showMessages()">DM</div>
+                    <div class="tab ${activeTab==='messages'?'active':''}" onclick="showMessages()">メッセージ</div>
                     <div class="tab ${activeTab==='settings'?'active':''}" onclick="showSettings()">設定</div>
                 </div>
             `;
         }
 
         window.checkRouting = async function() {
-            if (window.unsubscribePosts) {
-                window.unsubscribePosts();
-                window.unsubscribePosts = null;
-            }
-            if (window.unsubscribeChat) {
-                window.unsubscribeChat();
-                window.unsubscribeChat = null;
-            }
+            if (window.unsubscribePosts) { window.unsubscribePosts(); window.unsubscribePosts = null; }
+            if (window.unsubscribeChat) { window.unsubscribeChat(); window.unsubscribeChat = null; }
 
             const params = new URLSearchParams(window.location.search);
             const view = params.get('view'); const id = params.get('id'); const user = params.get('user'); const chat = params.get('chat');
+            
             document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
             closeAllMenus(); updateMyIconDisplays();
             loadSidebarTrends();
@@ -537,16 +520,18 @@
             } else if (user) {
                 renderNav('', 'プロフィール', true); document.getElementById('userProfileView').style.display = 'block'; await renderUserProfile(user);
             } else if (chat) {
-                // 💡 追加：チャットルーム表示
-                renderNav('', 'メッセージ', true); document.getElementById('chatRoomView').style.display = 'flex'; renderChatRoom(chat);
+                const type = params.get('type') || 'user';
+                const name = params.get('name') || 'チャット';
+                renderNav('messages', decodeURIComponent(name), true);
+                document.getElementById('chatRoomView').style.display = 'flex';
+                renderChatRoom(chat, type);
             } else if (view === 'search') {
                 renderNav('search', '検索'); document.getElementById('searchView').style.display = 'block';
                 const q = params.get('q') || ''; document.getElementById('searchInput').value = q;
                 loadPopularHashtags();
                 if(q) { renderSearchResults(q); } else { document.getElementById('searchResults').innerHTML = '<div style="padding:30px; text-align:center; color:#71767b;">検索したい言葉を入力してください。</div>'; }
             } else if (view === 'messages') {
-                // 💡 追加：DM一覧表示
-                renderNav('messages', 'ダイレクトメッセージ'); document.getElementById('messagesView').style.display = 'block'; renderDMList();
+                renderNav('messages', 'メッセージ'); document.getElementById('messagesView').style.display = 'block'; renderDMList();
             } else if (view === 'notifications') {
                 renderNav('notify', '通知'); document.getElementById('notificationView').style.display = 'block'; await renderNotifications();
             } else if (view === 'settings') {
@@ -563,7 +548,13 @@
         window.showSettings = function() { window.history.pushState({}, '', '?view=settings'); checkRouting(); }
         window.showUserProfile = function(uid, ev) { if(ev){ev.stopPropagation();} window.history.pushState({}, '', `?user=${uid}`); checkRouting(); }
         window.showPostDetail = function(pid) { window.history.pushState({}, '', `?id=${pid}`); checkRouting(); }
-        window.openChat = function(uid) { window.history.pushState({}, '', `?chat=${uid}`); checkRouting(); }
+        
+        // 💡 変更：チャットを開く処理（個人／グルチャ対応）
+        window.openChat = function(id, type, name) {
+            window.history.pushState({}, '', `?chat=${id}&type=${type}&name=${encodeURIComponent(name)}`);
+            checkRouting();
+        }
+
         window.addEventListener('popstate', checkRouting);
 
         window.executeSearch = function(keyword, event) {
@@ -622,7 +613,7 @@
                     div.innerHTML = `<div class="trend-tag-name">${tag}</div><div class="trend-tag-count">${count} 件のポスト</div>`;
                     list.appendChild(div);
                 });
-            } catch (e) { list.innerHTML = `<div style="color:#f91880; font-size:13px;">読み込みエラー: ${e.message}</div>`; }
+            } catch (e) {}
         }
 
         window.loadSidebarTrends = async function() {
@@ -682,9 +673,7 @@
                 
                 document.getElementById('aiTextModal').style.display = 'none'; 
                 showToast("✨ AIが文章を作成しました！");
-            } catch (e) { 
-                customAlert("エラー", "文章の生成に失敗しました。\n詳細: " + e.message); 
-            }
+            } catch (e) { customAlert("エラー", "文章の生成に失敗しました。\n詳細: " + e.message); }
         }
 
         let currentImgTargetId = 'postText'; 
@@ -713,15 +702,11 @@
                     document.getElementById('aiPreviewArea').style.display = 'block';
                     showToast("✨ 画像完成！");
                 }
-                imgEl.onerror = function() {
-                    throw new Error("画像の読み込みに失敗しました。");
-                }
+                imgEl.onerror = function() { throw new Error("画像の読み込みに失敗しました。"); }
                 imgEl.src = imageUrl;
                 window.currentGeneratedImgUrl = imageUrl;
                 
-            } catch (e) {
-                customAlert("エラー", "画像の生成に失敗しました。\n" + e.message);
-            }
+            } catch (e) { customAlert("エラー", "画像の生成に失敗しました。\n" + e.message); }
         }
         
         window.attachGeneratedImage = async function() {
@@ -820,39 +805,23 @@
             return div;
         }
 
-        // 💡 AIへメンションされた時の処理
         window.handleAIMention = async function(text, postId) {
             const question = text.replace(/@AI|＠AI/gi, '').trim();
             if (!question) return;
-
-            showToast("🤖 AIが返信を考えています...");
-
+            showTopNotification("🤖 AIが返信を考えています...");
             try {
-                const sysPrompt = "あなたはSNSのフレンドリーなAIアシスタントです。ユーザーの次の投稿に短く返信して:";
+                const sysPrompt = "あなたはSNSのフレンドリーなAIアシスタントです。ユーザーの投稿に短く返信して:";
                 const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(sysPrompt + "\n" + question)}`);
-                
                 if (!response.ok) throw new Error("APIエラー");
                 const aiResponse = await response.text();
 
                 await addDoc(collection(db, "replies"), {
-                    postId: postId,
-                    content: aiResponse,
-                    createdAt: new Date(),
-                    userId: "ai_bot_system",
-                    userName: "🤖 AI",
-                    userIcon: "https://api.dicebear.com/7.x/bottts/svg?seed=AI&backgroundColor=1d9bf0", 
-                    likes: 0
+                    postId: postId, content: aiResponse, createdAt: new Date(), userId: "ai_bot_system",
+                    userName: "🤖 AI", userIcon: "https://api.dicebear.com/7.x/bottts/svg?seed=AI&backgroundColor=1d9bf0", likes: 0
                 });
-
                 showTopNotification("✨ AIから返信が届きました！");
-
-                if (document.getElementById('detailReplyList') && document.getElementById('detailView').style.display === 'block') {
-                    loadReplies(postId);
-                }
-            } catch (e) {
-                console.error("AI Mention Error:", e);
-                showToast("🤖 AIの返信に失敗しました");
-            }
+                if (document.getElementById('detailReplyList') && document.getElementById('detailView').style.display === 'block') loadReplies(postId);
+            } catch (e) { showToast("🤖 AIの返信に失敗しました"); }
         }
 
         window.submitPost = async function() {
@@ -862,24 +831,14 @@
             if (!txt && !selectedPostFile) return;
 
             if (selectedPostFile) {
-                showToast("⏳ アップロード中... (動画の場合は時間がかかります)");
+                showToast("⏳ アップロード中...");
                 try {
-                    const formData = new FormData();
-                    formData.append("reqtype", "fileupload");
-                    formData.append("fileToUpload", selectedPostFile);
-                    
-                    const response = await fetch("https://catbox.moe/user/api.php", {
-                        method: "POST",
-                        body: formData
-                    });
-                    
+                    const formData = new FormData(); formData.append("reqtype", "fileupload"); formData.append("fileToUpload", selectedPostFile);
+                    const response = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: formData });
                     if (!response.ok) throw new Error("APIサーバーエラー");
                     const fileUrl = await response.text();
                     txt += (txt ? '\n\n' : '') + fileUrl;
-                } catch (e) {
-                    customAlert("アップロードエラー", "ファイルのアップロードに失敗しました。\n詳細: " + e.message);
-                    return; 
-                }
+                } catch (e) { customAlert("アップロードエラー", e.message); return; }
             }
 
             let data = { content: txt, createdAt: currentScheduleTime ? currentScheduleTime : new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, isRepost: false, views: 0, likes: 0, reposts: 0 };
@@ -887,34 +846,20 @@
             
             try {
                 const docRef = await addDoc(collection(db, "posts"), data);
-                document.getElementById('postText').value = ''; 
-                document.getElementById('postVideoUrl').value = '';
-                document.getElementById('postVideoUrl').style.display = 'none';
-                clearPostFile(); 
-                
+                document.getElementById('postText').value = ''; document.getElementById('postVideoUrl').value = ''; document.getElementById('postVideoUrl').style.display = 'none'; clearPostFile(); 
                 showToast(currentScheduleTime ? "予約しました！" : "ポストしました！");
-                currentScheduleTime = null; currentPollOptions = null; updateAttachmentUI(); 
-                loadSidebarTrends();
+                currentScheduleTime = null; currentPollOptions = null; updateAttachmentUI(); loadSidebarTrends();
 
-                // 💡 AIメンション判定
-                if (txt.includes('@AI') || txt.includes('＠AI')) {
-                    handleAIMention(txt, docRef.id);
-                }
+                if (txt.includes('@AI') || txt.includes('＠AI')) handleAIMention(txt, docRef.id);
 
-                // 💡 ユーザーメンション判定＆通知
                 const mentions = txt.match(/@([^\s ]+)/g);
                 if (mentions) {
                     for (let m of mentions) {
                         const mName = m.substring(1); 
                         if (mName.toUpperCase() === 'AI') continue; 
-                        const uq = query(collection(db, "users"), where("name", "==", mName));
-                        const usnap = await getDocs(uq);
+                        const usnap = await getDocs(query(collection(db, "users"), where("name", "==", mName)));
                         usnap.forEach(udoc => {
-                            addDoc(collection(db, "notifications"), {
-                                type: "mention", postId: docRef.id,
-                                senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon,
-                                targetUserId: udoc.id, createdAt: new Date()
-                            });
+                            addDoc(collection(db, "notifications"), { type: "mention", postId: docRef.id, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: udoc.id, createdAt: new Date() });
                         });
                     }
                 }
@@ -923,64 +868,32 @@
 
         window.renderPosts = function() {
             const tl = document.getElementById('timeline');
-            if (!window.unsubscribePosts) {
-                tl.innerHTML = '<div style="padding:15px; color:#71767b;">通信中...</div>';
-            }
-            if (window.unsubscribePosts) {
-                window.unsubscribePosts();
-            }
-
+            if (window.unsubscribePosts) window.unsubscribePosts();
+            
             const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
             let isFirstLoad = true;
 
             window.unsubscribePosts = onSnapshot(q, (snapshot) => {
                 if (isFirstLoad) {
                     tl.innerHTML = '';
-                    if (snapshot.empty) { 
-                        tl.innerHTML = '<div id="empty-timeline-msg" style="padding:15px; color:#71767b;">まだ投稿がありません。</div>'; 
-                    } else {
-                        snapshot.forEach(docSnap => tl.appendChild(createPostElement(docSnap.id, docSnap.data(), docSnap.data().userId)));
-                    }
+                    if (snapshot.empty) { tl.innerHTML = '<div id="empty-timeline-msg" style="padding:15px; color:#71767b;">まだ投稿がありません。</div>'; } 
+                    else { snapshot.forEach(docSnap => tl.appendChild(createPostElement(docSnap.id, docSnap.data(), docSnap.data().userId))); }
                     setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
                     isFirstLoad = false;
                 } else {
                     let hasNewPost = false;
                     snapshot.docChanges().forEach((change) => {
-                        const post = change.doc.data();
-                        const pid = change.doc.id;
-                        
+                        const post = change.doc.data(); const pid = change.doc.id;
                         if (change.type === "added") {
-                            const emptyMsg = document.getElementById('empty-timeline-msg');
-                            if (emptyMsg) emptyMsg.remove();
-                            
+                            const emptyMsg = document.getElementById('empty-timeline-msg'); if (emptyMsg) emptyMsg.remove();
                             const newEl = createPostElement(pid, post, post.userId);
-                            if (newEl.style.display !== 'none') {
-                                tl.insertBefore(newEl, tl.firstChild);
-                                hasNewPost = true;
-                                if (post.userId !== myProfile.id) {
-                                    showTopNotification("✨ 新着ポストが投稿されました！");
-                                }
-                            }
+                            if (newEl.style.display !== 'none') { tl.insertBefore(newEl, tl.firstChild); hasNewPost = true; if (post.userId !== myProfile.id) showTopNotification("✨ 新着ポストが投稿されました！"); }
                         }
-                        if (change.type === "modified") {
-                            const oldEl = document.getElementById(`postDom-${pid}`);
-                            if (oldEl) {
-                                const newEl = createPostElement(pid, post, post.userId);
-                                tl.replaceChild(newEl, oldEl);
-                            }
-                        }
-                        if (change.type === "removed") {
-                            const oldEl = document.getElementById(`postDom-${pid}`);
-                            if (oldEl) oldEl.remove();
-                        }
+                        if (change.type === "modified") { const oldEl = document.getElementById(`postDom-${pid}`); if (oldEl) tl.replaceChild(createPostElement(pid, post, post.userId), oldEl); }
+                        if (change.type === "removed") { const oldEl = document.getElementById(`postDom-${pid}`); if (oldEl) oldEl.remove(); }
                     });
-                    
-                    if (hasNewPost) {
-                        setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
-                    }
+                    if (hasNewPost) setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
                 }
-            }, (error) => {
-                tl.innerHTML = `<div class="error-box">エラー: ${error.message}</div>`;
             });
         }
 
@@ -993,13 +906,8 @@
                     const post = docSnap.data(); const dObj = post.createdAt ? post.createdAt.toDate() : new Date(0);
                     if (dObj > new Date() && post.userId !== myProfile.id) { area.innerHTML = '<div style="padding:20px;">まだ公開されていません。</div>'; return; }
                     
-                    const temp = createPostElement(postId, post, post.userId);
-                    temp.style.borderBottom = 'none'; temp.className = '';
-                    
+                    const temp = createPostElement(postId, post, post.userId); temp.style.borderBottom = 'none'; temp.className = '';
                     const likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
-                    const isLiked = likedPosts.includes(postId);
-                    const likeStyle = isLiked ? 'color: #f91880;' : '';
-
                     const tempHtml = temp.innerHTML.replace(`id="like-count-${postId}"`, `id="detail-like-count-${postId}"`);
 
                     area.innerHTML = `
@@ -1009,20 +917,12 @@
                             <div class="post-box-right">
                                 <textarea id="detailReplyText" rows="2" placeholder="返信をポスト... (@ユーザー名 や @AI)"></textarea>
                                 <input type="text" id="detailReplyVideoUrl" class="video-input-field" placeholder="🎥 動画のURLを貼り付け...">
-                                
                                 <input type="file" id="replyFileInput" accept="image/*,video/*" style="display:none;" onchange="handleReplyFileSelect(event)">
                                 <div id="replyFilePreview" style="display:none; margin-bottom: 10px; position: relative; max-width: max-content;">
-                                    <div id="replyFilePreviewContent"></div>
-                                    <button onclick="clearReplyFile()" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
+                                    <div id="replyFilePreviewContent"></div><button onclick="clearReplyFile()" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
                                 </div>
-
                                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                                    <div style="display:flex; gap:8px;">
-                                        <button class="toolbar-btn" onclick="openEmojiPicker('detailReplyText', event)" style="font-size:16px;">😀</button>
-                                        <button class="toolbar-btn" onclick="document.getElementById('replyFileInput').click()">${svgImage} 画像/動画</button>
-                                        <button class="toolbar-btn" onclick="toggleVideoInput('detailReplyVideoUrl', event)">${svgVideo} URL</button>
-                                        <button class="toolbar-btn" onclick="openAITextModal('detailReplyText')">${svgRobot}</button>
-                                    </div>
+                                    <div style="display:flex; gap:8px;"><button class="toolbar-btn" onclick="openEmojiPicker('detailReplyText', event)" style="font-size:16px;">😀</button><button class="toolbar-btn" onclick="document.getElementById('replyFileInput').click()">${svgImage} 画像/動画</button><button class="toolbar-btn" onclick="toggleVideoInput('detailReplyVideoUrl', event)">${svgVideo} URL</button><button class="toolbar-btn" onclick="openAITextModal('detailReplyText')">${svgRobot}</button></div>
                                     <button class="post-btn" onclick="submitReply('${postId}')">返信</button>
                                 </div>
                             </div>
@@ -1031,34 +931,24 @@
                     `;
                     loadReplies(postId); setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
                 } else { area.innerHTML = '<div style="padding:20px;">見つかりません。</div>'; }
-            } catch(e) { area.innerHTML = `エラー: ${e.message}`; }
+            } catch(e) {}
         }
 
-        // 💡 追加：フォロー切り替え機能
         window.toggleFollow = async function(targetUid) {
             if(targetUid === myProfile.id) return;
-            const followId = `${myProfile.id}_${targetUid}`;
-            const ref = doc(db, "follows", followId);
+            const followId = `${myProfile.id}_${targetUid}`; const ref = doc(db, "follows", followId);
             try {
                 const snap = await getDoc(ref);
-                if (snap.exists()) {
-                    await deleteDoc(ref);
-                    showToast("フォロー解除しました");
-                } else {
-                    await setDoc(ref, { follower: myProfile.id, following: targetUid, createdAt: new Date() });
-                    showToast("フォローしました！");
-                    await addDoc(collection(db, "notifications"), { type: "follow", senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUid, createdAt: new Date() });
-                }
+                if (snap.exists()) { await deleteDoc(ref); showToast("フォロー解除しました"); } 
+                else { await setDoc(ref, { follower: myProfile.id, following: targetUid, createdAt: new Date() }); showToast("フォローしました！"); await addDoc(collection(db, "notifications"), { type: "follow", senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: targetUid, createdAt: new Date() }); }
                 renderUserProfile(targetUid);
-            } catch(e) { console.error(e); }
+            } catch(e) {}
         }
 
-        // 💡 変更：プロフィール画面にフォロー＆DMボタンを追加
         window.renderUserProfile = async function(uid) {
             const header = document.getElementById('userProfileHeader'); const tl = document.getElementById('userProfileTimeline');
             header.innerHTML = ''; tl.innerHTML = '<div style="padding:15px;">読込中...</div>';
             try {
-                // DBからユーザー最新情報を取得
                 let uName = "名無し"; let uIcon = defaultIcon;
                 const uSnap = await getDoc(doc(db, "users", uid));
                 if(uSnap.exists()){ uName = uSnap.data().name; uIcon = uSnap.data().icon; }
@@ -1072,7 +962,7 @@
                     actionBtns = `
                         <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
                             <button class="post-btn" style="${isFollowing ? 'background:transparent; border:1px solid #71767b; color:#e7e9ea;' : ''}" onclick="toggleFollow('${uid}')">${isFollowing ? 'フォロー中' : 'フォローする'}</button>
-                            <button class="post-btn" style="background:transparent; border:1px solid #1d9bf0; color:#1d9bf0;" onclick="openChat('${uid}')">メッセージ(DM)</button>
+                            <button class="post-btn" style="background:transparent; border:1px solid #1d9bf0; color:#1d9bf0;" onclick="openChat('${uid}', 'user', '${uName}')">メッセージ(DM)</button>
                         </div>
                     `;
                 }
@@ -1091,79 +981,169 @@
                 `;
 
                 const snap = await getDocs(query(collection(db, "posts"), where("userId", "==", uid)));
-                let posts = [];
-                snap.forEach(d => { posts.push({id:d.id, ...d.data()}); });
-                posts.sort((a,b)=>b.createdAt.toDate() - a.createdAt.toDate());
+                let posts = []; snap.forEach(d => { posts.push({id:d.id, ...d.data()}); }); posts.sort((a,b)=>b.createdAt.toDate() - a.createdAt.toDate());
                 tl.innerHTML = ''; if(posts.length===0) tl.innerHTML='<div style="padding:20px; text-align:center;">投稿なし</div>';
                 posts.forEach(p => tl.appendChild(createPostElement(p.id, p, p.userId)));
                 setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
             } catch(e) {}
         }
 
-        // 💡 追加：DMリスト表示
+        // 💡 変更：DM・グルチャリスト表示
         window.renderDMList = async function() {
             const area = document.getElementById('dmListArea');
             area.innerHTML = '<div style="padding:15px; color:#71767b;">読込中...</div>';
             try {
-                const followingSnap = await getDocs(query(collection(db, "follows"), where("follower", "==", myProfile.id)));
-                area.innerHTML = '<div style="padding:15px; font-weight:bold; border-bottom:1px solid #2f3336;">DMを送る相手（フォロー中）</div>';
-                if (followingSnap.empty) {
-                    area.innerHTML += '<div style="padding:30px; text-align:center; color:#71767b;">誰もフォローしていません。<br>プロフィールから誰かをフォローすると、ここに表示されてDMを送れます。</div>';
-                    return;
-                }
+                let html = `
+                    <div style="padding:15px; border-bottom:1px solid #2f3336; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-weight:bold; font-size:18px;">メッセージ</div>
+                        <button class="toolbar-btn" onclick="openCreateGroupModal()">➕ グループを作成</button>
+                    </div>
+                `;
 
-                for (let d of followingSnap.docs) {
-                    const targetUid = d.data().following;
-                    const uSnap = await getDoc(doc(db, "users", targetUid));
-                    if(uSnap.exists()) {
-                        const u = uSnap.data();
-                        area.innerHTML += `
-                            <div style="padding:15px; border-bottom:1px solid #2f3336; display:flex; align-items:center; gap:12px; cursor:pointer; transition:0.2s;" onmouseover="this.style.backgroundColor='#16181c'" onmouseout="this.style.backgroundColor='transparent'" onclick="openChat('${targetUid}')">
-                                <img src="${u.icon || defaultIcon}" class="user-icon">
-                                <div><div style="font-weight:bold; color:#e7e9ea;">${u.name}</div><div style="color:#71767b; font-size:14px;">@${targetUid.substring(0,8)}</div></div>
+                // 💡 追加：参加中のグループチャットを取得
+                const groupSnap = await getDocs(query(collection(db, "groups"), where("members", "array-contains", myProfile.id)));
+                html += '<div style="padding:10px 15px; background:#16181c; font-weight:bold; font-size:14px; color:#71767b;">グループチャット</div>';
+                if (groupSnap.empty) {
+                    html += '<div style="padding:15px; color:#71767b; font-size:14px;">参加しているグループはありません。</div>';
+                } else {
+                    groupSnap.forEach(d => {
+                        const g = d.data();
+                        html += `
+                            <div style="padding:15px; border-bottom:1px solid #2f3336; display:flex; align-items:center; gap:12px; cursor:pointer;" onmouseover="this.style.backgroundColor='#16181c'" onmouseout="this.style.backgroundColor='transparent'" onclick="openChat('${d.id}', 'group', '${g.name}')">
+                                <div style="width:48px; height:48px; border-radius:50%; background:#1d9bf0; display:flex; align-items:center; justify-content:center; font-size:20px; color:#fff; flex-shrink:0;">👥</div>
+                                <div><div style="font-weight:bold; color:#e7e9ea;">${g.name}</div><div style="color:#71767b; font-size:13px;">${g.members.length}人のメンバー</div></div>
                             </div>
                         `;
+                    });
+                }
+
+                // 従来の個人DM（フォロー中）
+                const followingSnap = await getDocs(query(collection(db, "follows"), where("follower", "==", myProfile.id)));
+                html += '<div style="padding:10px 15px; background:#16181c; font-weight:bold; font-size:14px; color:#71767b;">ダイレクトメッセージ（フォロー中）</div>';
+                if (followingSnap.empty) {
+                    html += '<div style="padding:30px; text-align:center; color:#71767b;">誰もフォローしていません。</div>';
+                } else {
+                    for (let d of followingSnap.docs) {
+                        const targetUid = d.data().following;
+                        const uSnap = await getDoc(doc(db, "users", targetUid));
+                        if(uSnap.exists()) {
+                            const u = uSnap.data();
+                            html += `
+                                <div style="padding:15px; border-bottom:1px solid #2f3336; display:flex; align-items:center; gap:12px; cursor:pointer;" onmouseover="this.style.backgroundColor='#16181c'" onmouseout="this.style.backgroundColor='transparent'" onclick="openChat('${targetUid}', 'user', '${u.name}')">
+                                    <img src="${u.icon || defaultIcon}" class="user-icon">
+                                    <div><div style="font-weight:bold; color:#e7e9ea;">${u.name}</div><div style="color:#71767b; font-size:14px;">@${targetUid.substring(0,8)}</div></div>
+                                </div>
+                            `;
+                        }
                     }
                 }
+                area.innerHTML = html;
             } catch(e){ area.innerHTML = `エラー: ${e.message}`; }
         }
 
-        let currentChatTarget = null;
-        window.renderChatRoom = function(targetUid) {
-            currentChatTarget = targetUid;
+        // 💡 変更：チャットルームの描画（個人・グルチャ両対応）
+        let currentChatId = null;
+        let currentChatType = null;
+
+        window.renderChatRoom = function(targetId, type) {
+            currentChatId = targetId; currentChatType = type;
             const area = document.getElementById('chatMessages');
             area.innerHTML = '<div style="color:#71767b; text-align:center;">通信中...</div>';
             
-            const threadId = myProfile.id < targetUid ? `${myProfile.id}_${targetUid}` : `${targetUid}_${myProfile.id}`;
+            let threadId = targetId;
+            if (type === 'user') threadId = myProfile.id < targetId ? `${myProfile.id}_${targetId}` : `${targetId}_${myProfile.id}`;
+            
             const q = query(collection(db, "dms"), where("threadId", "==", threadId), orderBy("createdAt", "asc"));
 
             window.unsubscribeChat = onSnapshot(q, (snap) => {
                 area.innerHTML = '';
-                if(snap.empty) {
-                    area.innerHTML = '<div style="color:#71767b; text-align:center; margin-top:20px;">まだメッセージはありません。<br>挨拶を送ってみましょう！</div>';
-                }
+                if(snap.empty) { area.innerHTML = '<div style="color:#71767b; text-align:center; margin-top:20px;">まだメッセージはありません。<br>挨拶を送ってみましょう！</div>'; }
+                
                 snap.forEach(d => {
                     const msg = d.data();
                     const isMine = msg.sender === myProfile.id;
                     const safeText = (msg.text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    area.innerHTML += `<div class="dm-bubble ${isMine ? 'mine' : 'other'}">${safeText}</div>`;
+                    
+                    if (isMine) {
+                        area.innerHTML += `
+                            <div class="dm-message-wrapper mine">
+                                <div class="dm-bubble mine">${safeText}</div>
+                            </div>
+                        `;
+                    } else {
+                        const sName = msg.senderName || '名無し';
+                        const sIcon = msg.senderIcon || defaultIcon;
+                        area.innerHTML += `
+                            <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                                <div class="dm-sender-name">${sName}</div>
+                                <div class="dm-message-wrapper">
+                                    <img src="${sIcon}" class="user-icon" style="width:36px; height:36px; cursor:pointer;" onclick="showUserProfile('${msg.sender}')">
+                                    <div class="dm-bubble other">${safeText}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
                 });
                 area.scrollTop = area.scrollHeight;
             });
         }
 
         window.sendDM = async function() {
-            const input = document.getElementById('dmInput');
-            const txt = input.value.trim();
-            if(!txt || !currentChatTarget) return;
+            const input = document.getElementById('dmInput'); const txt = input.value.trim();
+            if(!txt || !currentChatId) return;
 
             input.value = '';
-            const threadId = myProfile.id < currentChatTarget ? `${myProfile.id}_${currentChatTarget}` : `${currentChatTarget}_${myProfile.id}`;
+            let threadId = currentChatId;
+            if (currentChatType === 'user') threadId = myProfile.id < currentChatId ? `${myProfile.id}_${currentChatId}` : `${currentChatId}_${myProfile.id}`;
+            
             try {
-                await addDoc(collection(db, "dms"), {
-                    threadId: threadId, sender: myProfile.id, text: txt, createdAt: new Date()
-                });
-            } catch(e) { console.error(e); showToast("送信失敗"); }
+                await addDoc(collection(db, "dms"), { threadId: threadId, sender: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, text: txt, createdAt: new Date() });
+            } catch(e) { showToast("送信失敗"); }
+        }
+
+        // 💡 追加：グループ作成モーダルの表示と作成処理
+        window.openCreateGroupModal = async function() {
+            const area = document.getElementById('groupMembersArea');
+            area.innerHTML = '読込中...'; document.getElementById('groupNameInput').value = '';
+            document.getElementById('createGroupModal').style.display = 'flex';
+
+            try {
+                const followingSnap = await getDocs(query(collection(db, "follows"), where("follower", "==", myProfile.id)));
+                area.innerHTML = '';
+                if (followingSnap.empty) { area.innerHTML = '<div style="color:#71767b; font-size:14px; padding:10px;">フォロー中のユーザーがいません。</div>'; return; }
+                
+                for (let d of followingSnap.docs) {
+                    const targetUid = d.data().following;
+                    const uSnap = await getDoc(doc(db, "users", targetUid));
+                    if(uSnap.exists()) {
+                        const u = uSnap.data();
+                        area.innerHTML += `
+                            <label style="display:flex; align-items:center; gap:10px; padding:10px; border-bottom:1px solid #2f3336; cursor:pointer;">
+                                <input type="checkbox" value="${targetUid}" class="group-member-checkbox" style="width:20px; height:20px;">
+                                <img src="${u.icon || defaultIcon}" class="user-icon" style="width:30px; height:30px;">
+                                <span style="color:#e7e9ea;">${u.name}</span>
+                            </label>
+                        `;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        window.submitCreateGroup = async function() {
+            const name = document.getElementById('groupNameInput').value.trim();
+            if(!name) { customAlert('エラー', 'グループ名を入力してください'); return; }
+            
+            const checkboxes = document.querySelectorAll('.group-member-checkbox:checked');
+            const members = [myProfile.id];
+            checkboxes.forEach(cb => members.push(cb.value));
+
+            if(members.length < 2) { customAlert('エラー', 'メンバーを1人以上選択してください'); return; }
+
+            try {
+                await addDoc(collection(db, "groups"), { name: name, members: members, createdAt: new Date(), createdBy: myProfile.id });
+                document.getElementById('createGroupModal').style.display = 'none';
+                showToast("グループを作成しました！"); renderDMList();
+            } catch(e) {}
         }
 
         window.submitReply = async function(postId) {
@@ -1173,40 +1153,21 @@
             if (!txt && !selectedReplyFile) return;
 
             if (selectedReplyFile) {
-                showToast("⏳ アップロード中... (動画の場合は時間がかかります)");
+                showToast("⏳ アップロード中...");
                 try {
-                    const formData = new FormData();
-                    formData.append("reqtype", "fileupload");
-                    formData.append("fileToUpload", selectedReplyFile);
-                    
-                    const response = await fetch("https://catbox.moe/user/api.php", {
-                        method: "POST",
-                        body: formData
-                    });
-                    
+                    const formData = new FormData(); formData.append("reqtype", "fileupload"); formData.append("fileToUpload", selectedReplyFile);
+                    const response = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: formData });
                     if (!response.ok) throw new Error("APIサーバーエラー");
                     const fileUrl = await response.text();
                     txt += (txt ? '\n\n' : '') + fileUrl;
-                } catch (e) {
-                    customAlert("アップロードエラー", "ファイルのアップロードに失敗しました。\n詳細: " + e.message);
-                    return;
-                }
+                } catch (e) { customAlert("アップロードエラー", e.message); return; }
             }
 
             try { 
                 await addDoc(collection(db, "replies"), { postId: postId, content: txt, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, likes: 0 });
-                
-                document.getElementById('detailReplyText').value = ''; 
-                document.getElementById('detailReplyVideoUrl').value = ''; 
-                document.getElementById('detailReplyVideoUrl').style.display = 'none';
-                clearReplyFile();
-
+                document.getElementById('detailReplyText').value = ''; document.getElementById('detailReplyVideoUrl').value = ''; document.getElementById('detailReplyVideoUrl').style.display = 'none'; clearReplyFile();
                 loadReplies(postId); showToast("返信しました！");
-
-                // 💡 AIメンション判定
-                if (txt.includes('@AI') || txt.includes('＠AI')) {
-                    handleAIMention(txt, postId);
-                }
+                if (txt.includes('@AI') || txt.includes('＠AI')) handleAIMention(txt, postId);
             } catch (e) {}
         }
 
@@ -1215,44 +1176,24 @@
             try {
                 const snap = await getDocs(query(collection(db, "replies"), where("postId", "==", postId)));
                 let arr = []; snap.forEach(d => arr.push({id: d.id, ...d.data()})); arr.sort((a,b)=>a.createdAt.toDate()-b.createdAt.toDate());
-                
                 list.innerHTML = ''; 
-                if (arr.length === 0) { 
-                    list.innerHTML = '<div style="padding:20px; color:#71767b; text-align:center;">返信はまだありません。</div>'; 
-                    return; 
-                }
-                
+                if (arr.length === 0) { list.innerHTML = '<div style="padding:20px; color:#71767b; text-align:center;">返信はまだありません。</div>'; return; }
                 const likedReplies = JSON.parse(localStorage.getItem('mySNS_likedReplies')) || [];
 
                 arr.forEach(r => {
-                    const dObj = r.createdAt ? r.createdAt.toDate() : new Date();
-                    const timeAgo = formatTimeAgo(dObj);
-                    const safeUid = r.userId || "unknown";
-                    
-                    const isLikedReply = likedReplies.includes(r.id);
-                    const likeStyle = isLikedReply ? 'color: #f91880;' : '';
+                    const dObj = r.createdAt ? r.createdAt.toDate() : new Date(); const timeAgo = formatTimeAgo(dObj); const safeUid = r.userId || "unknown";
+                    const isLikedReply = likedReplies.includes(r.id); const likeStyle = isLikedReply ? 'color: #f91880;' : '';
 
-                    const div = document.createElement('div'); 
-                    div.className = 'reply-item';
-                    
+                    const div = document.createElement('div'); div.className = 'reply-item';
                     div.innerHTML = `
-                        <div class="post-left" style="cursor: pointer;" onclick="showUserProfile('${safeUid}', event)">
-                            <img src="${r.userIcon || defaultIcon}" class="user-icon" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                        </div>
+                        <div class="post-left" style="cursor: pointer;" onclick="showUserProfile('${safeUid}', event)"><img src="${r.userIcon || defaultIcon}" class="user-icon" style="width: 40px; height: 40px;"></div>
                         <div class="post-right">
-                            <div class="post-header">
-                                <span class="user-name" onclick="showUserProfile('${safeUid}', event)" style="cursor: pointer;">${r.userName || '名無し'}</span>
-                                <span class="user-handle">@${safeUid.substring(0,8)}</span>
-                                <span class="post-time" style="margin-left:4px;">・ ${timeAgo}</span>
-                            </div>
+                            <div class="post-header"><span class="user-name" onclick="showUserProfile('${safeUid}', event)">${r.userName || '名無し'}</span><span class="user-handle">@${safeUid.substring(0,8)}</span><span class="post-time" style="margin-left:4px;">・ ${timeAgo}</span></div>
                             <div class="post-content" style="margin-bottom:0;">${parseContent(r.content)}</div>
-                            
                             <div class="post-actions" style="margin-top: 10px;">
-                                <button class="action-btn reply">${svgReply}</button>
-                                <button class="action-btn repost">${svgRepost}</button>
+                                <button class="action-btn reply">${svgReply}</button><button class="action-btn repost">${svgRepost}</button>
                                 <button class="action-btn like" style="${likeStyle}" onclick="likeReply('${r.id}', event)">${svgLike} <span class="count-span" id="reply-like-${r.id}">${r.likes>0?r.likes:''}</span></button>
-                                <div class="action-btn view">${svgView}</div>
-                                <button class="action-btn share">${svgShare}</button>
+                                <div class="action-btn view">${svgView}</div><button class="action-btn share">${svgShare}</button>
                             </div>
                         </div>
                     `;
@@ -1264,64 +1205,27 @@
         window.likePost = async function(pid, uid, ev) {
             if(ev)ev.stopPropagation(); 
             if(uid === myProfile.id){ customAlert("","自分のポストはいいねできません"); return;} 
-            
-            let likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [];
-            const isLiked = likedPosts.includes(pid);
-            const docRef = doc(db, "posts", pid);
-            
+            let likedPosts = JSON.parse(localStorage.getItem('mySNS_likedPosts')) || []; const isLiked = likedPosts.includes(pid); const docRef = doc(db, "posts", pid);
             try {
-                if (isLiked) {
-                    await updateDoc(docRef, {likes: increment(-1)});
-                    likedPosts = likedPosts.filter(id => id !== pid);
-                    localStorage.setItem('mySNS_likedPosts', JSON.stringify(likedPosts));
-                } else {
-                    await updateDoc(docRef, {likes: increment(1)});
-                    likedPosts.push(pid);
-                    localStorage.setItem('mySNS_likedPosts', JSON.stringify(likedPosts));
-                    await addDoc(collection(db, "notifications"), { type: "like", postId: pid, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: uid, createdAt: new Date() });
-                }
-
+                if (isLiked) { await updateDoc(docRef, {likes: increment(-1)}); likedPosts = likedPosts.filter(id => id !== pid); localStorage.setItem('mySNS_likedPosts', JSON.stringify(likedPosts)); } 
+                else { await updateDoc(docRef, {likes: increment(1)}); likedPosts.push(pid); localStorage.setItem('mySNS_likedPosts', JSON.stringify(likedPosts)); await addDoc(collection(db, "notifications"), { type: "like", postId: pid, senderId: myProfile.id, senderName: myProfile.name, senderIcon: myProfile.icon, targetUserId: uid, createdAt: new Date() }); }
                 const countSpans = document.querySelectorAll(`#like-count-${pid}, #detail-like-count-${pid}`);
-                countSpans.forEach(span => {
-                    let current = parseInt(span.innerText) || 0;
-                    let newVal = isLiked ? Math.max(0, current - 1) : current + 1;
-                    span.innerText = newVal > 0 ? newVal : '';
-                    span.parentElement.style.color = isLiked ? '' : '#f91880';
-                });
+                countSpans.forEach(span => { let current = parseInt(span.innerText) || 0; let newVal = isLiked ? Math.max(0, current - 1) : current + 1; span.innerText = newVal > 0 ? newVal : ''; span.parentElement.style.color = isLiked ? '' : '#f91880'; });
             } catch(e){}
         }
 
         window.likeReply = async function(replyId, ev) {
             if(ev)ev.stopPropagation(); 
-            let likedReplies = JSON.parse(localStorage.getItem('mySNS_likedReplies')) || [];
-            const isLiked = likedReplies.includes(replyId);
-            const docRef = doc(db, "replies", replyId);
-
+            let likedReplies = JSON.parse(localStorage.getItem('mySNS_likedReplies')) || []; const isLiked = likedReplies.includes(replyId); const docRef = doc(db, "replies", replyId);
             try{ 
-                if (isLiked) {
-                    await updateDoc(docRef, {likes: increment(-1)}); 
-                    likedReplies = likedReplies.filter(id => id !== replyId);
-                    localStorage.setItem('mySNS_likedReplies', JSON.stringify(likedReplies));
-                } else {
-                    await updateDoc(docRef, {likes: increment(1)}); 
-                    likedReplies.push(replyId);
-                    localStorage.setItem('mySNS_likedReplies', JSON.stringify(likedReplies));
-                }
-                
+                if (isLiked) { await updateDoc(docRef, {likes: increment(-1)}); likedReplies = likedReplies.filter(id => id !== replyId); localStorage.setItem('mySNS_likedReplies', JSON.stringify(likedReplies)); } 
+                else { await updateDoc(docRef, {likes: increment(1)}); likedReplies.push(replyId); localStorage.setItem('mySNS_likedReplies', JSON.stringify(likedReplies)); }
                 const span = document.getElementById(`reply-like-${replyId}`);
-                if (span) {
-                    let current = parseInt(span.innerText) || 0;
-                    let newVal = isLiked ? Math.max(0, current - 1) : current + 1;
-                    span.innerText = newVal > 0 ? newVal : '';
-                    span.parentElement.style.color = isLiked ? '' : '#f91880';
-                }
+                if (span) { let current = parseInt(span.innerText) || 0; let newVal = isLiked ? Math.max(0, current - 1) : current + 1; span.innerText = newVal > 0 ? newVal : ''; span.parentElement.style.color = isLiked ? '' : '#f91880'; }
             } catch(e){} 
         }
 
-        window.votePoll = async function(postId, optIdx, ev) {
-            if(ev)ev.stopPropagation(); try{ const ref = doc(db, "posts", postId); const snap = await getDoc(ref); if(!snap.exists())return;
-            let p = snap.data().poll; p.votes[myProfile.id] = optIdx; await updateDoc(ref, { "poll.votes": p.votes }); }catch(e){}
-        }
+        window.votePoll = async function(postId, optIdx, ev) { if(ev)ev.stopPropagation(); try{ const ref = doc(db, "posts", postId); const snap = await getDoc(ref); if(!snap.exists())return; let p = snap.data().poll; p.votes[myProfile.id] = optIdx; await updateDoc(ref, { "poll.votes": p.votes }); }catch(e){} }
         let currentRepId=""; window.repostPost=function(pid,ev){if(ev)ev.stopPropagation(); currentRepId=pid; document.getElementById('repostModal').style.display='flex';}
         window.submitRepost=async function(isQuote){
             if(!currentRepId)return; const txt=document.getElementById('quoteText').value.trim();
@@ -1346,120 +1250,58 @@
         window.updateMyIconDisplays = function(){ document.querySelectorAll('.my-current-icon').forEach(i=>i.src=myProfile.icon); }
 
         window.handleImageUpload = async function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            const file = event.target.files[0]; if (!file) return;
             if (file.size > 5 * 1024 * 1024) { customAlert("エラー", "ファイルサイズが大きすぎます(最大5MB)"); return; }
-
             showToast("⏳ アップロード中...");
-            
             try {
-                const formData = new FormData();
-                formData.append("reqtype", "fileupload");
-                formData.append("fileToUpload", file);
-                
-                const response = await fetch("https://catbox.moe/user/api.php", {
-                    method: "POST",
-                    body: formData
-                });
-                
+                const formData = new FormData(); formData.append("reqtype", "fileupload"); formData.append("fileToUpload", file);
+                const response = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: formData });
                 if (!response.ok) throw new Error("APIサーバーエラー");
                 const fileUrl = await response.text();
-                
-                document.getElementById('profileIconPreview').src = fileUrl;
-                document.getElementById('profileIcon').value = fileUrl;
+                document.getElementById('profileIconPreview').src = fileUrl; document.getElementById('profileIcon').value = fileUrl;
                 showToast("✨ アップロード完了！「設定を保存」を押してください。");
-            } catch (e) {
-                customAlert("アップロードエラー", "ファイルのアップロードに失敗しました。\n詳細: " + e.message);
-            } finally {
-                event.target.value = '';
-            }
+            } catch (e) { customAlert("アップロードエラー", e.message); } finally { event.target.value = ''; }
         }
 
-        window.renderSettings=function(){ 
-            document.getElementById('profileName').value=myProfile.name; 
-            document.getElementById('profileIconPreview').src=myProfile.icon; 
-            renderMuteBlockList();
-        }
-        window.saveSettings=function(){ 
-            myProfile.name=document.getElementById('profileName').value; 
-            const u=document.getElementById('profileIcon').value; if(u)myProfile.icon=u; 
-            localStorage.setItem('mySNS_profile',JSON.stringify(myProfile)); 
-            syncMyProfile(); // 💡 DBにも更新を同期
-            showToast("保存しました"); checkRouting(); 
-        }
+        window.renderSettings=function(){ document.getElementById('profileName').value=myProfile.name; document.getElementById('profileIconPreview').src=myProfile.icon; renderMuteBlockList(); }
+        window.saveSettings=function(){ myProfile.name=document.getElementById('profileName').value; const u=document.getElementById('profileIcon').value; if(u)myProfile.icon=u; localStorage.setItem('mySNS_profile',JSON.stringify(myProfile)); syncMyProfile(); showToast("保存しました"); checkRouting(); }
 
         window.renderMuteBlockList = function() {
-            const muted = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
-            const blocked = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
-            let html = '';
-
+            const muted = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; const blocked = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; let html = '';
             html += `<div style="font-weight:bold; margin-bottom:10px;">🔇 ミュート中のユーザー (${muted.length})</div>`;
             if (muted.length === 0) html += `<div style="color:#71767b; font-size:14px; margin-bottom:20px;">なし</div>`;
-            muted.forEach(uid => {
-                const safeUid = uid || "";
-                html += `<div class="manage-list-item"><span>@${safeUid.substring(0,8)}...</span><button onclick="unmuteUser('${safeUid}')" class="toolbar-btn">解除</button></div>`;
-            });
-
+            muted.forEach(uid => { html += `<div class="manage-list-item"><span>@${(uid||"").substring(0,8)}...</span><button onclick="unmuteUser('${uid}')" class="toolbar-btn">解除</button></div>`; });
             html += `<div style="font-weight:bold; margin-top:20px; margin-bottom:10px;">🚫 ブロック中のユーザー (${blocked.length})</div>`;
             if (blocked.length === 0) html += `<div style="color:#71767b; font-size:14px; margin-bottom:20px;">なし</div>`;
-            blocked.forEach(uid => {
-                const safeUid = uid || "";
-                html += `<div class="manage-list-item"><span>@${safeUid.substring(0,8)}...</span><button onclick="unblockUser('${safeUid}')" class="toolbar-btn">解除</button></div>`;
-            });
-
+            blocked.forEach(uid => { html += `<div class="manage-list-item"><span>@${(uid||"").substring(0,8)}...</span><button onclick="unblockUser('${uid}')" class="toolbar-btn">解除</button></div>`; });
             document.getElementById('muteBlockManageArea').innerHTML = html;
         }
 
-        window.unmuteUser = function(uid) {
-            let l = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
-            l = l.filter(id => id !== uid);
-            localStorage.setItem('mySNS_mutedUsers', JSON.stringify(l));
-            showToast("ミュートを解除しました");
-            renderMuteBlockList();
-            checkRouting();
-        }
+        window.unmuteUser = function(uid) { let l = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []; l = l.filter(id => id !== uid); localStorage.setItem('mySNS_mutedUsers', JSON.stringify(l)); showToast("ミュートを解除しました"); renderMuteBlockList(); checkRouting(); }
+        window.unblockUser = function(uid) { let l = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []; l = l.filter(id => id !== uid); localStorage.setItem('mySNS_blockedUsers', JSON.stringify(l)); showToast("ブロックを解除しました"); renderMuteBlockList(); checkRouting(); }
 
-        window.unblockUser = function(uid) {
-            let l = JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [];
-            l = l.filter(id => id !== uid);
-            localStorage.setItem('mySNS_blockedUsers', JSON.stringify(l));
-            showToast("ブロックを解除しました");
-            renderMuteBlockList();
-            checkRouting();
-        }
-
-        // 💡 変更：通知一覧の描画（いいね、フォロー、メンションに対応）
         window.renderNotifications = async function() {
-            const list = document.getElementById('notificationList');
-            list.innerHTML = '<div style="padding:20px; color:#71767b;">読込中...</div>';
+            const list = document.getElementById('notificationList'); list.innerHTML = '<div style="padding:20px; color:#71767b;">読込中...</div>';
             try {
                 const q = query(collection(db, "notifications"), where("targetUserId", "==", myProfile.id), orderBy("createdAt", "desc"));
-                const snap = await getDocs(q);
-                list.innerHTML = '';
+                const snap = await getDocs(q); list.innerHTML = '';
                 if (snap.empty) { list.innerHTML = '<div style="padding:30px; color:#71767b; text-align:center;">通知はありません。</div>'; return; }
                 
                 snap.forEach(docSnap => {
-                    const n = docSnap.data();
-                    let text = "";
-                    let clickAction = `showUserProfile('${n.senderId}')`;
-
+                    const n = docSnap.data(); let text = ""; let clickAction = `showUserProfile('${n.senderId}')`;
                     if (n.type === "like") { text = `<strong>${n.senderName}</strong> さんがあなたのポストをいいねしました💖`; clickAction = `showPostDetail('${n.postId}')`; }
                     else if (n.type === "follow") { text = `<strong>${n.senderName}</strong> さんがあなたをフォローしました👤`; }
                     else if (n.type === "mention") { text = `<strong>${n.senderName}</strong> さんがあなたをメンションしました🔔`; clickAction = `showPostDetail('${n.postId}')`; }
 
                     list.innerHTML += `
                         <div style="padding:15px; border-bottom:1px solid #2f3336; cursor:pointer; transition:0.2s;" onmouseover="this.style.backgroundColor='#16181c'" onmouseout="this.style.backgroundColor='transparent'" onclick="${clickAction}">
-                            <div style="display:flex; align-items:center; gap:12px;">
-                                <img src="${n.senderIcon || defaultIcon}" class="user-icon" style="width:40px; height:40px;">
-                                <div style="color:#e7e9ea; font-size:15px;">${text}</div>
-                            </div>
+                            <div style="display:flex; align-items:center; gap:12px;"><img src="${n.senderIcon || defaultIcon}" class="user-icon" style="width:40px; height:40px;"><div style="color:#e7e9ea; font-size:15px;">${text}</div></div>
                         </div>
                     `;
                 });
             } catch(e) { list.innerHTML = `エラー: ${e.message}`; }
         }
 
-        // Initialize App
         checkRouting();
     </script>
 </body>
