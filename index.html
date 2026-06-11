@@ -117,7 +117,7 @@
                 <div class="post-box">
                     <div onclick="showUserProfile(myProfile.id, event)" style="cursor:pointer;"><img src="" class="user-icon my-current-icon"></div>
                     <div class="post-box-right">
-                        <textarea id="postText" rows="3" placeholder="いまどうしてる？"></textarea>
+                        <textarea id="postText" rows="3" placeholder="いまどうしてる？ (@AIでメンション)"></textarea>
                         <input type="text" id="postVideoUrl" class="video-input-field" placeholder="🎥 動画のURLを貼り付け (YouTube, X等)...">
                         <input type="file" id="postFileInput" accept="image/*,video/*" style="display:none;" onchange="handlePostFileSelect(event)">
                         <div id="postFilePreview" style="display:none; margin-bottom: 10px; position: relative; max-width: max-content;">
@@ -770,6 +770,41 @@
             return div;
         }
 
+        // 💡 追加：AIへメンションされた時の処理
+        window.handleAIMention = async function(text, postId) {
+            const question = text.replace(/@AI|＠AI/gi, '').trim();
+            if (!question) return;
+
+            showToast("🤖 AIが返信を考えています...");
+
+            try {
+                const sysPrompt = "あなたはSNSのフレンドリーなAIアシスタントです。ユーザーの次の投稿に短く返信して:";
+                const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(sysPrompt + "\n" + question)}`);
+                
+                if (!response.ok) throw new Error("APIエラー");
+                const aiResponse = await response.text();
+
+                await addDoc(collection(db, "replies"), {
+                    postId: postId,
+                    content: aiResponse,
+                    createdAt: new Date(),
+                    userId: "ai_bot_system",
+                    userName: "🤖 AIアシスタント",
+                    userIcon: "https://api.dicebear.com/7.x/bottts/svg?seed=AI&backgroundColor=1d9bf0", 
+                    likes: 0
+                });
+
+                showTopNotification("✨ AIから返信が届きました！");
+
+                if (document.getElementById('detailReplyList') && document.getElementById('detailView').style.display === 'block') {
+                    loadReplies(postId);
+                }
+            } catch (e) {
+                console.error("AI Mention Error:", e);
+                showToast("🤖 AIの返信に失敗しました");
+            }
+        }
+
         window.submitPost = async function() {
             let txt = document.getElementById('postText').value.trim();
             const videoUrl = document.getElementById('postVideoUrl').value.trim();
@@ -801,7 +836,7 @@
             if (currentPollOptions) data.poll = currentPollOptions;
             
             try {
-                await addDoc(collection(db, "posts"), data);
+                const docRef = await addDoc(collection(db, "posts"), data); // 💡変更
                 document.getElementById('postText').value = ''; 
                 document.getElementById('postVideoUrl').value = '';
                 document.getElementById('postVideoUrl').style.display = 'none';
@@ -810,6 +845,11 @@
                 showToast(currentScheduleTime ? "予約しました！" : "ポストしました！");
                 currentScheduleTime = null; currentPollOptions = null; updateAttachmentUI(); 
                 loadSidebarTrends();
+
+                // 💡 追加：AIメンション判定
+                if (txt.includes('@AI') || txt.includes('＠AI')) {
+                    handleAIMention(txt, docRef.id);
+                }
             } catch (e) { customAlert("エラー", e.message); }
         }
 
@@ -899,7 +939,7 @@
                         <div class="detail-reply-box">
                             <div><img src="${myProfile.icon}" class="user-icon"></div>
                             <div class="post-box-right">
-                                <textarea id="detailReplyText" rows="2" placeholder="返信をポスト..."></textarea>
+                                <textarea id="detailReplyText" rows="2" placeholder="返信をポスト... (@AIでメンション)"></textarea>
                                 <input type="text" id="detailReplyVideoUrl" class="video-input-field" placeholder="🎥 動画のURLを貼り付け...">
                                 
                                 <input type="file" id="replyFileInput" accept="image/*,video/*" style="display:none;" onchange="handleReplyFileSelect(event)">
@@ -978,6 +1018,11 @@
                 clearReplyFile();
 
                 loadReplies(postId); showToast("返信しました！");
+
+                // 💡 追加：リプライ内でのAIメンション判定
+                if (txt.includes('@AI') || txt.includes('＠AI')) {
+                    handleAIMention(txt, postId);
+                }
             } catch (e) {}
         }
 
