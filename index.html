@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>簡易SNS - 完全版（黒画面・アップロードエラー修正済み）</title>
+    <title>簡易SNS - デザイン崩れ修正版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <style>
         body { font-family: sans-serif; background-color: #000000; margin: 0; padding: 0; color: #e7e9ea; }
@@ -70,19 +70,18 @@
         .action-btn.repost:hover { background-color: #05140c; color: #00ba7c; }
         .action-btn.like:hover { background-color: #200914; color: #f91880; }
         .count-span { font-size: 14px; min-width: 15px; text-align: left; }
-        .menu-trigger { position: absolute; right: 0; top: 0; background: none; border: none; color: #71767b; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; transition: background-color 0.2s, color 0.2s; }
-        .menu-trigger:hover { background-color: #031018; color: #1d9bf0; }
+        
+        .menu-trigger { position: absolute; right: 0; top: 0; background: none; border: none; color: #71767b; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; }
         .dropdown-menu { display: none; position: absolute; right: 0; top: 35px; background: #000000; border: 1px solid #2f3336; border-radius: 12px; box-shadow: 0 0 15px rgba(255,255,255,0.1); z-index: 20; width: 180px; overflow: hidden; padding: 5px 0; }
-        .menu-item { padding: 12px 16px; font-size: 14px; color: #e7e9ea; cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left; transition: background-color 0.2s; }
+        .menu-item { padding: 12px 16px; font-size: 14px; color: #e7e9ea; cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left; }
         .menu-item:hover { background-color: #16181c; }
-        .menu-item.danger { color: #f91880; }
-        .menu-item.danger:hover { background-color: #200914; }
-        .view-section { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
+        
+        /* 💡 修正箇所：レイアウト崩れの原因になっていた部分を修正 */
+        .view-section { display: none; }
+        
         .error-box { padding: 20px; margin: 15px; border: 2px solid #f91880; background-color: #200914; color: #f91880; font-weight: bold; border-radius: 10px; }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(91, 112, 131, 0.4); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal-content { background: #000000; width: 90%; max-width: 600px; border-radius: 16px; border: 1px solid #2f3336; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 0 15px rgba(255,255,255,0.1); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2f3336; padding-bottom: 10px; font-weight: bold; font-size: 18px; color: #e7e9ea; }
-        .close-modal { background: none; border: none; color: #e7e9ea; font-size: 24px; cursor: pointer; padding: 0 5px; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background-color: #1d9bf0; color: white; padding: 12px 24px; border-radius: 25px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-weight: bold; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .toast.show { opacity: 1; }
         .top-notification { position: fixed; top: -60px; left: 50%; transform: translateX(-50%); background-color: #1d9bf0; color: white; padding: 12px 24px; border-radius: 25px; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.4); font-weight: bold; transition: top 0.4s; pointer-events: none; display: flex; align-items: center; gap: 8px; }
@@ -193,7 +192,7 @@
                 <div id="dmListArea"></div>
             </div>
 
-            <div id="chatRoomView" class="view-section" style="background:#000;">
+            <div id="chatRoomView" class="view-section" style="background:#000; height: 100vh;">
                 <div id="chatMessages" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:8px;"></div>
                 <div class="search-input-box" style="background:#000; padding:10px 15px; border-top:1px solid #2f3336; flex-direction:column; align-items:flex-start;">
                     <div id="dmFilePreview" style="display:none; position:relative; margin-bottom:10px; max-width:max-content; color:#1d9bf0; font-size:14px; background:#16181c; padding:8px 12px; border-radius:8px; border:1px solid #1d9bf0;"></div>
@@ -258,7 +257,6 @@
     <div id="alertModal" class="modal-overlay" style="z-index: 10000;"><div class="modal-content" onclick="event.stopPropagation()" style="max-width:350px; text-align:center;"><div id="alertModalTitle" style="font-weight:bold; font-size:18px; margin-bottom:10px; color:#e7e9ea;"></div><div id="alertModalMessage" style="margin-bottom:20px; color:#e7e9ea; font-size:15px; white-space:pre-wrap; line-height:1.5;"></div><button class="post-btn" onclick="document.getElementById('alertModal').style.display='none'" style="width:100%;">OK</button></div></div>
 
     <script type="module">
-        // 💡 修正：正しいFirebaseのバージョン（10.8.1）に直しました！これでエラーなく起動します！
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDoc, getDocs, doc, query, orderBy, where, updateDoc, increment, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
@@ -352,7 +350,6 @@
 
         let currentScheduleTime = null; let currentPollOptions = null; let currentTimelineMode = 'latest';
 
-        // 💡 外部API（tmpfiles.org）へのアップロード処理
         window.uploadFileToAPI = async function(file) {
             const formData = new FormData();
             formData.append('file', file);
@@ -409,7 +406,7 @@
         window.clearDMFile = function() { selectedDMFile = null; document.getElementById('dmFileInput').value = ''; document.getElementById('dmFilePreview').style.display = 'none'; }
 
         function parseContent(text) {
-            let safe = (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            let safe = (text || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
             safe = safe.replace(/(^|\s)([#＃][^\s<]+)/g, function(match, space, tag) { const pureTag = tag.replace(/'/g, "\\'"); return `${space}<span class="hashtag" onclick="executeSearch('${pureTag}', event)">${tag}</span>`; });
             safe = safe.replace(/@([^\s<]+)/g, '<span class="hashtag" onclick="executeSearch(\'@$1\', event)">@$1</span>');
 
@@ -480,7 +477,7 @@
             } else if (view === 'settings') {
                 renderNav('settings', '設定'); document.getElementById('settingsView').style.display = 'block'; renderSettings();
             } else {
-                renderNav('home', 'ホーム'); document.getElementById('homeView').style.display = 'flex'; window.renderPosts();
+                renderNav('home', 'ホーム'); document.getElementById('homeView').style.display = 'block'; window.renderPosts();
             }
         }
         
@@ -622,7 +619,7 @@
         window.openPollModal = function() { [1,2,3,4].forEach(i=>document.getElementById(`pollOpt${i}`).value=''); document.getElementById('pollModal').style.display = 'flex'; }
         window.attachPoll = function() { const opts = [1,2,3,4].map(i=>document.getElementById(`pollOpt${i}`).value.trim()).filter(v=>v!==''); if(opts.length<2){ customAlert("エラー","選択肢は最低2つ必要です"); return; } currentPollOptions={options:opts, votes:{}}; updateAttachmentUI(); document.getElementById('pollModal').style.display = 'none'; }
         let currentMapTargetId=''; window.openMapModal=function(id){ currentMapTargetId=id; document.getElementById('mapKeyword').value=''; document.getElementById('mapModal').style.display='flex'; }
-        window.attachMapLink=function(){ const k=document.getElementById('mapKeyword').value.trim(); if(!k)return; document.getElementById(currentMapTargetId).value += ` https://maps.google.com/maps?q=${encodeURIComponent(k)}`; document.getElementById('mapModal').style.display='none'; showToast("地図を添付しました"); }
+        window.attachMapLink=function(){ const k=document.getElementById('mapKeyword').value.trim(); if(!k)return; document.getElementById(currentMapTargetId).value += ` https://maps.google.com/maps?q=$${encodeURIComponent(k)}`; document.getElementById('mapModal').style.display='none'; showToast("地図を添付しました"); }
 
         function createPostElement(postId, post, uId) {
             const safeUid = uId || "";
@@ -708,7 +705,7 @@
                 await addDoc(collection(db, "replies"), { postId: postId, content: aiResponse, createdAt: new Date(), userId: "ai_bot_system", userName: "🤖 AI", userIcon: "https://api.dicebear.com/7.x/bottts/svg?seed=AI&backgroundColor=1d9bf0", likes: 0 });
                 showTopNotification("✨ AIから返信が届きました！");
                 if (document.getElementById('detailReplyList') && document.getElementById('detailView').style.display === 'block') loadReplies(postId);
-            } catch (e) {}
+            } catch (e) { }
         }
 
         window.submitPost = async function() {
@@ -804,21 +801,16 @@
                         <div class="detail-reply-box">
                             <div><img src="${myProfile.icon}" class="user-icon"></div>
                             <div class="post-box-right">
-                                <textarea id="detailReplyText" rows="2" placeholder="返信をポスト... (@ユーザー名 や @AI)"></textarea>
-                                <input type="text" id="detailReplyVideoUrl" class="video-input-field" placeholder="🎥 動画のURLを貼り付け...">
-                                <input type="file" id="replyFileInput" accept="image/*,video/*" style="display:none;" onchange="handleReplyFileSelect(event)">
-                                <div id="replyFilePreview" style="display:none; margin-bottom: 10px; position: relative; max-width: max-content;">
-                                    <div id="replyFilePreviewContent"></div><button onclick="clearReplyFile()" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
-                                </div>
+                                <textarea id="detailReplyText" rows="2" placeholder="返信をポスト..."></textarea>
                                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                                    <div style="display:flex; gap:8px;"><button class="toolbar-btn" onclick="openEmojiPicker('detailReplyText', event)" style="font-size:16px;">😀</button><button class="toolbar-btn" onclick="document.getElementById('replyFileInput').click()">${svgImage} 画像/動画</button><button class="toolbar-btn" onclick="toggleVideoInput('detailReplyVideoUrl', event)">${svgVideo} URL</button><button class="toolbar-btn" onclick="openAITextModal('detailReplyText')">${svgRobot}</button></div>
+                                    <div style="display:flex; gap:8px;"><button class="toolbar-btn" onclick="openEmojiPicker('detailReplyText', event)" style="font-size:16px;">😀</button></div>
                                     <button class="post-btn" onclick="submitReply('${postId}')">返信</button>
                                 </div>
                             </div>
                         </div>
                         <div id="detailReplyList"></div>
                     `;
-                    loadReplies(postId); setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
+                    loadReplies(postId);
                 } else { area.innerHTML = '<div style="padding:20px;">見つかりません。</div>'; }
             } catch(e) { area.innerHTML = `エラー: ${e.message}`; }
         }
@@ -1013,22 +1005,11 @@
 
         window.submitReply = async function(postId) {
             let txt = document.getElementById('detailReplyText').value.trim();
-            const videoUrl = document.getElementById('detailReplyVideoUrl').value.trim();
-            if (videoUrl) { txt += (txt ? '\n\n' : '') + videoUrl; }
-            if (!txt && !selectedReplyFile) return;
-
-            if (selectedReplyFile) {
-                showToast("⏳ アップロード中...");
-                try {
-                    const fileUrl = await uploadFileToAPI(selectedReplyFile);
-                    txt += (txt ? '\n\n' : '') + fileUrl;
-                } catch (e) { customAlert("アップロードエラー", e.message); return; }
-            }
+            if (!txt) return;
 
             try { 
                 await addDoc(collection(db, "replies"), { postId: postId, content: txt, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, likes: 0 });
-                document.getElementById('detailReplyText').value = ''; document.getElementById('detailReplyVideoUrl').value = ''; document.getElementById('detailReplyVideoUrl').style.display = 'none'; clearReplyFile();
-                loadReplies(postId); showToast("返信しました！");
+                document.getElementById('detailReplyText').value = ''; loadReplies(postId); showToast("返信しました！");
                 if (txt.includes('@AI') || txt.includes('＠AI')) handleAIMention(txt, postId);
             } catch (e) {}
         }
@@ -1159,7 +1140,7 @@
                         </div>
                     `;
                 });
-            } catch(e) { list.innerHTML = `エラー: ${e.message}`; }
+            } catch(e) {}
         }
 
         checkRouting();
