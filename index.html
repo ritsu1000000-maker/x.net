@@ -51,7 +51,7 @@
         .layout-wrapper { display: flex; justify-content: center; max-width: 950px; margin: 0 auto; gap: 30px; }
         .container { width: 100%; max-width: 600px; background: var(--container-bg); min-height: 100vh; border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); position: relative; display: flex; flex-direction: column; }
         .view-section { display: none; }
-        #chatView { min-height: 100vh; display: flex; flex-direction: column; }
+        #chatView { height: 100vh; max-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         .sidebar { width: 320px; padding-top: 15px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: none; }
         @media (min-width: 950px) { .sidebar { display: block; } }
         .sidebar-box { background-color: var(--sidebar-bg); border-radius: 16px; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 20px; }
@@ -68,7 +68,7 @@
         .tab { flex: 1; text-align: center; padding: 15px 10px; text-decoration: none; color: var(--text-muted); font-weight: bold; font-size: 15px; cursor: pointer; min-width: 80px; }
         .tab:hover { background-color: var(--tab-hover-bg); }
         .tab.active { color: var(--text-color); border-bottom: 4px solid var(--accent-color); }
-        .sub-tabs { display: flex; border-bottom: 1px solid var(--border-color); background-color: var(--header-bg); position: sticky; top: 55px; backdrop-filter: blur(5px); z-index: 9; }
+        .sub-tabs { display: flex; border-bottom: 1px solid var(--border-color); background-color: var(--header-bg); position: static; }
         .sub-tab { flex: 1; text-align: center; padding: 12px 10px; color: var(--text-muted); font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; }
         .sub-tab:hover { background-color: var(--tab-hover-bg); }
         .sub-tab.active { color: var(--text-color); border-bottom: 3px solid var(--accent-color); }
@@ -177,6 +177,11 @@
         .color-dot, .shared-color-dot { transition: transform 0.1s, border-color 0.1s; }
         .color-dot:hover, .shared-color-dot:hover { transform: scale(1.1); }
         .color-dot.active, .shared-color-dot.active { transform: scale(1.15); }
+        
+        body.embed-mode { background: transparent !important; margin: 0; padding: 0; }
+        body.embed-mode .layout-wrapper { margin: 0; padding: 0; display: block; max-width: none; }
+        body.embed-mode .container { border: none; max-width: none; min-height: auto; width: 100%; margin: 0; padding: 0; }
+        body.embed-mode .header-bar, body.embed-mode .sidebar, body.embed-mode .tabs, body.embed-mode .detail-reply-box { display: none !important; }
 
         @media (max-width: 600px) {
             .container { border-left: none; border-right: none; }
@@ -325,12 +330,12 @@
         <div class="container" id="mainContainer">
             <!-- ナビゲーションバー -->
             <div id="navContainer" class="tabs">
-                <div class="tab active" onclick="showHome()">タイムライン</div>
-                <div class="tab" onclick="showSearch()">検索</div>
-                <div class="tab" onclick="showDMs()">DM</div>
-                <div class="tab" id="notificationLink" onclick="showNotifications()">通知</div>
-                <div class="tab" onclick="showUserProfile(myProfile.id)">プロフィール</div>
-                <div class="tab" onclick="showSettings()">設定</div>
+                <div class="tab active" id="tab-home" onclick="showHome()">タイムライン</div>
+                <div class="tab" id="tab-search" onclick="showSearch()">検索</div>
+                <div class="tab" id="tab-dm" onclick="showDMs()">DM</div>
+                <div class="tab" id="tab-notif" onclick="showNotifications()">通知</div>
+                <div class="tab" id="tab-prof" onclick="showUserProfile(myProfile.id)">プロフィール</div>
+                <div class="tab" id="tab-setting" onclick="showSettings()">設定</div>
             </div>
 
             <!-- ホームビュー -->
@@ -345,7 +350,7 @@
                         <textarea id="postText" rows="3" placeholder="いまどうしてる？ (@ユーザー名 または @AI でメンション)"></textarea>
                         
                         <!-- 添付ファイル各種プレビュー -->
-                        <input type="text" id="postVideoUrl" class="video-input-field" placeholder="動画のURLを貼り付け (YouTube, X等)...">
+                        <input type="text" id="postVideoUrl" class="video-input-field" placeholder="動画や音楽のURLを貼り付け (YouTube, Apple Music, Spotify等)...">
                         <input type="file" id="postFileInput" accept="image/*" style="display:none;" onchange="handlePostFileSelect(event)">
                         
                         <!-- アップロード画像/動画プレビュー -->
@@ -438,8 +443,8 @@
                             <button class="post-btn" onclick="toggleSharedPaint()" style="font-size:12px; padding:4px 10px; background-color:var(--border-color); color:var(--text-color);">閉じる</button>
                         </div>
                     </div>
-                    <div style="display:flex; justify-content:center; align-items:center; overflow:hidden; position:relative; border:1px solid var(--border-color); border-radius:8px; background:#ffffff; max-width:100%;">
-                        <canvas id="sharedPaintCanvas" width="600" height="600" style="display:block; width:100%; max-width:400px; height:auto; cursor:crosshair; touch-action:none; background:#ffffff;"></canvas>
+                    <div style="display:flex; justify-content:center; align-items:center; overflow:hidden; position:relative; border:1px solid var(--border-color); border-radius:8px; background:#ffffff; width:100%; max-width:400px; max-height:40vh; margin:0 auto;">
+                        <canvas id="sharedPaintCanvas" width="600" height="600" style="display:block; width:100%; height:100%; object-fit:contain; cursor:crosshair; touch-action:none; background:#ffffff;"></canvas>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center;">
                         <div class="shared-color-dot active" style="background:#000000; width:20px; height:20px; border-radius:50%; cursor:pointer; border:2px solid var(--accent-color);" onclick="selectSharedColor('#000000', this)"></div>
@@ -459,7 +464,7 @@
                     </div>
                 </div>
 
-                <div id="chatMessageList" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:12px; min-height: 60vh; background:#000;"></div>
+                <div id="chatMessageList" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:12px; min-height: 0; background:#000;"></div>
                 
                 <div class="search-input-box" style="background:#000; padding:10px 15px; border-top:1px solid var(--border-color); flex-direction:column; align-items:flex-start; flex-shrink:0;">
                     <div id="chatDrawingPreviewContainer" style="display:none; margin-bottom: 10px; position:relative; width:120px; height:120px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; overflow:hidden; padding:5px; align-items:center; justify-content:center;">
@@ -521,6 +526,10 @@
                             <option value="light">ライトモード</option>
                         </select>
                     </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-weight: bold; color: var(--text-muted);">Gemini APIキー (AI機能用)</label>
+                        <input type="text" id="settingsGeminiKey" placeholder="AIzaSy...から始まるキーを入力" style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: var(--text-color);">
+                    </div>
                     <button class="post-btn" onclick="saveSettings()">設定を保存</button>
                     
                     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
@@ -569,6 +578,15 @@
     <div id="repostModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>リポスト / 引用</span><button class="close-modal" onclick="closeRepostModal()">×</button></div><textarea id="quoteText" rows="3" placeholder="コメントを追加して引用..." style="width:100%; border:none; background:transparent; color:var(--text-color); resize:none; outline:none; font-size:16px;"></textarea><div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;"><button class="toolbar-btn btn-emoji" onclick="openEmojiPicker('quoteText', event)" style="font-size: 16px;"></button><div style="display:flex; gap:10px;"><button class="post-btn" style="background:transparent; border:1px solid #00ba7c; color:#00ba7c;" onclick="submitRepost(false)">通常リポスト</button><button class="post-btn" onclick="submitRepost(true)">引用ポスト</button></div></div></div></div>
     
     <div id="alertModal" class="modal-overlay" style="z-index: 10000;"><div class="modal-content" onclick="event.stopPropagation()" style="max-width:350px; text-align:center;"><div id="alertModalTitle" style="font-weight:bold; font-size:18px; margin-bottom:10px; color:var(--text-color);"></div><div id="alertModalMessage" style="margin-bottom:20px; color:var(--text-color); font-size:15px; white-space:pre-wrap; line-height:1.5;"></div><button class="post-btn" onclick="document.getElementById('alertModal').style.display='none'" style="width:100%;">OK</button></div></div>
+
+    <div id="shareModal" class="modal-overlay" style="z-index:10001;"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>共有オプション</span><button class="close-modal" onclick="document.getElementById('shareModal').style.display='none'">×</button></div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-weight:bold; color:var(--text-muted); font-size:14px;">直接リンク</label>
+            <div style="display:flex; gap:8px;"><input type="text" id="shareLinkInput" readonly style="flex:1; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color); outline:none;"><button class="post-btn" onclick="copyInput('shareLinkInput')">コピー</button></div>
+            <label style="font-weight:bold; color:var(--text-muted); font-size:14px; margin-top:10px;">HTML 埋め込みコード</label>
+            <div style="display:flex; gap:8px;"><input type="text" id="shareEmbedInput" readonly style="flex:1; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color); outline:none;"><button class="post-btn" onclick="copyInput('shareEmbedInput')">コピー</button></div>
+        </div>
+    </div></div>
 
     <!-- お絵描きキャンバスモーダル -->
     <div id="paintModal" class="modal-overlay" style="z-index:10002;">
@@ -854,6 +872,33 @@
                 `;
             }
             
+            // Apple Music
+            const amMatch = url.match(/music\.apple\.com\/([a-zA-Z]{2})\/(album|playlist|song|station)\/(?:[^\/]+\/)?([0-9a-zA-Z\.\-]+)/);
+            if (amMatch) {
+                const type = amMatch[2];
+                const hasIParam = url.includes('?i=');
+                const height = (type === 'song' || hasIParam) ? 150 : 450;
+                const embedUrl = url.replace("music.apple.com", "embed.music.apple.com");
+                return `
+                    <div style="margin-top:10px; width:100%;">
+                        <iframe allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" frameborder="0" height="${height}" style="width:100%;max-width:660px;overflow:hidden;background:transparent;border-radius:12px;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="${embedUrl}"></iframe>
+                    </div>
+                `;
+            }
+
+            // Spotify
+            const spMatch = url.match(/open\.spotify\.com\/(track|album|playlist|episode|show)\/([a-zA-Z0-9]+)/);
+            if (spMatch) {
+                const type = spMatch[1];
+                const id = spMatch[2];
+                const height = (type === 'track' || type === 'episode') ? 152 : 352;
+                return `
+                    <div style="margin-top:10px; width:100%;">
+                        <iframe style="border-radius:12px" src="https://open.spotify.com/embed/${type}/${id}?utm_source=generator" width="100%" height="${height}" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                    </div>
+                `;
+            }
+            
             // Fallback link
             return `<div style="margin-top:10px;"><a href="${url}" target="_blank" style="color:var(--accent-color);word-break:break-all;display:inline-flex;align-items:center;gap:6px;">${svgVideo} 外部動画リンク: ${url}</a></div>`;
         };
@@ -891,14 +936,24 @@
             if(pickerContainer) pickerContainer.style.display = 'none'; 
         };
 
-        // Client-side Compression & Conversion (Bypass external API and CORS)
-        window.uploadFileToAPI = function(file) {
-            return new Promise((resolve, reject) => {
-                if (file.type.startsWith('image/')) {
-                    showToast('画像を最適化中...');
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = new Image();
+        // Client-side Compression & Firebase Storage Integration
+        window.uploadFileToAPI = async function(file) {
+            try {
+                // Try Firebase Storage first
+                const ext = file.type.startsWith('image/') ? '.jpg' : file.type.startsWith('audio/') ? '.webm' : '.bin';
+                const filename = "uploads/" + Date.now() + "_" + Math.random().toString(36).substring(7) + ext;
+                const storageRef = ref(storage, filename);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+                return url;
+            } catch (storageError) {
+                console.log("Storage error, fallback to DataURL", storageError);
+                return new Promise((resolve, reject) => {
+                    if (file.type.startsWith('image/')) {
+                        showToast('画像を最適化中...');
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = new Image();
                         img.onload = function() {
                             const canvas = document.createElement('canvas');
                             let width = img.width;
@@ -949,10 +1004,11 @@
                     reader.onerror = () => reject(new Error("音声の読み取りに失敗しました。"));
                     reader.readAsDataURL(file);
                 } 
-                else {
-                    reject(new Error("今回は「画像」と「音声」のみの対応としました。動画等は選択できません。"));
-                }
-            });
+                    else {
+                        reject(new Error("画像または音声のみ対応しています"));
+                    }
+                });
+            }
         };
 
         // Emoji Picker Setup
@@ -1132,11 +1188,11 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     audioChunks = [];
+                    // Use safest default MediaRecorder to avoid unsupported option crashes
                     mediaRecorder = new MediaRecorder(stream);
                     mediaRecorder.ondataavailable = (e) => { audioChunks.push(e.data); };
                     mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-                        // Upload voice blob to Cloudinary as raw/auto
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Use native-like type
                         try {
                             const url = await uploadFileToAPI(audioBlob);
                             if (target === 'post') {
@@ -1148,15 +1204,17 @@
                                 document.getElementById('chatAudioPreview').src = url;
                                 document.getElementById('chatAudioPreviewContainer').style.display = 'flex';
                             }
-                            showToast("音声メッセージを追加しました");
-                        } catch(e) { alert("音声アップロードに失敗しました"); }
+                            showToast("音声を追加しました");
+                        } catch(e) { 
+                            alert("アップロード失敗: " + (e.message || "不明なエラー")); 
+                        }
                     };
                     mediaRecorder.start();
                     isRecording = true;
                     document.getElementById(`btn-voice-${target}`).innerText = '停止';
                     document.getElementById(`btn-voice-${target}`).style.backgroundColor = '#f91880';
                 } catch (err) {
-                    alert("マイクへのアクセスが拒否されました");
+                    alert("マイクへのアクセスに失敗しました: " + (err.message || err));
                 }
             }
         };
@@ -1177,22 +1235,37 @@
             if (!prompt) return;
             showToast("AIが文章を作成中...");
             try {
-                const response = await fetch('https://text.pollinations.ai/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        messages: [
-                            { role: 'system', content: 'あなたはSNS投稿を作成するアシスタントです。ユーザーの指示に合わせて、日本語で自然で魅力的なSNS投稿文（140文字程度）を作成してください。余計な挨拶や指示解説は含めず、投稿文のみを出力してください。' },
-                            { role: 'user', content: prompt }
-                        ]
-                    })
-                });
-                const text = await response.text();
+                const apiKey = localStorage.getItem('mySNS_gemini_key') || "AQ.Ab8RN6JpABId0V-vtHsOsYspVfZOZWu-74NLfuyAejqFS6LA-Q";
+                if (!apiKey.startsWith("AIza")) {
+                    throw new Error("Gemini APIキーが無効です。「設定」タブから正しいキー(AIza...から始まるもの)を登録してください。");
+                }
+                let text = "";
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [
+                                {
+                                    role: "user",
+                                    parts: [{ text: "あなたはSNS投稿を作成するアシスタントです。ユーザーの指示に合わせて、日本語で自然で魅力的なSNS投稿文（140文字程度）を作成してください。余計な挨拶や指示解説は含めず、投稿文のみを出力してください。\n\n指示: " + prompt }]
+                                }
+                            ]
+                        })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error?.message || "API Error");
+                    text = data.candidates[0].content.parts[0].text;
+                } catch (geminiError) {
+                    console.log("Gemini API Error: " + geminiError.message);
+                    throw new Error("Gemini APIでの生成に失敗しました: " + geminiError.message);
+                }
+                
                 document.getElementById('postText').value = text;
                 document.getElementById('aiTextModal').style.display = 'none';
                 showToast("AI文章を挿入しました");
             } catch (e) {
-                alert("AI文章作成に失敗しました");
+                alert("AI文章作成エラー: " + e.message);
             }
         };
 
@@ -1509,6 +1582,7 @@
                     }
 
                     const safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:var(--accent-color); text-decoration:none;">$1</a>')
                         .replace(/(#[a-zA-Z0-9ぁ-んァ-ヶー一-龠]+)/g, '<span class="hashtag" onclick="showSearch(\'$1\', event)">$1</span>')
                         .replace(/(@[a-zA-Z0-9_]+)/g, '<span class="hashtag" onclick="showUserProfile(\'$1\', event)">$1</span>');
 
@@ -1517,6 +1591,9 @@
 
                     // Media embeds
                     let mediaHTML = "";
+                    if (post.imageUrl) {
+                        mediaHTML += `<div style="margin-top:10px;"><img src="${post.imageUrl}" style="max-width:100%; border-radius:12px; max-height:400px; object-fit:contain;"></div>`;
+                    }
                     if (post.videoUrl) {
                         mediaHTML += `<div style="margin-top:10px;"><video src="${post.videoUrl}" controls style="max-width:100%; border-radius:12px; max-height:300px;"></video></div>`;
                     }
@@ -1686,6 +1763,7 @@
 
                 await addDoc(collection(db, "posts"), {
                     content: text,
+                    imageUrl: ((selectedPostFile && selectedPostFile.type.startsWith('image/')) || window.postAIImageUrl) ? uploadedUrl : "",
                     videoUrl: selectedPostFile && selectedPostFile.type.startsWith('video/') ? uploadedUrl : "",
                     audioData: window.postAudioUrl || "",
                     drawingData: window.postDrawingData || "",
@@ -1901,9 +1979,16 @@
             if(event) event.stopPropagation();
             closeAllMenus();
             const shareUrl = `${window.location.origin}${window.location.pathname}?id=${postId}`;
-            navigator.clipboard.writeText(`${decodeURIComponent(encodedContent)}\n${shareUrl}`).then(() => {
-                showToast("リンクをクリップボードにコピーしました");
-            });
+            const embedCode = `<iframe src="${shareUrl}&embed=true" width="100%" height="400" style="border:none; border-radius:12px; overflow:hidden;" scrolling="yes" frameborder="0"></iframe>`;
+            document.getElementById('shareLinkInput').value = shareUrl;
+            document.getElementById('shareEmbedInput').value = embedCode;
+            document.getElementById('shareModal').style.display = 'flex';
+        };
+        window.copyInput = function(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+            showToast("コピーしました");
         };
 
         // Routing System
@@ -1913,6 +1998,7 @@
             const userId = urlParams.get('user');
             const view = urlParams.get('view');
             const chatUserId = urlParams.get('chat');
+            const isEmbed = urlParams.get('embed') === 'true';
 
             // Hide all views
             document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
@@ -1921,6 +2007,15 @@
 
             // Set navbar highlights
             document.querySelectorAll('#navContainer .tab').forEach(t => t.classList.remove('active'));
+
+            if (isEmbed) {
+                document.body.classList.add('embed-mode');
+                document.getElementById('detailView').style.display = 'block';
+                await renderPostDetail(postId);
+                return;
+            } else {
+                document.body.classList.remove('embed-mode');
+            }
 
             if (postId) {
                 document.getElementById('detailView').style.display = 'block';
@@ -1999,6 +2094,7 @@
                 const isLiked = (JSON.parse(localStorage.getItem('mySNS_likedPosts')) || []).includes(postId);
 
                 let mediaHTML = "";
+                if (post.imageUrl) mediaHTML += `<img src="${post.imageUrl}" style="width:100%; border-radius:12px; margin-top:10px;">`;
                 if (post.videoUrl) mediaHTML += `<video src="${post.videoUrl}" controls style="width:100%; border-radius:12px; margin-top:10px;"></video>`;
                 if (post.audioData) mediaHTML += `<audio src="${post.audioData}" controls></audio>`;
                 if (post.drawingData) mediaHTML += `<img src="${post.drawingData}" class="drawing-preview">`;
@@ -2009,6 +2105,32 @@
                 let mapHTML = "";
                 if (post.mapLink) {
                     mapHTML = `<div class="map-card"><iframe src="https://maps.google.com/maps?q=${encodeURIComponent(post.mapLink)}&t=&z=13&ie=UTF8&iwloc=&output=embed"></iframe></div>`;
+                }
+
+                const safeContent = (post.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:var(--accent-color); text-decoration:none;">$1</a>')
+                    .replace(/(#[a-zA-Z0-9ぁ-んァ-ヶー一-龠]+)/g, '<span class="hashtag" onclick="showSearch(\'$1\', event)">$1</span>')
+                    .replace(/(@[a-zA-Z0-9_]+)/g, '<span class="hashtag" onclick="showUserProfile(\'$1\', event)">$1</span>');
+
+                const isEmbed = new URLSearchParams(window.location.search).get('embed') === 'true';
+
+                if (isEmbed) {
+                    detailArea.innerHTML = `
+                        <div style="padding: 15px; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 12px; margin: 10px;">
+                            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                                <img src="${post.userIcon || defaultIcon}" class="user-icon" style="width:40px; height:40px;">
+                                <div>
+                                    <div class="user-name" style="font-size:15px;">${post.userName || "名無し"}</div>
+                                    <div style="color:var(--text-muted); font-size:12px;">${(post.userId || "").substring(0,8)}...</div>
+                                </div>
+                            </div>
+                            <div style="font-size:16px; line-height:1.5; white-space:pre-wrap; color:var(--text-color); margin-bottom:12px; word-break:break-all;">${safeContent}</div>
+                            ${mediaHTML}
+                            ${mapHTML}
+                            <div style="color:var(--text-muted); font-size:12px; margin-top:10px;">${dateStr}</div>
+                        </div>
+                    `;
+                    return; // Stop rendering
                 }
 
                 detailArea.innerHTML = `
@@ -2024,7 +2146,7 @@
                                 <div style="color:var(--text-muted); font-size:13px;">${(post.userId || "").substring(0,8)}...</div>
                             </div>
                         </div>
-                        <div style="font-size:20px; line-height:1.5; white-space:pre-wrap; color:var(--text-color); margin-bottom:15px;">${post.content || ""}</div>
+                        <div style="font-size:20px; line-height:1.5; white-space:pre-wrap; color:var(--text-color); margin-bottom:15px; word-break:break-all;">${safeContent}</div>
                         ${mediaHTML}
                         ${mapHTML}
                         <div style="color:var(--text-muted); font-size:14px; margin-bottom:12px;">${dateStr}</div>
@@ -2702,6 +2824,7 @@
             
             const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
             document.getElementById('settingsThemeSelect').value = currentTheme;
+            document.getElementById('settingsGeminiKey').value = localStorage.getItem('mySNS_gemini_key') || '';
 
             // Render block / mute manage lists
             const mutes = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
