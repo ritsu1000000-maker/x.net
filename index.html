@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>簡易SNS - デザイン崩れ修正版</title>
+    <title>簡易SNS - 投稿反映バグ修正版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <style>
         body { font-family: sans-serif; background-color: #000000; margin: 0; padding: 0; color: #e7e9ea; }
@@ -43,7 +43,7 @@
         button.post-btn { background-color: #1d9bf0; color: white; border: none; border-radius: 20px; padding: 8px 18px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         button.post-btn:hover { background-color: #1a8cd8; }
         
-        .post { padding: 15px; border-bottom: 1px solid #2f3336; display: flex; cursor: pointer; transition: background-color 0.2s, opacity 0.3s, transform 0.3s; position: relative; }
+        .post { padding: 15px; border-bottom: 1px solid #2f3336; display: flex; cursor: pointer; transition: background-color 0.2s; position: relative; }
         .post:hover { background-color: #080808; }
         .post-left { margin-right: 12px; flex-shrink: 0; }
         .post-right { flex: 1; display: flex; flex-direction: column; position: relative; width: 100%; min-width: 0; }
@@ -76,9 +76,7 @@
         .menu-item { padding: 12px 16px; font-size: 14px; color: #e7e9ea; cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left; }
         .menu-item:hover { background-color: #16181c; }
         
-        /* 💡 修正箇所：レイアウト崩れの原因になっていた部分を修正 */
-        .view-section { display: none; }
-        
+        .view-section { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
         .error-box { padding: 20px; margin: 15px; border: 2px solid #f91880; background-color: #200914; color: #f91880; font-weight: bold; border-radius: 10px; }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(91, 112, 131, 0.4); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal-content { background: #000000; width: 90%; max-width: 600px; border-radius: 16px; border: 1px solid #2f3336; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 0 15px rgba(255,255,255,0.1); }
@@ -192,7 +190,7 @@
                 <div id="dmListArea"></div>
             </div>
 
-            <div id="chatRoomView" class="view-section" style="background:#000; height: 100vh;">
+            <div id="chatRoomView" class="view-section" style="background:#000;">
                 <div id="chatMessages" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:8px;"></div>
                 <div class="search-input-box" style="background:#000; padding:10px 15px; border-top:1px solid #2f3336; flex-direction:column; align-items:flex-start;">
                     <div id="dmFilePreview" style="display:none; position:relative; margin-bottom:10px; max-width:max-content; color:#1d9bf0; font-size:14px; background:#16181c; padding:8px 12px; border-radius:8px; border:1px solid #1d9bf0;"></div>
@@ -293,6 +291,14 @@
 
         window.unsubscribePosts = null;
         window.unsubscribeChat = null;
+
+        // 💡 修正：Firebaseからの日付データ安全変換ヘルパー
+        window.getDateObj = function(t) {
+            if (!t) return new Date();
+            if (typeof t.toDate === 'function') return t.toDate();
+            if (t.seconds) return new Date(t.seconds * 1000);
+            return new Date(t);
+        };
         
         let currentEmojiTargetId = '';
         const emojis = ["😀","😂","🤣","😊","🥰","😍","😭","😩","🥺","😡","🤯","😱","🤔","🤫","😑","😬","🙄","😪","😴","😷","🤧","🤮","🤑","😈","🤡","💩","👻","💀","👽","🤖","🎃","😺","🙈","💋","💌","💘","💝","💖","💗","💓","💞","💕","💟","❣️","💔","❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","💯","💢","💥","💫","💦","💨","💣","💬","👁️‍🗨️","💭","💤","👋","🤚","🖐️","✋","🖖","👌","🤏","✌️","🤞","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝️","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍️","💅","🤳","💪","🦾","🦿","🦵","🦶","👂","🦻","👃","🧠","🦷","骨","👀","👁️","👅","👄","👶","🧒","👦","👧","🧑","👱","👨","🧔","👩","🧓","👴","👵","🙍","🙎","🙅","🙆","💁","🙋","🧏","🙇","🤦","🤷","👮","🕵️","💂","👷","🤴","👸","👳","👲","🧕","🤵","👰","🤰","🤱","👼","🎅","🤶","🦸","🦹","🧙","🧚","🧛","🧜","🧝","🧞","🧟","💆","💇","🚶","🧍","🧎","🏃","💃","🕺","🕴️","👯","🧖","🧗","🤺","🏇","⛷️","🏂","🏌️","🏄","🚣","🏊","⛹️","🏋️","🚴","🚵","🤸","🤼","🤽","🤾","🤹","🧘","🛀","🛌","🧑‍🤝‍🧑","👭","👫","👬","💏","💑","👪","🗣️","👤","👥","🫂","🐾","🐵","🐒","🦍","🦧","🐶","🐕","🐩","🐺","🦊","🦝","🐱","🐈","🦁","🐯","🐅","🐆","🐴","🐎","🦄","🦓","🦌","🦬","🐮","🐂","🐃","🐄","🐷","🐖","🐗","🐽","🐏","🐑","🐐","🐪","🐫","🦙","🦒","🐘","🦣","🦏","🦛","🐭","🐁","🐀","🐹","🐰","🐇","🐿️","🦫","🦔","🦇","🐻","🐨","🐼","🦥","🦦","🦨","🦘","🦡","🦃","🐔","🐓","🐣","🐤","🐥","🐦","🐧","🕊️","🦅","🦆","🦢","🦉","🦤","🪶","🦩","🦚","🦜","🐸","🐊","🐢","🦎","🐍","🐲","🐉","🦕","🦖","🐳","🐋","🐬","🦭","🐟","🐠","🐡","🦈","🐙","🐚","🐌","🦋","🐛","🐜","🐝","🪲","🐞","🦗","🪳","🕷️","🕸️","🦂","🦟","🪰","🪱","🦠","💐","🌸","💮","🏵️","🌹","🥀","🌺","🌻","🌼","🌷","🌱","🪴","🌲","🌳","🌴","🌵","🌾","🌿","☘️","🍀","🍁","🍂","🍃"];
@@ -387,7 +393,6 @@
             if (file.size > 150 * 1024 * 1024) { customAlert("エラー", "ファイルが大きすぎます"); return; }
             selectedReplyFile = file;
             const previewContent = document.getElementById('replyFilePreviewContent'); previewContent.innerHTML = '';
-            
             if (file.type.startsWith('image/')) { const img = document.createElement('img'); img.src = URL.createObjectURL(file); img.style.maxWidth = '100%'; img.style.maxHeight = '150px'; img.style.borderRadius = '12px'; previewContent.appendChild(img); } 
             else if (file.type.startsWith('video/')) { const video = document.createElement('video'); video.src = URL.createObjectURL(file); video.controls = true; video.style.maxWidth = '100%'; video.style.maxHeight = '150px'; video.style.borderRadius = '12px'; previewContent.appendChild(video); }
             document.getElementById('replyFilePreview').style.display = 'block';
@@ -405,8 +410,9 @@
         }
         window.clearDMFile = function() { selectedDMFile = null; document.getElementById('dmFileInput').value = ''; document.getElementById('dmFilePreview').style.display = 'none'; }
 
+        // 💡 修正：安全なHTMLエスケープ処理
         function parseContent(text) {
-            let safe = (text || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+            let safe = (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
             safe = safe.replace(/(^|\s)([#＃][^\s<]+)/g, function(match, space, tag) { const pureTag = tag.replace(/'/g, "\\'"); return `${space}<span class="hashtag" onclick="executeSearch('${pureTag}', event)">${tag}</span>`; });
             safe = safe.replace(/@([^\s<]+)/g, '<span class="hashtag" onclick="executeSearch(\'@$1\', event)">@$1</span>');
 
@@ -477,7 +483,7 @@
             } else if (view === 'settings') {
                 renderNav('settings', '設定'); document.getElementById('settingsView').style.display = 'block'; renderSettings();
             } else {
-                renderNav('home', 'ホーム'); document.getElementById('homeView').style.display = 'block'; window.renderPosts();
+                renderNav('home', 'ホーム'); document.getElementById('homeView').style.display = 'flex'; window.renderPosts();
             }
         }
         
@@ -619,14 +625,16 @@
         window.openPollModal = function() { [1,2,3,4].forEach(i=>document.getElementById(`pollOpt${i}`).value=''); document.getElementById('pollModal').style.display = 'flex'; }
         window.attachPoll = function() { const opts = [1,2,3,4].map(i=>document.getElementById(`pollOpt${i}`).value.trim()).filter(v=>v!==''); if(opts.length<2){ customAlert("エラー","選択肢は最低2つ必要です"); return; } currentPollOptions={options:opts, votes:{}}; updateAttachmentUI(); document.getElementById('pollModal').style.display = 'none'; }
         let currentMapTargetId=''; window.openMapModal=function(id){ currentMapTargetId=id; document.getElementById('mapKeyword').value=''; document.getElementById('mapModal').style.display='flex'; }
-        window.attachMapLink=function(){ const k=document.getElementById('mapKeyword').value.trim(); if(!k)return; document.getElementById(currentMapTargetId).value += ` https://maps.google.com/maps?q=$${encodeURIComponent(k)}`; document.getElementById('mapModal').style.display='none'; showToast("地図を添付しました"); }
+        window.attachMapLink=function(){ const k=document.getElementById('mapKeyword').value.trim(); if(!k)return; document.getElementById(currentMapTargetId).value += ` https://maps.google.com/maps?q=${encodeURIComponent(k)}`; document.getElementById('mapModal').style.display='none'; showToast("地図を添付しました"); }
 
         function createPostElement(postId, post, uId) {
             const safeUid = uId || "";
             const isMuted = (JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || []).includes(safeUid) || (JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || []).includes(safeUid);
             if (isMuted) { const d=document.createElement('div'); d.style.display='none'; return d; }
 
-            const now = new Date(); const dObj = post.createdAt ? post.createdAt.toDate() : new Date(0);
+            const now = new Date(); 
+            // 💡 修正：ここでエラーが起きていたのを安全なヘルパーに差し替え
+            const dObj = getDateObj(post.createdAt);
             if (dObj > now && safeUid !== myProfile.id) { const d=document.createElement('div'); d.style.display='none'; return d; }
 
             const safeContent = parseContent(post.content);
@@ -705,7 +713,7 @@
                 await addDoc(collection(db, "replies"), { postId: postId, content: aiResponse, createdAt: new Date(), userId: "ai_bot_system", userName: "🤖 AI", userIcon: "https://api.dicebear.com/7.x/bottts/svg?seed=AI&backgroundColor=1d9bf0", likes: 0 });
                 showTopNotification("✨ AIから返信が届きました！");
                 if (document.getElementById('detailReplyList') && document.getElementById('detailView').style.display === 'block') loadReplies(postId);
-            } catch (e) { }
+            } catch (e) {}
         }
 
         window.submitPost = async function() {
@@ -790,7 +798,7 @@
                 const docRef = doc(db, "posts", postId); try { await updateDoc(docRef, { views: increment(1) }); } catch(e){}
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    const post = docSnap.data(); const dObj = post.createdAt ? post.createdAt.toDate() : new Date(0);
+                    const post = docSnap.data(); const dObj = getDateObj(post.createdAt);
                     if (dObj > new Date() && post.userId !== myProfile.id) { area.innerHTML = '<div style="padding:20px;">まだ公開されていません。</div>'; return; }
                     
                     const temp = createPostElement(postId, post, post.userId); temp.style.borderBottom = 'none'; temp.className = '';
@@ -801,16 +809,21 @@
                         <div class="detail-reply-box">
                             <div><img src="${myProfile.icon}" class="user-icon"></div>
                             <div class="post-box-right">
-                                <textarea id="detailReplyText" rows="2" placeholder="返信をポスト..."></textarea>
+                                <textarea id="detailReplyText" rows="2" placeholder="返信をポスト... (@ユーザー名 や @AI)"></textarea>
+                                <input type="text" id="detailReplyVideoUrl" class="video-input-field" placeholder="🎥 動画のURLを貼り付け...">
+                                <input type="file" id="replyFileInput" accept="image/*,video/*" style="display:none;" onchange="handleReplyFileSelect(event)">
+                                <div id="replyFilePreview" style="display:none; margin-bottom: 10px; position: relative; max-width: max-content;">
+                                    <div id="replyFilePreviewContent"></div><button onclick="clearReplyFile()" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
+                                </div>
                                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                                    <div style="display:flex; gap:8px;"><button class="toolbar-btn" onclick="openEmojiPicker('detailReplyText', event)" style="font-size:16px;">😀</button></div>
+                                    <div style="display:flex; gap:8px;"><button class="toolbar-btn" onclick="openEmojiPicker('detailReplyText', event)" style="font-size:16px;">😀</button><button class="toolbar-btn" onclick="document.getElementById('replyFileInput').click()">${svgImage} 画像/動画</button><button class="toolbar-btn" onclick="toggleVideoInput('detailReplyVideoUrl', event)">${svgVideo} URL</button><button class="toolbar-btn" onclick="openAITextModal('detailReplyText')">${svgRobot}</button></div>
                                     <button class="post-btn" onclick="submitReply('${postId}')">返信</button>
                                 </div>
                             </div>
                         </div>
                         <div id="detailReplyList"></div>
                     `;
-                    loadReplies(postId);
+                    loadReplies(postId); setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
                 } else { area.innerHTML = '<div style="padding:20px;">見つかりません。</div>'; }
             } catch(e) { area.innerHTML = `エラー: ${e.message}`; }
         }
@@ -865,9 +878,12 @@
                 `;
 
                 const snap = await getDocs(query(collection(db, "posts"), where("userId", "==", uid)));
-                let posts = []; snap.forEach(d => { posts.push({id:d.id, ...d.data()}); }); posts.sort((a,b)=>b.createdAt.toDate() - a.createdAt.toDate());
+                let posts = []; snap.forEach(d => { posts.push({id:d.id, ...d.data()}); }); 
+                // 💡 修正：ここで日付ソートが原因のエラーを防ぐ
+                posts.sort((a,b)=> getDateObj(b.createdAt) - getDateObj(a.createdAt));
                 tl.innerHTML = ''; if(posts.length===0) tl.innerHTML='<div style="padding:20px; text-align:center;">投稿なし</div>';
                 posts.forEach(p => tl.appendChild(createPostElement(p.id, p, p.userId)));
+                setTimeout(() => { if (window.twttr) window.twttr.widgets.load(); }, 100);
             } catch(e) {}
         }
 
@@ -1005,11 +1021,22 @@
 
         window.submitReply = async function(postId) {
             let txt = document.getElementById('detailReplyText').value.trim();
-            if (!txt) return;
+            const videoUrl = document.getElementById('detailReplyVideoUrl').value.trim();
+            if (videoUrl) { txt += (txt ? '\n\n' : '') + videoUrl; }
+            if (!txt && !selectedReplyFile) return;
+
+            if (selectedReplyFile) {
+                showToast("⏳ アップロード中...");
+                try {
+                    const fileUrl = await uploadFileToAPI(selectedReplyFile);
+                    txt += (txt ? '\n\n' : '') + fileUrl;
+                } catch (e) { customAlert("アップロードエラー", e.message); return; }
+            }
 
             try { 
                 await addDoc(collection(db, "replies"), { postId: postId, content: txt, createdAt: new Date(), userId: myProfile.id, userName: myProfile.name, userIcon: myProfile.icon, likes: 0 });
-                document.getElementById('detailReplyText').value = ''; loadReplies(postId); showToast("返信しました！");
+                document.getElementById('detailReplyText').value = ''; document.getElementById('detailReplyVideoUrl').value = ''; document.getElementById('detailReplyVideoUrl').style.display = 'none'; clearReplyFile();
+                loadReplies(postId); showToast("返信しました！");
                 if (txt.includes('@AI') || txt.includes('＠AI')) handleAIMention(txt, postId);
             } catch (e) {}
         }
@@ -1018,13 +1045,16 @@
             const list = document.getElementById('detailReplyList'); list.innerHTML = '<div style="padding:15px;">読込中...</div>';
             try {
                 const snap = await getDocs(query(collection(db, "replies"), where("postId", "==", postId)));
-                let arr = []; snap.forEach(d => arr.push({id: d.id, ...d.data()})); arr.sort((a,b)=>a.createdAt.toDate()-b.createdAt.toDate());
+                let arr = []; snap.forEach(d => arr.push({id: d.id, ...d.data()})); 
+                // 💡 修正：安全にソート
+                arr.sort((a,b)=> getDateObj(a.createdAt) - getDateObj(b.createdAt));
                 list.innerHTML = ''; 
                 if (arr.length === 0) { list.innerHTML = '<div style="padding:20px; color:#71767b; text-align:center;">返信はまだありません。</div>'; return; }
                 const likedReplies = JSON.parse(localStorage.getItem('mySNS_likedReplies')) || [];
 
                 arr.forEach(r => {
-                    const dObj = r.createdAt ? r.createdAt.toDate() : new Date(); const timeAgo = formatTimeAgo(dObj); const safeUid = r.userId || "unknown";
+                    // 💡 修正：安全に変換
+                    const dObj = getDateObj(r.createdAt); const timeAgo = formatTimeAgo(dObj); const safeUid = r.userId || "unknown";
                     const isLikedReply = likedReplies.includes(r.id); const likeStyle = isLikedReply ? 'color: #f91880;' : '';
 
                     const div = document.createElement('div'); div.className = 'reply-item';
