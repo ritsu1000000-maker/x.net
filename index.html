@@ -336,7 +336,6 @@
                 <div class="tab" id="tab-search" onclick="showSearch()">検索</div>
                 <div class="tab" id="tab-dm" onclick="showDMs()">DM <span id="badge-dm" style="display:none; background:var(--accent-color); color:#fff; border-radius:50%; padding:2px 6px; font-size:10px; margin-left:4px;">0</span></div>
                 <div class="tab" id="tab-notif" onclick="showNotifications()">通知 <span id="badge-notif" style="display:none; background:var(--accent-color); color:#fff; border-radius:50%; padding:2px 6px; font-size:10px; margin-left:4px;">0</span></div>
-                <div class="tab" id="tab-prof" onclick="showUserProfile(myProfile.id)">プロフィール</div>
                 <div class="tab" id="tab-setting" onclick="showSettings()">設定</div>
             </div>
 
@@ -1946,7 +1945,11 @@
                                 </div>
                             </div>
                             <div class="post-content">${safeContent}</div>
-                            ${mediaHTML}
+                            ${post.imageUrl ? `<div style="position:relative; display:inline-block; width:100%;"><img src="${post.imageUrl}" style="width:100%; border-radius:12px; margin-top:10px; display:block;"><a href="${post.imageUrl}" download target="_blank" style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:#fff; padding:6px 12px; border-radius:20px; text-decoration:none; font-size:12px; font-weight:bold; cursor:pointer;" onclick="event.stopPropagation();">⬇ ダウンロード</a></div>` : ''}
+                            ${post.videoUrl ? `<video src="${post.videoUrl}" controls style="width:100%; border-radius:12px; margin-top:10px;" onclick="event.stopPropagation();"></video>` : ''}
+                            ${post.audioData ? `<audio src="${post.audioData}" controls onclick="event.stopPropagation();"></audio>` : ''}
+                            ${post.drawingData ? `<img src="${post.drawingData}" class="drawing-preview">` : ''}
+                            ${post.videoInputUrl ? getVideoEmbedHTML(post.videoInputUrl) : ''}
                             ${pollHTML}
                             ${mapHTML}
                             ${quoteHTML}
@@ -2282,12 +2285,6 @@
             if (postId) {
                 document.getElementById('detailView').style.display = 'block';
                 await renderPostDetail(postId);
-            } else if (userId) {
-                document.getElementById('userProfileView').style.display = 'block';
-                if (userId === myProfile.id) {
-                    document.querySelector('#navContainer .tab:nth-child(5)').classList.add('active');
-                }
-                await renderUserProfile(userId);
             } else if (chatUserId) {
                 document.getElementById('chatView').style.display = 'flex';
                 await openChatRoom(chatUserId);
@@ -2305,7 +2302,7 @@
                 await renderNotifications();
             } else if (view === 'settings') {
                 document.getElementById('settingsView').style.display = 'block';
-                document.querySelector('#navContainer .tab:nth-child(6)').classList.add('active');
+                document.querySelector('#navContainer .tab:nth-child(5)').classList.add('active');
                 renderSettings();
             } else {
                 // Home
@@ -2350,19 +2347,25 @@
             
             try {
                 const docRef = doc(db, "posts", postId);
-                const docSnap = await getDoc(docRef);
+                let docSnap = await getDoc(docRef);
+                let post = null;
                 if (!docSnap.exists()) {
-                    detailArea.innerHTML = '<div class="error-box">ポストが見つかりませんでした</div>';
-                    return;
+                    const replyRef = doc(db, "replies", postId);
+                    docSnap = await getDoc(replyRef);
+                    if (!docSnap.exists()) {
+                        detailArea.innerHTML = '<div class="error-box">ポストが見つかりませんでした</div>';
+                        return;
+                    }
                 }
-                const post = docSnap.data();
+                post = docSnap.data();
+                post.id = docSnap.id;
                 currentDetailPostUserId = post.userId;
 
                 const dateStr = formatTimeAgo(post.createdAt);
                 const isLiked = (JSON.parse(localStorage.getItem('mySNS_likedPosts')) || []).includes(postId);
 
                 let mediaHTML = "";
-                if (post.imageUrl) mediaHTML += `<img src="${post.imageUrl}" style="width:100%; border-radius:12px; margin-top:10px;">`;
+                if (post.imageUrl) mediaHTML += `<div style="position:relative; display:inline-block; width:100%;"><img src="${post.imageUrl}" style="width:100%; border-radius:12px; margin-top:10px; display:block;"><a href="${post.imageUrl}" download target="_blank" style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:#fff; padding:6px 12px; border-radius:20px; text-decoration:none; font-size:12px; font-weight:bold; cursor:pointer;" onclick="event.stopPropagation();">⬇ ダウンロード</a></div>`;
                 if (post.videoUrl) mediaHTML += `<video src="${post.videoUrl}" controls style="width:100%; border-radius:12px; margin-top:10px;"></video>`;
                 if (post.audioData) mediaHTML += `<audio src="${post.audioData}" controls></audio>`;
                 if (post.drawingData) mediaHTML += `<img src="${post.drawingData}" class="drawing-preview">`;
@@ -2502,7 +2505,7 @@
                     replies.push(r);
                 });
                 
-                replies.sort((a,b)=>getDateObj(a.createdAt) - getDateObj(b.createdAt));
+                replies.sort((a,b)=>getDateObj(b.createdAt) - getDateObj(a.createdAt));
                 
                 if (replies.length === 0) {
                     replyList.innerHTML = '<div style="padding:15px; color:var(--text-muted); font-size:14px;">返信はありません</div>';
@@ -2510,16 +2513,23 @@
                 }
                 
                 replies.forEach(reply => {
+                    const safeContent = (reply.content || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:var(--accent-color); text-decoration:none;">$1</a>')
+                        .replace(/(#[a-zA-Z0-9ぁ-んァ-ヶ一-龥々]+)/g, '<span class="hashtag" onclick="showSearch(\'$1\', event)">$1</span>')
+                        .replace(/(@[a-zA-Z0-9_]+)/g, '<span class="hashtag" onclick="showUserProfile(\'$1\', event)">$1</span>');
+
                     const div = document.createElement('div');
                     div.className = 'reply-item';
+                    div.style.cursor = 'pointer';
+                    div.onclick = () => showPostDetail(reply.id);
                     div.innerHTML = `
-                        <img src="${reply.userIcon || defaultIcon}" class="user-icon" onclick="showUserProfile('${reply.userId}')">
-                        <div class="post-right">
+                        <img src="${reply.userIcon || defaultIcon}" class="user-icon">
+                        <div class="post-right" style="width:100%;">
                             <div class="post-header">
-                                <span class="user-name" onclick="showUserProfile('${reply.userId}')">${reply.userName || "名無し"}</span>
+                                <span class="user-name">${reply.userName || "名無し"}</span>
                                 <span class="post-time">· ${formatTimeAgo(reply.createdAt)}</span>
                             </div>
-                            <div class="post-content" style="font-size:14px;">${reply.content}</div>
+                            <div class="post-content" style="font-size:14px; margin-bottom: 8px;">${safeContent}</div>
                         </div>
                     `;
                     replyList.appendChild(div);
