@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>簡易SNS - 統合完全版</title>
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
@@ -138,8 +139,8 @@
         .dm-message-wrapper { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 15px; }
         .dm-message-wrapper.mine { flex-direction: row-reverse; }
         .dm-bubble { max-width: 75%; padding: 10px 14px; border-radius: 20px; font-size: 15px; line-height: 1.4; word-break: break-all; }
-        .dm-bubble.mine { background-color: #ffffff; color: var(--text-color); border: 1px solid var(--accent-color); border-bottom-right-radius: 4px; }
-        .dm-bubble.other { background-color: #ffffff; color: var(--text-color); border: 1px solid var(--border-color); border-bottom-left-radius: 4px; }
+        .dm-bubble.mine { background-color: var(--accent-color); color: #ffffff; border: none; border-bottom-right-radius: 4px; }
+        .dm-bubble.other { background-color: #f1f1f1; color: #000000; border: none; border-bottom-left-radius: 4px; }
         .dm-sender-name { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; margin-left: 48px; }
         .emoji-picker-custom { display: none; position: absolute; z-index: 10000; background: var(--sidebar-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; width: 280px; box-shadow: 0 4px 15px var(--shadow-color); }
         .emoji-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
@@ -333,8 +334,8 @@
             <div id="navContainer" class="tabs">
                 <div class="tab active" id="tab-home" onclick="showHome()">タイムライン</div>
                 <div class="tab" id="tab-search" onclick="showSearch()">検索</div>
-                <div class="tab" id="tab-dm" onclick="showDMs()">DM</div>
-                <div class="tab" id="tab-notif" onclick="showNotifications()">通知</div>
+                <div class="tab" id="tab-dm" onclick="showDMs()">DM <span id="badge-dm" style="display:none; background:var(--accent-color); color:#fff; border-radius:50%; padding:2px 6px; font-size:10px; margin-left:4px;">0</span></div>
+                <div class="tab" id="tab-notif" onclick="showNotifications()">通知 <span id="badge-notif" style="display:none; background:var(--accent-color); color:#fff; border-radius:50%; padding:2px 6px; font-size:10px; margin-left:4px;">0</span></div>
                 <div class="tab" id="tab-prof" onclick="showUserProfile(myProfile.id)">プロフィール</div>
                 <div class="tab" id="tab-setting" onclick="showSettings()">設定</div>
             </div>
@@ -465,9 +466,9 @@
                     </div>
                 </div>
 
-                <div id="chatMessageList" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:12px; min-height: 0; background:#000;"></div>
+                <div id="chatMessageList" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:12px; min-height: 0; background:var(--bg-color);"></div>
                 
-                <div class="search-input-box" style="background:#000; padding:10px 15px; border-top:1px solid var(--border-color); flex-direction:column; align-items:flex-start; flex-shrink:0;">
+                <div class="search-input-box" style="background:var(--bg-color); padding:10px 15px; border-top:1px solid var(--border-color); flex-direction:column; align-items:flex-start; flex-shrink:0;">
                     <div id="chatDrawingPreviewContainer" style="display:none; margin-bottom: 10px; position:relative; width:120px; height:120px; background:#ffffff; border:1px solid var(--border-color); border-radius:12px; overflow:hidden; padding:5px; align-items:center; justify-content:center;">
                         <img id="chatDrawingPreview" style="max-width:100%; max-height:100%; object-fit:contain;">
                         <button onclick="removeDrawingPreview('chat')" style="position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.6); border:none; color:white; border-radius:50%; width:20px; height:20px; cursor:pointer; font-weight:bold; font-size:12px; display:flex; align-items:center; justify-content:center;">×</button>
@@ -555,7 +556,9 @@
     </div>
 
     <!-- 各種モーダル -->
-    <div id="emojiPickerContainer" class="emoji-picker-custom" onclick="event.stopPropagation()"><div style="color:var(--text-color); font-weight:bold; margin-bottom:10px; font-size:14px;">絵文字を選択</div><div id="simpleEmojiList" class="emoji-list"></div></div>
+    <div id="emojiPickerContainer" class="emoji-picker-custom" onclick="event.stopPropagation()" style="padding:0; border:none; background:transparent; box-shadow:none; width:auto;">
+        <emoji-picker></emoji-picker>
+    </div>
     
     <!-- AI文章作成モーダル -->
     <div id="aiTextModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span class="title-ai-text">AI文章アシスト</span><button class="close-modal" onclick="document.getElementById('aiTextModal').style.display='none'">×</button></div><textarea id="aiTextPrompt" rows="3" placeholder="例: 今日のランチで食べたハンバーグが美味しかった感想を書いて" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color); outline:none; resize:none; font-size:16px;"></textarea><button class="post-btn" onclick="generateTextAI()" style="width: 100%;">AIに文章を作成させる</button></div></div>
@@ -582,37 +585,87 @@
                 .poll-opt-img-btn svg { width: 24px; height: 24px; fill: currentColor; }
             </style>
             
-            <div class="poll-opt-group">
-                <input type="text" id="pollOpt1" placeholder="選択肢 1">
-                <label class="poll-opt-img-btn">
-                    <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                    <input type="file" id="pollOptFile1" accept="image/*" style="display:none;" onchange="previewPollOptImg(1, this)">
-                    <img id="pollOptImgPreview1" style="display:none;">
-                </label>
-            </div>
-            <div class="poll-opt-group">
-                <input type="text" id="pollOpt2" placeholder="選択肢 2">
-                <label class="poll-opt-img-btn">
-                    <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                    <input type="file" id="pollOptFile2" accept="image/*" style="display:none;" onchange="previewPollOptImg(2, this)">
-                    <img id="pollOptImgPreview2" style="display:none;">
-                </label>
-            </div>
-            <div class="poll-opt-group">
-                <input type="text" id="pollOpt3" placeholder="選択肢 3 (任意)">
-                <label class="poll-opt-img-btn">
-                    <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                    <input type="file" id="pollOptFile3" accept="image/*" style="display:none;" onchange="previewPollOptImg(3, this)">
-                    <img id="pollOptImgPreview3" style="display:none;">
-                </label>
-            </div>
-            <div class="poll-opt-group">
-                <input type="text" id="pollOpt4" placeholder="選択肢 4 (任意)">
-                <label class="poll-opt-img-btn">
-                    <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                    <input type="file" id="pollOptFile4" accept="image/*" style="display:none;" onchange="previewPollOptImg(4, this)">
-                    <img id="pollOptImgPreview4" style="display:none;">
-                </label>
+            <div id="pollOptionsContainer" style="max-height: 40vh; overflow-y: auto; padding-right: 5px; margin-bottom: 10px;">
+                <div class="poll-opt-group">
+                    <input type="text" id="pollOpt1" placeholder="選択肢 1">
+                    <label class="poll-opt-img-btn">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        <input type="file" id="pollOptFile1" accept="image/*" style="display:none;" onchange="previewPollOptImg(1, this)">
+                        <img id="pollOptImgPreview1" style="display:none;">
+                    </label>
+                </div>
+                <div class="poll-opt-group">
+                    <input type="text" id="pollOpt2" placeholder="選択肢 2">
+                    <label class="poll-opt-img-btn">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        <input type="file" id="pollOptFile2" accept="image/*" style="display:none;" onchange="previewPollOptImg(2, this)">
+                        <img id="pollOptImgPreview2" style="display:none;">
+                    </label>
+                </div>
+                <div class="poll-opt-group">
+                    <input type="text" id="pollOpt3" placeholder="選択肢 3 (任意)">
+                    <label class="poll-opt-img-btn">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        <input type="file" id="pollOptFile3" accept="image/*" style="display:none;" onchange="previewPollOptImg(3, this)">
+                        <img id="pollOptImgPreview3" style="display:none;">
+                    </label>
+                </div>
+                <div class="poll-opt-group">
+                    <input type="text" id="pollOpt4" placeholder="選択肢 4 (任意)">
+                    <label class="poll-opt-img-btn">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        <input type="file" id="pollOptFile4" accept="image/*" style="display:none;" onchange="previewPollOptImg(4, this)">
+                        <img id="pollOptImgPreview4" style="display:none;">
+                    </label>
+                </div>
+                <div class="poll-opt-group">
+                    <input type="text" id="pollOpt5" placeholder="選択肢 5 (任意)">
+                    <label class="poll-opt-img-btn">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        <input type="file" id="pollOptFile5" accept="image/*" style="display:none;" onchange="previewPollOptImg(5, this)">
+                        <img id="pollOptImgPreview5" style="display:none;">
+                    </label>
+                </div>
+                <div class="poll-opt-group">
+                    <input type="text" id="pollOpt6" placeholder="選択肢 6 (任意)">
+                    <label class="poll-opt-img-btn">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        <input type="file" id="pollOptFile6" accept="image/*" style="display:none;" onchange="previewPollOptImg(6, this)">
+                        <img id="pollOptImgPreview6" style="display:none;">
+                    </label>
+                </div>
+                <div class="poll-opt-group">
+                    <input type="text" id="pollOpt7" placeholder="選択肢 7 (任意)">
+                    <label class="poll-opt-img-btn">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        <input type="file" id="pollOptFile7" accept="image/*" style="display:none;" onchange="previewPollOptImg(7, this)">
+                        <img id="pollOptImgPreview7" style="display:none;">
+                    </label>
+                </div>
+                <div class="poll-opt-group">
+                    <input type="text" id="pollOpt8" placeholder="選択肢 8 (任意)">
+                    <label class="poll-opt-img-btn">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        <input type="file" id="pollOptFile8" accept="image/*" style="display:none;" onchange="previewPollOptImg(8, this)">
+                        <img id="pollOptImgPreview8" style="display:none;">
+                    </label>
+                </div>
+                <div class="poll-opt-group">
+                    <input type="text" id="pollOpt9" placeholder="選択肢 9 (任意)">
+                    <label class="poll-opt-img-btn">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        <input type="file" id="pollOptFile9" accept="image/*" style="display:none;" onchange="previewPollOptImg(9, this)">
+                        <img id="pollOptImgPreview9" style="display:none;">
+                    </label>
+                </div>
+                <div class="poll-opt-group">
+                    <input type="text" id="pollOpt10" placeholder="選択肢 10 (任意)">
+                    <label class="poll-opt-img-btn">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        <input type="file" id="pollOptFile10" accept="image/*" style="display:none;" onchange="previewPollOptImg(10, this)">
+                        <img id="pollOptImgPreview10" style="display:none;">
+                    </label>
+                </div>
             </div>
             
             <div style="margin-bottom: 15px;">
@@ -749,6 +802,7 @@
         const svgVideo    = `<svg class="icon" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>`;
         const svgRobot    = `<svg class="icon" viewBox="0 0 24 24"><path d="M19 9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2H9c-1.1 0-2 .9-2 2v2H5c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h2v2c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-2h2c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2zM9 13c-.83 0-1.5-.67-1.5-1.5S8.17 10 9 10s1.5.67 1.5 1.5S9.83 13 9 13zm6 0c-.83 0-1.5-.67-1.5-1.5S14.17 10 15 10s1.5.67 1.5 1.5S15.83 13 15 13z"/></svg>`;
         const svgImage    = `<svg class="icon" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>`;
+        const svgMail     = `<svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM4 6v.01L12 13l8-6.99V6H4zm0 2v10h16V8l-8 7-8-7z"/></svg>`;
         const svgMute     = `<svg class="icon" viewBox="0 0 24 24"><path d="M18.43 10.04C18.43 6.62 15.81 3.86 12 3.86S5.57 6.62 5.57 10.04v6.15L4 17.77V18.5h16v-.73l-1.57-1.57v-6.16zM12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm7.54-16.12l-1.42-1.41L16.7 5.88c-1.27-.93-2.82-1.5-4.7-1.5-4.42 0-8 3.58-8 8H6c0-3.31 2.69-6 6-6 1.53 0 2.93.57 4 1.5l1.13-1.13c.17.18.35.35.53.51l-.12.12.12-.12z"/></svg>`;
         const svgBlock    = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.68L5.68 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.68L18.32 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z"/></svg>`;
         const svgDislike  = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-4-9h8v2H8z"/></svg>`;
@@ -822,6 +876,65 @@
             try { await setDoc(doc(db, "users", myProfile.id), { id: myProfile.id, name: myProfile.name, icon: myProfile.icon, updatedAt: new Date() }, { merge: true }); } catch(e) {}
         }
         syncMyProfile();
+
+        // Realtime Listeners for Badges
+        window.setupRealtimeListeners = function() {
+            let initialNotifLoad = true;
+            const qNotif = query(collection(db, "notifications"), where("targetUserId", "==", myProfile.id));
+            onSnapshot(qNotif, (snapshot) => {
+                if (!initialNotifLoad) {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === "added") {
+                            const data = change.doc.data();
+                            showTopNotification(`新しい通知: ${data.senderName}さんから`);
+                            const badge = document.getElementById('badge-notif');
+                            badge.style.display = 'inline-block';
+                            badge.innerText = parseInt(badge.innerText || '0') + 1;
+                        }
+                    });
+                }
+                initialNotifLoad = false;
+            });
+
+            let initialDMLoad = true;
+            const qDM = query(collection(db, "direct_messages"), where("participants", "array-contains", myProfile.id));
+            onSnapshot(qDM, (snapshot) => {
+                if (!initialDMLoad) {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === "modified" || change.type === "added") {
+                            const data = change.doc.data();
+                            if (data.lastMessageSenderId && data.lastMessageSenderId !== myProfile.id) {
+                                showTopNotification(`新しいDMが届きました`);
+                                const badge = document.getElementById('badge-dm');
+                                badge.style.display = 'inline-block';
+                                badge.innerText = parseInt(badge.innerText || '0') + 1;
+                            }
+                        }
+                    });
+                }
+                initialDMLoad = false;
+            });
+        };
+        setupRealtimeListeners();
+
+        // Save Image Function
+        window.saveImage = async function(url, event) {
+            if(event) event.stopPropagation();
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'image_' + Date.now() + '.jpg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+            } catch (e) {
+                window.open(url, '_blank');
+            }
+        };
+
 
         // UTILITY FUNCTIONS
         window.getVideoEmbedHTML = function(url) {
@@ -1014,7 +1127,22 @@
                         return data.data.url;
                     }
                 } catch (e) {
-                    console.log("ImgBB Upload Error, fallback to Storage", e);
+                    console.log("ImgBB Upload Error", e);
+                }
+            } else {
+                try {
+                    showToast('ファイルをアップロード中...');
+                    const formData = new FormData();
+                    formData.append("reqtype", "fileupload");
+                    formData.append("fileToUpload", file);
+                    const res = await fetch("https://catbox.moe/user/api.php", {
+                        method: "POST",
+                        body: formData
+                    });
+                    const url = await res.text();
+                    if (url.startsWith("http")) return url;
+                } catch(e) {
+                    console.log("Catbox Upload Error", e);
                 }
             }
 
@@ -1093,14 +1221,10 @@
 
         // Emoji Picker Setup
         let currentEmojiTargetId = '';
-        const emojis = ["😀","😂","🤣","😊","🥰","😍","😭","😩","🥺","😡","🤯","😱","🤔","🤫","😑","😬","🙄","😪","😴","👋","👍","👎","👏","🙌","🙏","🔥","✨","💖","🎉","💡","🚀","👀","🌈","🌸","🍁","🐱","🐶","🍕","🍣","☕","🍺"];
-        const emojiListContainer = document.getElementById('simpleEmojiList');
-        emojis.forEach(emoji => {
-            const btn = document.createElement('button');
-            btn.className = 'emoji-btn';
-            btn.innerText = emoji;
-            btn.onclick = (e) => {
-                e.stopPropagation();
+        const picker = document.querySelector('emoji-picker');
+        if (picker) {
+            picker.addEventListener('emoji-click', event => {
+                const emoji = event.detail.unicode;
                 const target = document.getElementById(currentEmojiTargetId);
                 if (target) {
                     const start = target.selectionStart || 0;
@@ -1109,9 +1233,8 @@
                     target.selectionStart = target.selectionEnd = start + emoji.length;
                     target.focus();
                 }
-            };
-            emojiListContainer.appendChild(btn);
-        });
+            });
+        }
 
         window.openEmojiPicker = function(targetId, event) {
             if (event) { event.stopPropagation(); }
@@ -1122,7 +1245,7 @@
             const rect = btn.getBoundingClientRect();
             container.style.display = 'block';
             let topPos = rect.bottom + window.scrollY + 5;
-            if (topPos + 250 > window.innerHeight + window.scrollY) { topPos = rect.top + window.scrollY - 255; }
+            if (topPos + 350 > window.innerHeight + window.scrollY) { topPos = rect.top + window.scrollY - 355; }
             container.style.top = topPos + 'px'; 
             container.style.left = Math.max(10, rect.left) + 'px';
         };
@@ -1315,31 +1438,9 @@
             if (!prompt) return;
             showToast("AIが文章を作成中...");
             try {
-                const apiKey = localStorage.getItem('mySNS_gemini_key') || "AQ.Ab8RN6JpABId0V-vtHsOsYspVfZOZWu-74NLfuyAejqFS6LA-Q";
-                if (!apiKey.startsWith("AIza")) {
-                    throw new Error("Gemini APIキーが無効です。「設定」タブから正しいキー(AIza...から始まるもの)を登録してください。");
-                }
-                let text = "";
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [
-                                {
-                                    role: "user",
-                                    parts: [{ text: "あなたはSNS投稿を作成するアシスタントです。ユーザーの指示に合わせて、日本語で自然で魅力的なSNS投稿文（140文字程度）を作成してください。余計な挨拶や指示解説は含めず、投稿文のみを出力してください。\n\n指示: " + prompt }]
-                                }
-                            ]
-                        })
-                    });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.error?.message || "API Error");
-                    text = data.candidates[0].content.parts[0].text;
-                } catch (geminiError) {
-                    console.log("Gemini API Error: " + geminiError.message);
-                    throw new Error("Gemini APIでの生成に失敗しました: " + geminiError.message);
-                }
+                const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent("あなたはSNS投稿を作成するアシスタントです。ユーザーの指示に合わせて、日本語で自然で魅力的なSNS投稿文（140文字程度）を作成してください。余計な挨拶や指示解説は含めず、投稿文のみを出力してください。\n\n指示: " + prompt)}`);
+                if (!response.ok) throw new Error("API Error");
+                const text = await response.text();
                 
                 document.getElementById('postText').value = text;
                 document.getElementById('aiTextModal').style.display = 'none';
@@ -1423,7 +1524,7 @@
 
         // Poll Creation Setup
         window.openPollModal = function() {
-            for(let i=1; i<=4; i++) {
+            for(let i=1; i<=10; i++) {
                 document.getElementById('pollOpt' + i).value = '';
                 const fileInput = document.getElementById('pollOptFile' + i);
                 if (fileInput) {
@@ -1437,15 +1538,17 @@
             document.getElementById('pollModal').style.display = 'flex';
         };
         window.attachPoll = function() {
-            const o1 = document.getElementById('pollOpt1').value.trim();
-            const o2 = document.getElementById('pollOpt2').value.trim();
-            const o3 = document.getElementById('pollOpt3').value.trim();
-            const o4 = document.getElementById('pollOpt4').value.trim();
-            if (!o1 || !o2) { alert("最低でも2つの選択肢が必要です"); return; }
+            const options = [];
+            const imgFiles = [];
+            for (let i = 1; i <= 10; i++) {
+                const optVal = document.getElementById('pollOpt' + i).value.trim();
+                if (optVal) {
+                    options.push(optVal);
+                    imgFiles.push(document.getElementById('pollOptFile' + i).files[0] || null);
+                }
+            }
             
-            const options = [o1, o2];
-            if (o3) options.push(o3);
-            if (o4) options.push(o4);
+            if (options.length < 2) { alert("最低でも2つの選択肢が必要です"); return; }
             
             const expireVal = document.getElementById('pollExpireSelect').value;
             let expiresAt = null;
@@ -1461,12 +1564,6 @@
                 alert("期限は現在より未来に設定してください"); return;
             }
 
-            const imgFiles = [];
-            imgFiles.push(document.getElementById('pollOptFile1').files[0] || null);
-            imgFiles.push(document.getElementById('pollOptFile2').files[0] || null);
-            if (o3) imgFiles.push(document.getElementById('pollOptFile3').files[0] || null);
-            if (o4) imgFiles.push(document.getElementById('pollOptFile4').files[0] || null);
-            
             currentPollOptions = options;
             currentPollExpiresAt = expiresAt;
             currentPollOptionImages = imgFiles;
@@ -1723,7 +1820,13 @@
                     // Media embeds
                     let mediaHTML = "";
                     if (post.imageUrl) {
-                        mediaHTML += `<div style="margin-top:10px;"><img src="${post.imageUrl}" style="max-width:100%; border-radius:12px; max-height:400px; object-fit:contain;"></div>`;
+                        mediaHTML += `
+                        <div style="margin-top:10px; position:relative; display:inline-block; max-width:100%;">
+                            <img src="${post.imageUrl}" style="max-width:100%; border-radius:12px; max-height:400px; object-fit:contain; display:block;">
+                            <button onclick="saveImage('${post.imageUrl}', event)" style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.6); color:#fff; border:none; border-radius:50%; width:32px; height:32px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.3); transition:background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.8)'" onmouseout="this.style.background='rgba(0,0,0,0.6)'" title="画像を保存">
+                                <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                            </button>
+                        </div>`;
                     }
                     if (post.videoUrl) {
                         mediaHTML += `<div style="margin-top:10px;"><video src="${post.videoUrl}" controls style="max-width:100%; border-radius:12px; max-height:300px;"></video></div>`;
@@ -2215,8 +2318,14 @@
 
         window.showHome = function() { window.history.pushState({}, '', window.location.pathname); checkRouting(); };
         window.showSearch = function() { window.history.pushState({}, '', '?view=search'); checkRouting(); };
-        window.showDMs = function() { window.history.pushState({}, '', '?view=dms'); checkRouting(); };
-        window.showNotifications = function() { window.history.pushState({}, '', '?view=notifications'); checkRouting(); };
+        window.showDMs = function() { 
+            const b = document.getElementById('badge-dm'); if(b) { b.style.display='none'; b.innerText='0'; }
+            window.history.pushState({}, '', '?view=dms'); checkRouting(); 
+        };
+        window.showNotifications = function() { 
+            const b = document.getElementById('badge-notif'); if(b) { b.style.display='none'; b.innerText='0'; }
+            window.history.pushState({}, '', '?view=notifications'); checkRouting(); 
+        };
         window.showUserProfile = function(userId, event) { 
             if(event) event.stopPropagation();
             window.history.pushState({}, '', `?user=${userId}`); 
@@ -2314,11 +2423,11 @@
                             <span><strong>${post.reposts || 0}</strong> リポスト</span>
                             <span><strong>${post.likes || 0}</strong> いいね</span>
                         </div>
-                        <div class="post-actions" style="max-width:350px;">
-                            <button class="action-btn reply">${svgReply}</button>
-                            <button class="action-btn repost" onclick="repostPost('${postId}')">${svgRepost}</button>
-                            <button class="action-btn like ${isLiked ? 'liked' : ''}" onclick="likePost('${postId}', '${post.userId}')">${svgLike}</button>
-                            <button class="action-btn share" onclick="sharePost('${postId}', '${encodeURIComponent(post.content || '')}')">${svgShare}</button>
+                        <div class="post-actions" style="max-width:400px;">
+                            <button class="action-btn reply" onclick="document.getElementById('detailReplyText').focus();">${svgReply}</button>
+                            <button class="action-btn repost" onclick="repostPost('${postId}', event)">${svgRepost}</button>
+                            <button class="action-btn like ${isLiked ? 'liked' : ''}" onclick="likePost('${postId}', '${post.userId}', event)">${svgLike}</button>
+                            <button class="action-btn share" onclick="sharePost('${postId}', '${encodeURIComponent(post.content || '')}', event)">${svgShare}</button>
                         </div>
                     </div>
                     
@@ -2525,17 +2634,20 @@
             list.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">読み込み中...</div>';
             
             try {
-                const q = query(collection(db, "notifications"), where("targetUserId", "==", myProfile.id), orderBy("createdAt", "desc"));
+                const q = query(collection(db, "notifications"), where("targetUserId", "==", myProfile.id));
                 const snap = await getDocs(q);
                 list.innerHTML = '';
                 
-                if (snap.empty) {
+                let notifs = [];
+                snap.forEach(docSnap => notifs.push(docSnap.data()));
+                notifs.sort((a, b) => b.createdAt - a.createdAt);
+                
+                if (notifs.length === 0) {
                     list.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-muted);">通知はありません</div>';
                     return;
                 }
                 
-                snap.forEach(docSnap => {
-                    const n = docSnap.data();
+                notifs.forEach(n => {
                     const icon = n.senderIcon || defaultIcon;
                     const date = formatTimeAgo(n.createdAt);
                     
