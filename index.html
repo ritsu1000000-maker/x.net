@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -10,25 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #000000;
-            --container-bg: #000000;
-            --header-bg: rgba(0, 0, 0, 0.85);
-            --border-color: #2f3336;
-            --text-color: #e7e9ea;
-            --text-muted: #71767b;
-            --hover-bg: #080808;
-            --tab-hover-bg: #181818;
-            --sidebar-bg: #16181c;
-            --menu-bg: #000000;
-            --menu-hover-bg: #16181c;
-            --modal-overlay-bg: rgba(91, 112, 131, 0.4);
-            --modal-content-bg: #000000;
-            --shadow-color: rgba(255, 255, 255, 0.1);
-            --accent-color: #1d9bf0;
-            --accent-hover: #1a8cd8;
-            --audio-invert: 1;
-        }
-        [data-theme="light"] {
             --bg-color: #ffffff;
             --container-bg: #ffffff;
             --header-bg: rgba(255, 255, 255, 0.85);
@@ -46,6 +28,25 @@
             --accent-color: #1d9bf0;
             --accent-hover: #1a8cd8;
             --audio-invert: 0;
+        }
+        [data-theme="dark"] {
+            --bg-color: #000000;
+            --container-bg: #000000;
+            --header-bg: rgba(0, 0, 0, 0.85);
+            --border-color: #2f3336;
+            --text-color: #e7e9ea;
+            --text-muted: #71767b;
+            --hover-bg: #080808;
+            --tab-hover-bg: #181818;
+            --sidebar-bg: #16181c;
+            --menu-bg: #000000;
+            --menu-hover-bg: #16181c;
+            --modal-overlay-bg: rgba(91, 112, 131, 0.4);
+            --modal-content-bg: #000000;
+            --shadow-color: rgba(255, 255, 255, 0.1);
+            --accent-color: #1d9bf0;
+            --accent-hover: #1a8cd8;
+            --audio-invert: 1;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol"; background-color: var(--bg-color); margin: 0; padding: 0; color: var(--text-color); transition: background-color 0.2s, color 0.2s; }
         .layout-wrapper { display: flex; justify-content: center; max-width: 950px; margin: 0 auto; gap: 30px; }
@@ -137,8 +138,8 @@
         .dm-message-wrapper { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 15px; }
         .dm-message-wrapper.mine { flex-direction: row-reverse; }
         .dm-bubble { max-width: 75%; padding: 10px 14px; border-radius: 20px; font-size: 15px; line-height: 1.4; word-break: break-all; }
-        .dm-bubble.mine { background-color: var(--accent-color); color: white; border-bottom-right-radius: 4px; }
-        .dm-bubble.other { background-color: var(--border-color); color: var(--text-color); border-bottom-left-radius: 4px; }
+        .dm-bubble.mine { background-color: #ffffff; color: var(--text-color); border: 1px solid var(--accent-color); border-bottom-right-radius: 4px; }
+        .dm-bubble.other { background-color: #ffffff; color: var(--text-color); border: 1px solid var(--border-color); border-bottom-left-radius: 4px; }
         .dm-sender-name { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; margin-left: 48px; }
         .emoji-picker-custom { display: none; position: absolute; z-index: 10000; background: var(--sidebar-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; width: 280px; box-shadow: 0 4px 15px var(--shadow-color); }
         .emoji-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
@@ -347,26 +348,16 @@
                 <div class="post-box" id="postBoxArea">
                     <div onclick="showUserProfile(myProfile.id, event)" style="cursor:pointer;"><img src="" class="user-icon my-current-icon"></div>
                     <div class="post-box-right">
-                        <textarea id="postText" rows="3" placeholder="いまどうしてる？ (@ユーザー名 でメンション / @AI でClaude AIに話しかけよう)"></textarea>
+                        <textarea id="postText" rows="3" placeholder="いまどうしてる？ (@ユーザー名 または @AI でメンション)"></textarea>
                         
                         <!-- 添付ファイル各種プレビュー -->
                         <input type="text" id="postVideoUrl" class="video-input-field" placeholder="動画や音楽のURLを貼り付け (YouTube, Apple Music, Spotify等)...">
-                        <input type="file" id="postFileInput" accept="image/*,video/*" style="display:none;" onchange="handlePostFileSelect(event)">
+                        <input type="file" id="postFileInput" accept="image/*" style="display:none;" onchange="handlePostFileSelect(event)">
                         
                         <!-- アップロード画像/動画プレビュー -->
-                        <div id="postFilePreview" style="display:none; margin-bottom: 10px; position: relative; max-width: 100%;">
+                        <div id="postFilePreview" style="display:none; margin-bottom: 10px; position: relative; max-width: max-content;">
                             <div id="postFilePreviewContent"></div>
-                            <!-- アップロード進捗バー -->
-                            <div id="uploadProgressBar" style="display:none; margin-top:8px;">
-                                <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:4px;">
-                                    <span id="uploadProgressLabel">アップロード中...</span>
-                                    <span id="uploadProgressPct">0%</span>
-                                </div>
-                                <div style="background:var(--border-color); border-radius:4px; height:6px; overflow:hidden;">
-                                    <div id="uploadProgressFill" style="background:var(--accent-color); height:100%; width:0%; transition:width 0.2s; border-radius:4px;"></div>
-                                </div>
-                            </div>
-                            <button onclick="clearPostFile()" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size:14px; line-height:1;">×</button>
+                            <button onclick="clearPostFile()" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
                         </div>
 
                         <!-- 予約・投票・地図などの添付状態表示 -->
@@ -387,7 +378,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                 <button class="toolbar-btn btn-emoji" onclick="openEmojiPicker('postText', event)" title="絵文字" style="font-size: 16px;"></button>
-                                <button class="toolbar-btn btn-file" onclick="document.getElementById('postFileInput').click()" id="btn-file">画像/動画</button>
+                                <button class="toolbar-btn btn-file" onclick="document.getElementById('postFileInput').click()" id="btn-file">添付</button>
                                 <button class="toolbar-btn btn-video" onclick="toggleVideoInput('postVideoUrl', event)" title="動画追加 URL入力" id="btn-video">動画URL</button>
                                 <button class="toolbar-btn btn-paint" onclick="openPaintModal('post')" title="お絵描き">お絵描き</button>
                                 <button class="toolbar-btn btn-voice" onclick="toggleVoiceRecord('post')" id="btn-voice-post" title="音声メッセージ">音声</button>
@@ -525,21 +516,17 @@
                         <label style="font-weight: bold; color: var(--text-muted);">ニックネーム</label>
                         <input type="text" id="profileName" style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: var(--text-color);">
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-weight: bold; color: var(--text-muted);">または画像のURL</label>
-                        <input type="text" id="profileIcon" style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: var(--text-color);" oninput="document.getElementById('profileIconPreview').src = this.value">
-                    </div>
+
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         <label style="font-weight: bold; color: var(--text-muted);">テーマ設定</label>
                         <select id="settingsThemeSelect" onchange="setTheme(this.value)" style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; outline: none; background-color: var(--container-bg); color: var(--text-color);">
-                            <option value="dark">ダークモード</option>
                             <option value="light">ライトモード</option>
+                            <option value="dark">ダークモード</option>
                         </select>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-weight: bold; color: var(--text-muted);">Claude APIキー (AI機能用)</label>
-                        <input type="text" id="settingsGeminiKey" placeholder="sk-ant-...から始まるキーを入力" style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: var(--text-color);">
-                        <div style="font-size:12px; color:var(--text-muted);">Anthropic Console (<a href="https://console.anthropic.com" target="_blank" style="color:var(--accent-color);">console.anthropic.com</a>) でAPIキーを取得してください。</div>
+                        <label style="font-weight: bold; color: var(--text-muted);">Gemini APIキー (AI機能用)</label>
+                        <input type="text" id="settingsGeminiKey" placeholder="AIzaSy...から始まるキーを入力" style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; outline: none; background: transparent; color: var(--text-color);">
                     </div>
                     <button class="post-btn" onclick="saveSettings()">設定を保存</button>
                     
@@ -571,7 +558,7 @@
     <div id="emojiPickerContainer" class="emoji-picker-custom" onclick="event.stopPropagation()"><div style="color:var(--text-color); font-weight:bold; margin-bottom:10px; font-size:14px;">絵文字を選択</div><div id="simpleEmojiList" class="emoji-list"></div></div>
     
     <!-- AI文章作成モーダル -->
-    <div id="aiTextModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span class="title-ai-text">AI文章アシスト (Claude)</span><button class="close-modal" onclick="document.getElementById('aiTextModal').style.display='none'">×</button></div><textarea id="aiTextPrompt" rows="3" placeholder="例: 今日のランチで食べたハンバーグが美味しかった感想を書いて" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color); outline:none; resize:none; font-size:16px;"></textarea><div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">※「設定」タブでClaude APIキー（sk-ant-...）を設定してください</div><button class="post-btn" onclick="generateTextAI()" style="width: 100%;">Claudeに文章を作成させる</button></div></div>
+    <div id="aiTextModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span class="title-ai-text">AI文章アシスト</span><button class="close-modal" onclick="document.getElementById('aiTextModal').style.display='none'">×</button></div><textarea id="aiTextPrompt" rows="3" placeholder="例: 今日のランチで食べたハンバーグが美味しかった感想を書いて" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color); outline:none; resize:none; font-size:16px;"></textarea><button class="post-btn" onclick="generateTextAI()" style="width: 100%;">AIに文章を作成させる</button></div></div>
     
     <!-- AI画像生成モーダル -->
     <div id="aiModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span class="title-ai-img">AI画像生成</span><button class="close-modal" onclick="document.getElementById('aiModal').style.display='none'">×</button></div><input type="text" id="aiPrompt" placeholder="描きたい内容を入力 (英語・日本語OK)" style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; font-size:16px; outline:none; background:transparent; color:var(--text-color); box-sizing:border-box;"><button class="post-btn" onclick="generateImage()" style="width: 100%;">画像を生成する</button><div id="aiPreviewArea" style="display: none; text-align: center; margin-top: 10px;"><img id="aiPreviewImg" src="" style="max-width: 100%; border-radius: 12px; margin-bottom:10px;"><button class="post-btn" onclick="attachGeneratedImage()" style="width:100%; background-color:#00ba7c;">ポストに添付する</button></div></div></div>
@@ -580,7 +567,69 @@
     <div id="scheduleModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span class="title-schedule">予約投稿設定</span><button class="close-modal" onclick="document.getElementById('scheduleModal').style.display='none'">×</button></div><input type="datetime-local" id="scheduleInput" style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; font-size:16px; outline:none; background:var(--bg-color); color:var(--text-color); box-sizing:border-box; color-scheme:dark;"><button class="post-btn" onclick="attachSchedule()" style="width:100%; margin-top:15px;">時間を設定する</button></div></div>
     
     <!-- 投票作成モーダル -->
-    <div id="pollModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span class="title-poll">投票を作成</span><button class="close-modal" onclick="document.getElementById('pollModal').style.display='none'">×</button></div><input type="text" id="pollOpt1" placeholder="選択肢 1" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color);"><input type="text" id="pollOpt2" placeholder="選択肢 2" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color);"><input type="text" id="pollOpt3" placeholder="選択肢 3 (任意)" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color);"><input type="text" id="pollOpt4" placeholder="選択肢 4 (任意)" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color);"><button class="post-btn" onclick="attachPoll()" style="width:100%;">投票を設定する</button></div></div>
+    <div id="pollModal" class="modal-overlay">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span class="title-poll">投票を作成</span>
+                <button class="close-modal" onclick="document.getElementById('pollModal').style.display='none'">×</button>
+            </div>
+            <style>
+                .poll-opt-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+                .poll-opt-group input[type="text"] { flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: transparent; color: var(--text-color); }
+                .poll-opt-img-btn { width: 44px; height: 44px; border-radius: 8px; border: 1px solid var(--border-color); background: transparent; color: var(--accent-color); cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; flex-shrink: 0; transition: background 0.2s; }
+                .poll-opt-img-btn:hover { background: rgba(29, 155, 240, 0.1); }
+                .poll-opt-img-btn img { position: absolute; width: 100%; height: 100%; object-fit: cover; left: 0; top: 0; background: var(--bg-color); }
+                .poll-opt-img-btn svg { width: 24px; height: 24px; fill: currentColor; }
+            </style>
+            
+            <div class="poll-opt-group">
+                <input type="text" id="pollOpt1" placeholder="選択肢 1">
+                <label class="poll-opt-img-btn">
+                    <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                    <input type="file" id="pollOptFile1" accept="image/*" style="display:none;" onchange="previewPollOptImg(1, this)">
+                    <img id="pollOptImgPreview1" style="display:none;">
+                </label>
+            </div>
+            <div class="poll-opt-group">
+                <input type="text" id="pollOpt2" placeholder="選択肢 2">
+                <label class="poll-opt-img-btn">
+                    <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                    <input type="file" id="pollOptFile2" accept="image/*" style="display:none;" onchange="previewPollOptImg(2, this)">
+                    <img id="pollOptImgPreview2" style="display:none;">
+                </label>
+            </div>
+            <div class="poll-opt-group">
+                <input type="text" id="pollOpt3" placeholder="選択肢 3 (任意)">
+                <label class="poll-opt-img-btn">
+                    <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                    <input type="file" id="pollOptFile3" accept="image/*" style="display:none;" onchange="previewPollOptImg(3, this)">
+                    <img id="pollOptImgPreview3" style="display:none;">
+                </label>
+            </div>
+            <div class="poll-opt-group">
+                <input type="text" id="pollOpt4" placeholder="選択肢 4 (任意)">
+                <label class="poll-opt-img-btn">
+                    <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                    <input type="file" id="pollOptFile4" accept="image/*" style="display:none;" onchange="previewPollOptImg(4, this)">
+                    <img id="pollOptImgPreview4" style="display:none;">
+                </label>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 14px; color: var(--text-muted); display: block; margin-bottom: 5px;">投票期限</label>
+                <select id="pollExpireSelect" onchange="document.getElementById('pollExpireCustom').style.display = this.value === 'custom' ? 'block' : 'none';" style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color);">
+                    <option value="1">1日</option>
+                    <option value="3">3日</option>
+                    <option value="7">7日</option>
+                    <option value="10">10日</option>
+                    <option value="custom">カスタム設定</option>
+                </select>
+                <input type="datetime-local" id="pollExpireCustom" style="display:none; width:100%; padding:12px; margin-top:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color); color-scheme:dark;">
+            </div>
+
+            <button class="post-btn" onclick="attachPoll()" style="width:100%;">投票を設定する</button>
+        </div>
+    </div>
     
     <!-- 地図添付モーダル -->
     <div id="mapModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span class="title-map">場所を検索して添付</span><button class="close-modal" onclick="document.getElementById('mapModal').style.display='none'">×</button></div><input type="text" id="mapKeyword" placeholder="例: 東京駅" style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color);"><button class="post-btn" onclick="attachMapLink()" style="width:100%; margin-top:10px;">地図を添付する</button></div></div>
@@ -739,6 +788,8 @@
         // attachments state
         let currentScheduleTime = null;
         let currentPollOptions = null;
+        let currentPollExpiresAt = null;
+        let currentPollOptionImages = [];
         let currentMapKeyword = null;
         
         // paint state
@@ -947,122 +998,94 @@
             if(pickerContainer) pickerContainer.style.display = 'none'; 
         };
 
-        // ====================================================
-        // ファイルアップロード（画像・動画対応、進捗バー付き）
-        // ====================================================
-        function setUploadProgress(pct, label) {
-            const bar = document.getElementById('uploadProgressBar');
-            const fill = document.getElementById('uploadProgressFill');
-            const pctEl = document.getElementById('uploadProgressPct');
-            const labelEl = document.getElementById('uploadProgressLabel');
-            if (!bar) return;
-            if (pct === null) { bar.style.display = 'none'; return; }
-            bar.style.display = 'block';
-            fill.style.width = pct + '%';
-            pctEl.textContent = pct + '%';
-            if (label) labelEl.textContent = label;
-        }
-
+        // Client-side Compression & Firebase Storage & ImgBB Integration
         window.uploadFileToAPI = async function(file) {
-            const isImage = file.type.startsWith('image/');
-            const isVideo = file.type.startsWith('video/');
-            const isAudio = file.type.startsWith('audio/');
+            if (file.type.startsWith('image/')) {
+                try {
+                    showToast('画像をImgBBへアップロード中...');
+                    const formData = new FormData();
+                    formData.append("image", file);
+                    const res = await fetch("https://api.imgbb.com/1/upload?key=7f77ed2f38bcbadcf18d57f089f19c6a", {
+                        method: "POST",
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data && data.data && data.data.url) {
+                        return data.data.url;
+                    }
+                } catch (e) {
+                    console.log("ImgBB Upload Error, fallback to Storage", e);
+                }
+            }
 
-            setUploadProgress(5, 'アップロード準備中...');
-
-            // --- Firebase Storage アップロード試行 ---
             try {
-                const ext = isImage ? '.jpg' : isVideo ? (file.name.endsWith('.mov') ? '.mov' : file.name.endsWith('.webm') ? '.webm' : '.mp4') : isAudio ? '.webm' : '.bin';
+                // Try Firebase Storage first
+                const ext = file.type.startsWith('image/') ? '.jpg' : file.type.startsWith('audio/') ? '.webm' : '.bin';
                 const filename = "uploads/" + Date.now() + "_" + Math.random().toString(36).substring(7) + ext;
                 const storageRef = ref(storage, filename);
-
-                setUploadProgress(10, 'Storageにアップロード中...');
-
-                // uploadBytesResumable で進捗を取得
-                const { uploadBytesResumable, getDownloadURL: gdl } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js");
-                await new Promise((resolve, reject) => {
-                    const task = uploadBytesResumable(storageRef, file);
-                    task.on('state_changed',
-                        (snap) => {
-                            const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 85) + 10;
-                            const mb = (snap.bytesTransferred / 1024 / 1024).toFixed(1);
-                            const total = (snap.totalBytes / 1024 / 1024).toFixed(1);
-                            setUploadProgress(pct, `${isVideo ? '動画' : isImage ? '画像' : '音声'}アップロード中... ${mb}/${total}MB`);
-                        },
-                        reject,
-                        resolve
-                    );
-                });
-
-                setUploadProgress(98, 'URL取得中...');
+                await uploadBytes(storageRef, file);
                 const url = await getDownloadURL(storageRef);
-                setUploadProgress(100, '完了！');
-                setTimeout(() => setUploadProgress(null), 1200);
                 return url;
-
             } catch (storageError) {
-                console.warn("Firebase Storage失敗、フォールバック処理へ:", storageError.message || storageError);
-
-                // --- フォールバック: DataURL変換 ---
+                console.log("Storage error, fallback to DataURL", storageError);
                 return new Promise((resolve, reject) => {
-                    if (isImage) {
-                        setUploadProgress(20, '画像を圧縮中...');
+                    if (file.type.startsWith('image/')) {
+                        showToast('画像を最適化中...');
                         const reader = new FileReader();
                         reader.onload = function(e) {
                             const img = new Image();
-                            img.onload = function() {
-                                const canvas = document.createElement('canvas');
-                                let w = img.width, h = img.height;
-                                const MAX = 1200;
-                                if (w > h ? w > MAX : h > MAX) {
-                                    if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-                                    else { w = Math.round(w * MAX / h); h = MAX; }
-                                }
-                                canvas.width = w; canvas.height = h;
-                                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                                setUploadProgress(80, '画像を変換中...');
-                                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                                if (dataUrl.length > 2 * 1024 * 1024) {
-                                    reject(new Error("画像が大きすぎます。Firebase Storageの設定を確認するか、より小さい画像を使用してください。"));
-                                    return;
-                                }
-                                setUploadProgress(100, '完了！');
-                                setTimeout(() => setUploadProgress(null), 1200);
-                                resolve(dataUrl);
-                            };
-                            img.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
-                            img.src = e.target.result;
-                        };
-                        reader.onerror = () => reject(new Error("ファイルの読み取りに失敗しました"));
-                        reader.readAsDataURL(file);
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            const max_size = 1200;
 
-                    } else if (isVideo) {
-                        // 動画はDataURLフォールバック不可（容量超過のため）
-                        reject(new Error(
-                            "動画のアップロードに失敗しました。\n\n" +
-                            "Firebase Storageの設定を確認してください：\n" +
-                            "・Storageルールで書き込みが許可されているか\n" +
-                            "・ストレージの使用容量が上限に達していないか\n\n" +
-                            "または「動画URL」ボタンからYouTube/TikTokなどのURLを貼り付けて投稿してください。"
-                        ));
+                            if (width > height) {
+                                if (width > max_size) {
+                                    height *= max_size / width;
+                                    width = max_size;
+                                }
+                            } else {
+                                if (height > max_size) {
+                                    width *= max_size / height;
+                                    height = max_size;
+                                }
+                            }
 
-                    } else if (isAudio) {
-                        setUploadProgress(30, '音声を処理中...');
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const dataUrl = e.target.result;
-                            if (dataUrl.length > 1024 * 1024) {
-                                reject(new Error("音声が長すぎます。もっと短く録音してください。"));
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                            if (dataUrl.length > 1000000) {
+                                reject(new Error("画像が複雑すぎて縮小後も容量オーバーです。"));
                                 return;
                             }
-                            setUploadProgress(100, '完了！');
-                            setTimeout(() => setUploadProgress(null), 1200);
                             resolve(dataUrl);
                         };
-                        reader.onerror = () => reject(new Error("音声の読み取りに失敗しました"));
-                        reader.readAsDataURL(file);
-                    } else {
-                        reject(new Error("このファイル形式には対応していません"));
+                        img.onerror = () => reject(new Error("画像の読み込みに失敗しました。"));
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = () => reject(new Error("ファイルの読み取りに失敗しました。"));
+                    reader.readAsDataURL(file);
+                } 
+                else if (file.type.startsWith('audio/')) {
+                    showToast('音声を処理中...');
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const dataUrl = e.target.result;
+                        if (dataUrl.length > 1000000) {
+                            reject(new Error("音声が長すぎます。もっと短く録音してください。"));
+                            return;
+                        }
+                        resolve(dataUrl);
+                    };
+                    reader.onerror = () => reject(new Error("音声の読み取りに失敗しました。"));
+                    reader.readAsDataURL(file);
+                } 
+                    else {
+                        reject(new Error("画像または音声のみ対応しています"));
                     }
                 });
             }
@@ -1107,47 +1130,16 @@
         // File Selection Handlers
         window.handlePostFileSelect = function(event) {
             const file = event.target.files[0]; if (!file) return;
-
-            const isImage = file.type.startsWith('image/');
-            const isVideo = file.type.startsWith('video/');
-
-            if (!isImage && !isVideo) {
-                customAlert("エラー", "画像または動画ファイルを選択してください。\n対応形式: JPEG, PNG, GIF, WebP, MP4, MOV, WebM など");
-                return;
-            }
-
-            const maxSizeMB = isVideo ? 500 : 50;
-            const maxSizeBytes = maxSizeMB * 1024 * 1024;
-            if (file.size > maxSizeBytes) {
-                customAlert("エラー", `ファイルが大きすぎます。\n${isVideo ? '動画' : '画像'}の上限は ${maxSizeMB}MB です。\n（選択ファイル: ${(file.size / 1024 / 1024).toFixed(1)}MB）`);
-                return;
-            }
-
+            if (file.size > 100 * 1024 * 1024) { customAlert("エラー", "ファイルが大きすぎます(最大100MB)"); return; }
             selectedPostFile = file;
-            const previewContent = document.getElementById('postFilePreviewContent');
+            const previewContent = document.getElementById('postFilePreviewContent'); 
             previewContent.innerHTML = '';
-
-            // ファイル情報バッジ
-            const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-            const badge = document.createElement('div');
-            badge.style.cssText = 'font-size:12px; color:var(--text-muted); margin-bottom:6px; display:flex; align-items:center; gap:6px;';
-            badge.innerHTML = `<span style="background:var(--border-color); border-radius:4px; padding:2px 6px;">${isVideo ? '🎬 動画' : '🖼 画像'}</span><span>${file.name}</span><span style="color:var(--accent-color);">${sizeMB}MB</span>`;
-            previewContent.appendChild(badge);
-
-            if (isImage) {
-                const img = document.createElement('img');
-                img.src = URL.createObjectURL(file);
-                img.style.cssText = 'max-width:100%; max-height:300px; border-radius:12px; display:block;';
-                previewContent.appendChild(img);
-            } else if (isVideo) {
-                const video = document.createElement('video');
-                video.src = URL.createObjectURL(file);
-                video.controls = true;
-                video.style.cssText = 'max-width:100%; max-height:300px; border-radius:12px; display:block;';
-                previewContent.appendChild(video);
+            if (file.type.startsWith('image/')) { 
+                const img = document.createElement('img'); img.src = URL.createObjectURL(file); img.style.maxWidth = '100%'; img.style.maxHeight = '200px'; img.style.borderRadius = '12px'; previewContent.appendChild(img); 
+            } else if (file.type.startsWith('video/')) { 
+                const video = document.createElement('video'); video.src = URL.createObjectURL(file); video.controls = true; video.style.maxWidth = '100%'; video.style.maxHeight = '200px'; video.style.borderRadius = '12px'; previewContent.appendChild(video); 
             }
             document.getElementById('postFilePreview').style.display = 'block';
-            document.getElementById('uploadProgressBar').style.display = 'none';
         };
         window.clearPostFile = function() { 
             selectedPostFile = null; 
@@ -1316,57 +1308,44 @@
             }
         };
 
-        // ========== Claude AI 共通呼び出し関数 ==========
-        window.callClaudeAI = async function(systemPrompt, userMessage) {
-            const apiKey = localStorage.getItem('mySNS_claude_key') || '';
-            if (!apiKey || !apiKey.startsWith('sk-ant-')) {
-                throw new Error("Claude APIキーが未設定または無効です。「設定」タブから sk-ant-... から始まるキーを登録してください。");
-            }
-            const response = await fetch("https://api.anthropic.com/v1/messages", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": apiKey,
-                    "anthropic-version": "2023-06-01",
-                    "anthropic-dangerous-direct-browser-access": "true"
-                },
-                body: JSON.stringify({
-                    model: "claude-sonnet-4-6",
-                    max_tokens: 512,
-                    system: systemPrompt,
-                    messages: [{ role: "user", content: userMessage }]
-                })
-            });
-            if (!response.ok) {
-                const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.error?.message || `API Error: ${response.status}`);
-            }
-            const data = await response.json();
-            return data.content?.[0]?.text || "";
-        };
-
-        // AI文章作成 (Claude版)
+        // AI Text & Image Generation via Pollinations.ai (FREE)
         window.openAITextModal = function() { document.getElementById('aiTextModal').style.display = 'flex'; };
         window.generateTextAI = async function() {
             const prompt = document.getElementById('aiTextPrompt').value.trim();
             if (!prompt) return;
-            const btn = document.querySelector('#aiTextModal .post-btn');
-            btn.disabled = true;
-            btn.innerText = '生成中...';
-            showToast("Claudeが文章を作成中...");
+            showToast("AIが文章を作成中...");
             try {
-                const text = await callClaudeAI(
-                    "あなたはSNS投稿を作成するアシスタントです。ユーザーの指示に合わせて、日本語で自然で魅力的なSNS投稿文（140文字程度）を作成してください。余計な挨拶や指示解説は含めず、投稿文のみを出力してください。",
-                    prompt
-                );
+                const apiKey = localStorage.getItem('mySNS_gemini_key') || "AQ.Ab8RN6JpABId0V-vtHsOsYspVfZOZWu-74NLfuyAejqFS6LA-Q";
+                if (!apiKey.startsWith("AIza")) {
+                    throw new Error("Gemini APIキーが無効です。「設定」タブから正しいキー(AIza...から始まるもの)を登録してください。");
+                }
+                let text = "";
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [
+                                {
+                                    role: "user",
+                                    parts: [{ text: "あなたはSNS投稿を作成するアシスタントです。ユーザーの指示に合わせて、日本語で自然で魅力的なSNS投稿文（140文字程度）を作成してください。余計な挨拶や指示解説は含めず、投稿文のみを出力してください。\n\n指示: " + prompt }]
+                                }
+                            ]
+                        })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error?.message || "API Error");
+                    text = data.candidates[0].content.parts[0].text;
+                } catch (geminiError) {
+                    console.log("Gemini API Error: " + geminiError.message);
+                    throw new Error("Gemini APIでの生成に失敗しました: " + geminiError.message);
+                }
+                
                 document.getElementById('postText').value = text;
                 document.getElementById('aiTextModal').style.display = 'none';
                 showToast("AI文章を挿入しました");
             } catch (e) {
                 alert("AI文章作成エラー: " + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = 'AIに文章を作成させる';
             }
         };
 
@@ -1427,12 +1406,34 @@
             document.getElementById('scheduleModal').style.display = 'none';
         };
 
+        window.previewPollOptImg = function(index, input) {
+            const file = input.files[0];
+            const preview = document.getElementById('pollOptImgPreview' + index);
+            const icon = input.parentElement.querySelector('svg');
+            if (file) {
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+                icon.style.display = 'none';
+            } else {
+                preview.style.display = 'none';
+                icon.style.display = 'block';
+                preview.src = '';
+            }
+        };
+
         // Poll Creation Setup
         window.openPollModal = function() {
-            document.getElementById('pollOpt1').value = '';
-            document.getElementById('pollOpt2').value = '';
-            document.getElementById('pollOpt3').value = '';
-            document.getElementById('pollOpt4').value = '';
+            for(let i=1; i<=4; i++) {
+                document.getElementById('pollOpt' + i).value = '';
+                const fileInput = document.getElementById('pollOptFile' + i);
+                if (fileInput) {
+                    fileInput.value = '';
+                    previewPollOptImg(i, fileInput);
+                }
+            }
+            document.getElementById('pollExpireSelect').value = '1';
+            document.getElementById('pollExpireCustom').style.display = 'none';
+            document.getElementById('pollExpireCustom').value = '';
             document.getElementById('pollModal').style.display = 'flex';
         };
         window.attachPoll = function() {
@@ -1446,7 +1447,30 @@
             if (o3) options.push(o3);
             if (o4) options.push(o4);
             
+            const expireVal = document.getElementById('pollExpireSelect').value;
+            let expiresAt = null;
+            if (expireVal === 'custom') {
+                const customVal = document.getElementById('pollExpireCustom').value;
+                if (!customVal) { alert("カスタム期限を設定してください"); return; }
+                expiresAt = new Date(customVal).getTime();
+            } else {
+                expiresAt = Date.now() + parseInt(expireVal) * 24 * 60 * 60 * 1000;
+            }
+
+            if (expiresAt <= Date.now()) {
+                alert("期限は現在より未来に設定してください"); return;
+            }
+
+            const imgFiles = [];
+            imgFiles.push(document.getElementById('pollOptFile1').files[0] || null);
+            imgFiles.push(document.getElementById('pollOptFile2').files[0] || null);
+            if (o3) imgFiles.push(document.getElementById('pollOptFile3').files[0] || null);
+            if (o4) imgFiles.push(document.getElementById('pollOptFile4').files[0] || null);
+            
             currentPollOptions = options;
+            currentPollExpiresAt = expiresAt;
+            currentPollOptionImages = imgFiles;
+            
             updateAttachmentsUI();
             document.getElementById('pollModal').style.display = 'none';
         };
@@ -1556,7 +1580,9 @@
                 container.innerHTML += `<div style="display:inline-flex;align-items:center;gap:6px;">${svgClock} 予約日時: ${currentScheduleTime.toLocaleString()} <button onclick="currentScheduleTime=null;updateAttachmentsUI();" style="border:none;background:none;color:#f91880;cursor:pointer;font-weight:bold;">×</button></div>`;
             }
             if (currentPollOptions) {
-                container.innerHTML += `<div style="display:inline-flex;align-items:center;gap:6px;">${svgPoll} 投票項目: [ ${currentPollOptions.join(', ')} ] <button onclick="currentPollOptions=null;updateAttachmentsUI();" style="border:none;background:none;color:#f91880;cursor:pointer;font-weight:bold;">×</button></div>`;
+                let pollStr = `[ ${currentPollOptions.join(', ')} ] (期限: ${new Date(currentPollExpiresAt).toLocaleString()})`;
+                if (currentPollOptionImages && currentPollOptionImages.some(f => f !== null)) pollStr += ` + 画像添付`;
+                container.innerHTML += `<div style="display:inline-flex;align-items:center;gap:6px;">${svgPoll} 投票項目: ${pollStr} <button onclick="currentPollOptions=null;currentPollExpiresAt=null;currentPollOptionImages=[];updateAttachmentsUI();" style="border:none;background:none;color:#f91880;cursor:pointer;font-weight:bold;">×</button></div>`;
             }
             if (currentMapKeyword) {
                 container.innerHTML += `<div style="display:inline-flex;align-items:center;gap:6px;">${svgLocation} 地図添付: "${currentMapKeyword}" <button onclick="currentMapKeyword=null;updateAttachmentsUI();" style="border:none;background:none;color:#f91880;cursor:pointer;font-weight:bold;">×</button></div>`;
@@ -1605,6 +1631,10 @@
                 if (!postSnap.exists()) return;
                 const post = postSnap.data();
                 
+                if (post.poll && post.poll.expiresAt && Date.now() > post.poll.expiresAt) {
+                    alert("この投票は既に終了しています"); return;
+                }
+
                 if (post.poll && post.poll.votes) {
                     const newVotes = [...post.poll.votes];
                     newVotes[optionIndex] = (newVotes[optionIndex] || 0) + 1;
@@ -1693,14 +1723,10 @@
                     // Media embeds
                     let mediaHTML = "";
                     if (post.imageUrl) {
-                        mediaHTML += `<div style="margin-top:10px;"><img src="${post.imageUrl}" loading="lazy" style="max-width:100%; border-radius:12px; max-height:400px; object-fit:contain; display:block;"></div>`;
+                        mediaHTML += `<div style="margin-top:10px;"><img src="${post.imageUrl}" style="max-width:100%; border-radius:12px; max-height:400px; object-fit:contain;"></div>`;
                     }
                     if (post.videoUrl) {
-                        mediaHTML += `<div style="margin-top:10px; position:relative;">
-                            <video src="${post.videoUrl}" controls playsinline preload="metadata"
-                                style="max-width:100%; width:100%; border-radius:12px; max-height:400px; display:block; background:#000;">
-                            </video>
-                        </div>`;
+                        mediaHTML += `<div style="margin-top:10px;"><video src="${post.videoUrl}" controls style="max-width:100%; border-radius:12px; max-height:300px;"></video></div>`;
                     }
                     if (post.audioData) {
                         mediaHTML += `<audio src="${post.audioData}" controls></audio>`;
@@ -1715,6 +1741,12 @@
                     // Poll Render
                     let pollHTML = "";
                     if (post.poll && post.poll.options) {
+                        const isExpired = post.poll.expiresAt && Date.now() > post.poll.expiresAt;
+                        
+                        if (post.poll.imageUrl) {
+                            pollHTML += `<div style="margin-bottom:10px;"><img src="${post.poll.imageUrl}" style="max-width:100%; border-radius:12px; max-height:300px; object-fit:contain;"></div>`;
+                        }
+
                         let votesArray = Array(post.poll.options.length).fill(0);
                         if (Array.isArray(post.poll.votes)) {
                             post.poll.votes.forEach((v, idx) => {
@@ -1731,19 +1763,29 @@
                         
                         const totalVotes = votesArray.reduce((a, b) => a + b, 0);
                         const isVoted = votedPolls[post.id] !== undefined;
-                        pollHTML = `<div class="poll-container">`;
+                        pollHTML += `<div class="poll-container ${isExpired ? 'expired' : ''}">`;
                         post.poll.options.forEach((opt, index) => {
                             const votes = votesArray[index] || 0;
                             const percent = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+                            
+                            let optImgHTML = "";
+                            if (post.poll.optionImages && post.poll.optionImages[index]) {
+                                optImgHTML = `<img src="${post.poll.optionImages[index]}" style="width:36px; height:36px; border-radius:4px; object-fit:cover; margin-right:8px; cursor:pointer;" onclick="window.open('${post.poll.optionImages[index]}', '_blank'); event.stopPropagation();">`;
+                            }
+
                             pollHTML += `
-                                <div class="poll-option-row" onclick="votePoll('${post.id}', ${index}, event)">
-                                    ${isVoted ? `<div class="poll-bg-fill" style="width:${percent}%"></div>` : ''}
-                                    <span class="poll-opt-text">${opt}</span>
-                                    ${isVoted ? `<span class="poll-opt-percent">${percent}% (${votes}票)</span>` : ''}
+                                <div class="poll-option-row" onclick="${isExpired ? '' : `votePoll('${post.id}', ${index}, event)`}" style="${isExpired ? 'cursor:default; opacity:0.8;' : ''} display:flex; align-items:center;">
+                                    ${(isVoted || isExpired) ? `<div class="poll-bg-fill" style="width:${percent}%"></div>` : ''}
+                                    <div style="z-index:2; display:flex; align-items:center; flex:1;">
+                                        ${optImgHTML}
+                                        <span class="poll-opt-text" style="position:relative; z-index:2;">${opt}</span>
+                                    </div>
+                                    ${(isVoted || isExpired) ? `<span class="poll-opt-percent" style="position:relative; z-index:2;">${percent}% (${votes}票)</span>` : ''}
                                 </div>
                             `;
                         });
-                        pollHTML += `<div class="poll-total-votes">合計: ${totalVotes} 票</div></div>`;
+                        const expireText = post.poll.expiresAt ? new Date(post.poll.expiresAt).toLocaleString([], {year:'numeric', month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}) : "期限なし";
+                        pollHTML += `<div class="poll-total-votes" style="display:flex; justify-content:space-between;"><span>合計: ${totalVotes} 票</span><span>${isExpired ? '<span style="color:var(--accent-color);font-weight:bold;">投票終了</span>' : '期限: ' + expireText}</span></div></div>`;
                     }
 
                     // Map Render
@@ -1852,9 +1894,6 @@
             const hasAttachments = text || selectedPostFile || window.postAudioUrl || window.postDrawingData || window.postAIImageUrl || videoUrl || currentPollOptions || currentMapKeyword;
             if (!hasAttachments) return;
 
-            const postBtn = document.querySelector('#postBoxArea .post-btn');
-            if (postBtn) { postBtn.disabled = true; postBtn.textContent = '投稿中...'; }
-
             showToast("投稿中...");
             try {
                 let uploadedUrl = "";
@@ -1864,9 +1903,19 @@
                     uploadedUrl = window.postAIImageUrl;
                 }
 
+                let pollOptionImagesUrls = [];
+                if (currentPollOptionImages && currentPollOptionImages.some(f => f !== null)) {
+                    pollOptionImagesUrls = await Promise.all(currentPollOptionImages.map(async (file) => {
+                        if (file) return await uploadFileToAPI(file);
+                        return null;
+                    }));
+                }
+
                 const pollObj = currentPollOptions ? {
                     options: currentPollOptions,
-                    votes: currentPollOptions.map(()=>0)
+                    votes: currentPollOptions.map(()=>0),
+                    expiresAt: currentPollExpiresAt,
+                    optionImages: pollOptionImagesUrls.length > 0 ? pollOptionImagesUrls : null
                 } : null;
 
                 await addDoc(collection(db, "posts"), {
@@ -1895,42 +1944,14 @@
                 window.postAIImageUrl = null;
                 currentScheduleTime = null;
                 currentPollOptions = null;
+                currentPollExpiresAt = null;
+                currentPollOptionImages = [];
                 currentMapKeyword = null;
                 updateAttachmentsUI();
                 
                 showToast("ポストを送信しました");
                 renderPosts();
-
-                // @AI メンション → Claudeが自動返信
-                if (text && /(@AI|@ai)\b/i.test(text)) {
-                    const cleanText = text.replace(/(@AI|@ai)\b/gi, '').trim();
-                    showTopNotification("@AIが返信を考えています...");
-                    try {
-                        const aiReply = await callClaudeAI(
-                            "あなたは「@AI」というSNSユーザーです。フレンドリーで役立つ短い返信（80文字以内）を日本語でしてください。返信文のみ出力し、余計な前置きは不要です。",
-                            cleanText || "こんにちは！"
-                        );
-                        await addDoc(collection(db, "posts"), {
-                            content: `@${myProfile.name} ${aiReply}`,
-                            createdAt: new Date(),
-                            userId: "ai_bot",
-                            userName: "AI (Claude)",
-                            userIcon: "https://www.anthropic.com/favicon.ico",
-                            isRepost: false,
-                            views: 0, likes: 0, reposts: 0
-                        });
-                        showTopNotification("@AIが返信しました！");
-                        renderPosts();
-                    } catch(aiErr) {
-                        showTopNotification("@AI返信エラー: " + aiErr.message);
-                    }
-                }
-            } catch(e) {
-                setUploadProgress(null);
-                alert("投稿エラー: " + e.message);
-            } finally {
-                if (postBtn) { postBtn.disabled = false; postBtn.textContent = 'ポスト'; }
-            }
+            } catch(e) { alert("投稿エラー: " + e.message); }
         };
 
         window.executeSearch = async function(queryVal) {
@@ -2232,8 +2253,8 @@
                 const isLiked = (JSON.parse(localStorage.getItem('mySNS_likedPosts')) || []).includes(postId);
 
                 let mediaHTML = "";
-                if (post.imageUrl) mediaHTML += `<img src="${post.imageUrl}" loading="lazy" style="width:100%; border-radius:12px; margin-top:10px; display:block;">`;
-                if (post.videoUrl) mediaHTML += `<video src="${post.videoUrl}" controls playsinline preload="metadata" style="width:100%; border-radius:12px; margin-top:10px; display:block; background:#000;"></video>`;
+                if (post.imageUrl) mediaHTML += `<img src="${post.imageUrl}" style="width:100%; border-radius:12px; margin-top:10px;">`;
+                if (post.videoUrl) mediaHTML += `<video src="${post.videoUrl}" controls style="width:100%; border-radius:12px; margin-top:10px;"></video>`;
                 if (post.audioData) mediaHTML += `<audio src="${post.audioData}" controls></audio>`;
                 if (post.drawingData) mediaHTML += `<img src="${post.drawingData}" class="drawing-preview">`;
                 if (post.videoInputUrl) {
@@ -2937,32 +2958,36 @@
         }
 
         // USER SETTINGS & AVATAR UPLOAD
-        window.handleImageUpload = function(event) {
+        window.handleImageUpload = async function(event) {
             const file = event.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas'); const size = 96; canvas.width = size; canvas.height = size;
-                    const ctx = canvas.getContext('2d'); const side = Math.min(img.width, img.height);
-                    ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
-                    uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            showToast("アイコン画像をアップロード中...");
+            try {
+                const formData = new FormData();
+                formData.append("image", file);
+                const res = await fetch("https://api.imgbb.com/1/upload?key=7f77ed2f38bcbadcf18d57f089f19c6a", {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await res.json();
+                if (data && data.data && data.data.url) {
+                    uploadedImageBase64 = data.data.url;
                     document.getElementById('profileIconPreview').src = uploadedImageBase64;
-                    document.getElementById('profileIcon').value = "";
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+                    showToast("アイコン画像のアップロードが完了しました");
+                } else {
+                    alert("画像のアップロードに失敗しました。");
+                }
+            } catch (e) {
+                alert("アップロードエラー: " + e.message);
+            }
         };
 
         window.renderSettings = function() {
             document.getElementById('profileIconPreview').src = myProfile.icon || defaultIcon;
             document.getElementById('profileName').value = myProfile.name;
-            document.getElementById('profileIcon').value = myProfile.icon.startsWith("data:") ? "" : myProfile.icon;
             
             const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
             document.getElementById('settingsThemeSelect').value = currentTheme;
-            document.getElementById('settingsGeminiKey').value = localStorage.getItem('mySNS_claude_key') || '';
+            document.getElementById('settingsGeminiKey').value = localStorage.getItem('mySNS_gemini_key') || '';
 
             // Render block / mute manage lists
             const mutes = JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [];
@@ -3001,25 +3026,16 @@
 
         window.saveSettings = async function() {
             const name = document.getElementById('profileName').value.trim();
-            const iconUrl = document.getElementById('profileIcon').value.trim();
             if (!name) { alert("名前を入力してください"); return; }
 
             myProfile.name = name;
             if (uploadedImageBase64) {
                 myProfile.icon = uploadedImageBase64;
-            } else if (iconUrl) {
-                myProfile.icon = iconUrl;
             }
             localStorage.setItem('mySNS_profile', JSON.stringify(myProfile));
             
             const theme = document.getElementById('settingsThemeSelect').value;
             setTheme(theme);
-
-            // Claude APIキーを保存
-            const claudeKey = document.getElementById('settingsGeminiKey').value.trim();
-            if (claudeKey) {
-                localStorage.setItem('mySNS_claude_key', claudeKey);
-            }
             
             showToast("プロフィール保存中...");
             await syncMyProfile();
@@ -3139,7 +3155,7 @@
         // INIT SYSTEM
         async function init() {
             // Theme setup
-            const savedTheme = localStorage.getItem('mySNS_theme') || 'dark';
+            const savedTheme = localStorage.getItem('mySNS_theme') || 'light';
             setTheme(savedTheme);
 
             // Routing check
