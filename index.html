@@ -759,6 +759,7 @@
             <div id="videoSearchResults" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top:5px;">
                 <div style="text-align:center; padding:20px; color:var(--text-muted);">キーワードを入力して検索してください。</div>
             </div>
+            <button id="btn-video-search-more" class="post-btn" style="display:none; width:100%; margin-top:10px;" onclick="loadMoreVideoSearch()">もっと見る</button>
             <!-- フォールバック用手動貼り付け入力欄 -->
             <div id="videoSearchFallbackArea" style="display:none; border-top:1px solid var(--border-color); padding-top:10px; margin-top:10px; flex-direction:column; gap:6px;">
                 <span style="font-size:12px; color:#f91880; font-weight:bold;">⚠️ 検索がタイムアウトしたかエラーになりました。以下に動画URLを直接入力して添付できます：</span>
@@ -1310,9 +1311,14 @@
             return Promise.race([fetchPromise, timeoutPromise]);
         }
 
-        async function fetchNicoSearch(queryVal, sortVal) {
-            // Niconico Snapshot Search API v2
-            const apiTarget = `https://api.search.nicovideo.jp/api/v2/snapshot/video/contents/search?q=${encodeURIComponent(queryVal)}&targets=title&fields=contentId,title,viewCounter,thumbnailUrl&_sort=${sortVal}&_context=snsapp&_limit=15`;
+        // Video search pagination state
+        let videoSearchOffset = 0;
+        let currentVideoQuery = "";
+        let currentVideoSort = "";
+
+        async function fetchNicoSearch(queryVal, sortVal, offsetVal = 0) {
+            // Niconico Snapshot Search API v2 with comments, likes, and mylists counters
+            const apiTarget = `https://api.search.nicovideo.jp/api/v2/snapshot/video/contents/search?q=${encodeURIComponent(queryVal)}&targets=title&fields=contentId,title,viewCounter,thumbnailUrl,commentCounter,mylistCounter,likeCounter&_sort=${sortVal}&_context=snsapp&_limit=15&_offset=${offsetVal}`;
             
             const proxies = [
                 // 1. AllOrigins (get wrapper) - contents property wrapping (Very high CORS bypass capability)
@@ -1411,6 +1417,42 @@
             document.getElementById('videoSearchModal').style.display = 'none';
         };
 
+        function renderVideoSearchResults(items, clearBefore) {
+            const resultsDiv = document.getElementById('videoSearchResults');
+            if (clearBefore) resultsDiv.innerHTML = '';
+            
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'reply-item';
+                div.style.cursor = 'pointer';
+                div.style.display = 'flex';
+                div.style.gap = '10px';
+                div.style.padding = '8px';
+                div.style.borderBottom = '1px solid var(--border-color)';
+                div.onclick = () => attachSearchedVideo(item.contentId);
+                
+                const views = item.viewCounter ? item.viewCounter.toLocaleString() : '0';
+                const comments = item.commentCounter ? item.commentCounter.toLocaleString() : '0';
+                const likes = item.likeCounter ? item.likeCounter.toLocaleString() : '0';
+                const mylists = item.mylistCounter ? item.mylistCounter.toLocaleString() : '0';
+                
+                div.innerHTML = `
+                    <img src="${item.thumbnailUrl}" style="width:80px; height:60px; object-fit:cover; border-radius:4px; flex-shrink:0;">
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between;">
+                        <div style="font-size:13px; font-weight:bold; color:var(--text-color); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all;">${item.title}</div>
+                        <div style="font-size:11px; color:var(--text-muted); display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;">
+                            <span style="white-space:nowrap;">ID: ${item.contentId}</span>
+                            <span style="white-space:nowrap;">👁️ ${views}</span>
+                            <span style="white-space:nowrap;">💬 ${comments}</span>
+                            <span style="white-space:nowrap;">👍 ${likes}</span>
+                            <span style="white-space:nowrap;">📂 ${mylists}</span>
+                        </div>
+                    </div>
+                `;
+                resultsDiv.appendChild(div);
+            });
+        }
+
         window.executeVideoSearch = async function() {
             const keyword = document.getElementById('videoSearchKeyword').value.trim();
             if (!keyword) return;
@@ -1419,39 +1461,25 @@
             const resultsDiv = document.getElementById('videoSearchResults');
             resultsDiv.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">検索中...</div>';
             document.getElementById('videoSearchFallbackArea').style.display = 'none';
+            document.getElementById('btn-video-search-more').style.display = 'none';
+
+            videoSearchOffset = 0;
+            currentVideoQuery = keyword;
+            currentVideoSort = sort;
 
             try {
-                const items = await fetchNicoSearch(keyword, sort);
+                const items = await fetchNicoSearch(keyword, sort, videoSearchOffset);
                 resultsDiv.innerHTML = '';
                 if (!items || items.length === 0) {
                     resultsDiv.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">動画が見つかりませんでした。</div>';
                     return;
                 }
                 
-                items.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'reply-item';
-                    div.style.cursor = 'pointer';
-                    div.style.display = 'flex';
-                    div.style.gap = '10px';
-                    div.style.padding = '8px';
-                    div.style.borderBottom = '1px solid var(--border-color)';
-                    div.onclick = () => attachSearchedVideo(item.contentId);
-                    
-                    const views = item.viewCounter ? item.viewCounter.toLocaleString() : '0';
-                    
-                    div.innerHTML = `
-                        <img src="${item.thumbnailUrl}" style="width:80px; height:60px; object-fit:cover; border-radius:4px; flex-shrink:0;">
-                        <div style="flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between;">
-                            <div style="font-size:13px; font-weight:bold; color:var(--text-color); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all;">${item.title}</div>
-                            <div style="font-size:11px; color:var(--text-muted); display:flex; justify-content:space-between; margin-top:4px;">
-                                <span>ID: ${item.contentId}</span>
-                                <span>👁️ ${views}</span>
-                            </div>
-                        </div>
-                    `;
-                    resultsDiv.appendChild(div);
-                });
+                renderVideoSearchResults(items, true);
+                
+                if (items.length >= 15) {
+                    document.getElementById('btn-video-search-more').style.display = 'block';
+                }
             } catch (e) {
                 console.error(e);
                 resultsDiv.innerHTML = `
@@ -1461,6 +1489,37 @@
                     </div>
                 `;
                 document.getElementById('videoSearchFallbackArea').style.display = 'flex';
+            }
+        };
+
+        window.loadMoreVideoSearch = async function() {
+            const moreBtn = document.getElementById('btn-video-search-more');
+            moreBtn.innerText = '読み込み中...';
+            moreBtn.disabled = true;
+            
+            videoSearchOffset += 15;
+            
+            try {
+                const items = await fetchNicoSearch(currentVideoQuery, currentVideoSort, videoSearchOffset);
+                moreBtn.innerText = 'もっと見る';
+                moreBtn.disabled = false;
+                
+                if (!items || items.length === 0) {
+                    showToast("これ以上の動画はありません。");
+                    moreBtn.style.display = 'none';
+                    return;
+                }
+                
+                renderVideoSearchResults(items, false);
+                
+                if (items.length < 15) {
+                    moreBtn.style.display = 'none';
+                }
+            } catch (e) {
+                console.error(e);
+                moreBtn.innerText = 'もっと見る';
+                moreBtn.disabled = false;
+                showToast("追加読み込み中にエラーが発生しました。");
             }
         };
 
@@ -1518,6 +1577,119 @@
 
         // Client-side Compression & Firebase Storage & ImgBB Integration
         window.uploadFileToAPI = async function(file) {
+            // Helper function for uploading non-image files (or fallback for images)
+            const uploadGeneralFile = async (f) => {
+                let uploadErrors = [];
+
+                // 1. Try Pixeldrain PUT directly (CORS-free, up to 1GB, highly recommended)
+                try {
+                    showToast('ファイルをアップロード中 (Pixeldrain)...');
+                    const res = await fetch(`https://pixeldrain.com/api/file/${encodeURIComponent(f.name)}`, {
+                        method: "PUT",
+                        body: f,
+                        headers: {
+                            "Content-Type": f.type || "application/octet-stream"
+                        }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.success && data.id) {
+                            console.log("Pixeldrain PUT succeeded:", data.id);
+                            return `https://pixeldrain.com/api/file/${data.id}`;
+                        }
+                    }
+                    throw new Error(`HTTP Status ${res.status}`);
+                } catch (e) {
+                    console.warn("Pixeldrain PUT failed, trying Transfer.sh...", e);
+                    uploadErrors.push(`Pixeldrain PUT: ${e.message || e}`);
+                }
+
+                // 2. Try Transfer.sh PUT directly (CORS-free, up to 10GB)
+                try {
+                    showToast('バックアップサーバーへアップロード中 (Transfer)...');
+                    const res = await fetch(`https://transfer.sh/${encodeURIComponent(f.name)}`, {
+                        method: "PUT",
+                        body: f,
+                        headers: {
+                            "Content-Type": f.type || "application/octet-stream"
+                        }
+                    });
+                    if (res.ok) {
+                        const text = await res.text();
+                        if (text && text.startsWith("https://")) {
+                            console.log("Transfer.sh PUT succeeded:", text.trim());
+                            return text.trim();
+                        }
+                    }
+                    throw new Error(`HTTP Status ${res.status}`);
+                } catch (e) {
+                    console.warn("Transfer.sh PUT failed, trying Gofile...", e);
+                    uploadErrors.push(`Transfer.sh: ${e.message || e}`);
+                }
+
+                // 3. Try Gofile upload (CORS-free, large capacity)
+                try {
+                    showToast('バックアップサーバーへアップロード中 (Gofile)...');
+                    // Get best server
+                    const serverRes = await fetch("https://api.gofile.io/servers");
+                    if (!serverRes.ok) throw new Error(`Server list HTTP Status ${serverRes.status}`);
+                    const serverData = await serverRes.json();
+                    if (serverData.status === "ok" && serverData.data && serverData.data.servers && serverData.data.servers.length > 0) {
+                        const server = serverData.data.servers[0].name;
+                        const formData = new FormData();
+                        formData.append("file", f);
+                        const uploadRes = await fetch(`https://${server}.gofile.io/contents/uploadfile`, {
+                            method: "POST",
+                            body: formData
+                        });
+                        if (uploadRes.ok) {
+                            const uploadData = await uploadRes.json();
+                            if (uploadData.status === "ok" && uploadData.data) {
+                                const fileUrl = uploadData.data.directLink || uploadData.data.downloadPage;
+                                if (fileUrl) {
+                                    console.log("Gofile upload succeeded:", fileUrl);
+                                    return fileUrl;
+                                }
+                            }
+                            throw new Error(`Upload response status: ${uploadData.status}`);
+                        }
+                        throw new Error(`Upload HTTP Status ${uploadRes.status}`);
+                    }
+                    throw new Error("Could not fetch available Gofile server");
+                } catch (e) {
+                    console.warn("Gofile upload failed, trying Pixeldrain via Proxy...", e);
+                    uploadErrors.push(`Gofile: ${e.message || e}`);
+                }
+
+                // 4. Try Pixeldrain PUT via CORS Proxy (fallback for small files under proxy limits)
+                try {
+                    showToast('プロキシ経由でアップロード中...');
+                    const targetUrl = `https://pixeldrain.com/api/file/${encodeURIComponent(f.name)}`;
+                    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+                    const res = await fetch(proxyUrl, {
+                        method: "PUT",
+                        body: f,
+                        headers: {
+                            "Content-Type": f.type || "application/octet-stream"
+                        }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.success && data.id) {
+                            console.log("Pixeldrain Proxy PUT succeeded:", data.id);
+                            return `https://pixeldrain.com/api/file/${data.id}`;
+                        }
+                    }
+                    throw new Error(`HTTP Status ${res.status}`);
+                } catch (e) {
+                    console.error("Pixeldrain Proxy PUT failed:", e);
+                    uploadErrors.push(`Proxy PUT: ${e.message || e}`);
+                }
+
+                throw new Error("すべてのアップロード手段が失敗しました。\n" + uploadErrors.join("\n"));
+            };
+
+            // 1. Image Upload: ImgBB (highly stable for images, no CORS issues)
             if (file.type.startsWith('image/')) {
                 try {
                     showToast('画像をImgBBへアップロード中...');
@@ -1529,99 +1701,55 @@
                     });
                     const data = await res.json();
                     if (data && data.data && data.data.url) {
-                        return data.data.url;
+                        return data.data.url.replace(/^http:/i, 'https:');
                     }
                 } catch (e) {
-                    console.log("ImgBB Upload Error", e);
-                }
-            } else {
-                try {
-                    showToast('ファイルをアップロード中...');
-                    const formData = new FormData();
-                    formData.append("reqtype", "fileupload");
-                    formData.append("fileToUpload", file);
-                    const res = await fetch("https://catbox.moe/user/api.php", {
-                        method: "POST",
-                        body: formData
-                    });
-                    const url = await res.text();
-                    if (url.startsWith("http")) return url;
-                } catch(e) {
-                    console.log("Catbox Upload Error", e);
+                    console.warn("ImgBB Upload Error, falling back to general upload...", e);
                 }
             }
 
+            // 2. For videos, audios, and images (if ImgBB failed), use the general direct PUT pipeline
             try {
-                // Try Firebase Storage first with timeout
-                const ext = file.type.startsWith('image/') ? '.jpg' : file.type.startsWith('audio/') ? '.webm' : file.type.startsWith('video/') ? '.mp4' : '.bin';
-                const filename = "uploads/" + Date.now() + "_" + Math.random().toString(36).substring(7) + ext;
-                const storageRef = ref(storage, filename);
-                await uploadBytesWithTimeout(storageRef, file, 4000);
-                const url = await getDownloadURL(storageRef);
-                return url;
-            } catch (storageError) {
-                console.log("Storage error, fallback to DataURL", storageError);
-                return new Promise((resolve, reject) => {
-                    if (file.type.startsWith('image/')) {
+                const url = await uploadGeneralFile(file);
+                return url.replace(/^http:/i, 'https:');
+            } catch (e) {
+                console.error("General file upload pipeline failed:", e);
+                // If even the general pipeline failed for an image, fallback to DataURL as a last resort
+                if (file.type.startsWith('image/')) {
+                    return new Promise((resolve, reject) => {
                         showToast('画像を最適化中...');
                         const reader = new FileReader();
                         reader.onload = function(e) {
                             const img = new Image();
                             img.onload = function() {
                                 const canvas = document.createElement('canvas');
-                                let width = img.width;
-                                let height = img.height;
+                                let width = img.width; let height = img.height;
                                 const max_size = 1200;
-
                                 if (width > height) {
-                                    if (width > max_size) {
-                                        height *= max_size / width;
-                                        width = max_size;
-                                    }
+                                    if (width > max_size) { height *= max_size / width; width = max_size; }
                                 } else {
-                                    if (height > max_size) {
-                                        width *= max_size / height;
-                                        height = max_size;
-                                    }
+                                    if (height > max_size) { width *= max_size / height; height = max_size; }
                                 }
-
-                                canvas.width = width;
-                                canvas.height = height;
+                                canvas.width = width; canvas.height = height;
                                 const ctx = canvas.getContext('2d');
                                 ctx.drawImage(img, 0, 0, width, height);
-
                                 const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
                                 if (dataUrl.length > 1000000) {
-                                    reject(new Error("画像が複雑すぎて縮小後も容量オーバーです。"));
+                                    reject(new Error("画像が容量オーバーです(1MB以下にしてください)。"));
                                     return;
                                 }
                                 resolve(dataUrl);
                             };
-                            img.onerror = () => reject(new Error("画像の読み込みに失敗しました。"));
+                            img.onerror = () => reject(new Error("画像読み込みエラー"));
                             img.src = e.target.result;
                         };
-                        reader.onerror = () => reject(new Error("ファイルの読み取りに失敗しました。"));
+                        reader.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
                         reader.readAsDataURL(file);
-                    } 
-                    else if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
-                        const fileTypeName = file.type.startsWith('audio/') ? '音声' : '動画';
-                        showToast(`${fileTypeName}を処理中...`);
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const dataUrl = e.target.result;
-                            if (dataUrl.length > 1000000) {
-                                reject(new Error(`${fileTypeName}のファイルサイズが大きすぎます。1MB以下のファイルを選択してください。`));
-                                return;
-                            }
-                            resolve(dataUrl);
-                        };
-                        reader.onerror = () => reject(new Error(`${fileTypeName}の読み取りに失敗しました。`));
-                        reader.readAsDataURL(file);
-                    } 
-                    else {
-                        reject(new Error("画像、動画、または音声のみ対応しています"));
-                    }
-                });
+                    });
+                } else {
+                    // For non-images, propagate the error directly so the UI shows what failed
+                    throw e;
+                }
             }
         };
 
@@ -1659,14 +1787,14 @@
         // File Selection Handlers
         window.handlePostFileSelect = function(event) {
             const file = event.target.files[0]; if (!file) return;
-            if (file.size > 100 * 1024 * 1024) { customAlert("エラー", "ファイルが大きすぎます(最大100MB)"); return; }
+            if (file.size > 1024 * 1024 * 1024) { customAlert("エラー", "ファイルが大きすぎます(最大1GB)"); return; }
             selectedPostFile = file;
             const previewContent = document.getElementById('postFilePreviewContent'); 
             previewContent.innerHTML = '';
             if (file.type.startsWith('image/')) { 
                 const img = document.createElement('img'); img.src = URL.createObjectURL(file); img.style.maxWidth = '100%'; img.style.maxHeight = '200px'; img.style.borderRadius = '12px'; previewContent.appendChild(img); 
             } else if (file.type.startsWith('video/')) { 
-                const video = document.createElement('video'); video.src = URL.createObjectURL(file); video.controls = true; video.style.maxWidth = '100%'; video.style.maxHeight = '200px'; video.style.borderRadius = '12px'; previewContent.appendChild(video); 
+                const video = document.createElement('video'); video.src = URL.createObjectURL(file); video.controls = true; video.preload = 'metadata'; video.style.maxWidth = '100%'; video.style.maxHeight = '200px'; video.style.borderRadius = '12px'; video.style.background = '#000'; previewContent.appendChild(video); 
             } else if (file.type.startsWith('audio/')) {
                 const audio = document.createElement('audio'); audio.src = URL.createObjectURL(file); audio.controls = true; audio.style.width = '100%'; audio.style.marginTop = '10px'; previewContent.appendChild(audio);
             } else {
@@ -2417,7 +2545,16 @@
                             </div>
                             <div class="post-content">${safeContent}</div>
                             ${post.imageUrl ? `<div style="position:relative; display:inline-block; width:100%;"><img src="${post.imageUrl}" style="width:100%; border-radius:12px; margin-top:10px; display:block;"><a href="${post.imageUrl}" download target="_blank" style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:#fff; padding:6px 12px; border-radius:20px; text-decoration:none; font-size:12px; font-weight:bold; cursor:pointer;" onclick="event.stopPropagation();">⬇ ダウンロード</a></div>` : ''}
-                            ${post.videoUrl ? `<video src="${post.videoUrl}" controls style="width:100%; border-radius:12px; margin-top:10px;" onclick="event.stopPropagation();"></video>` : ''}
+                            ${post.videoUrl ? `
+                            <div style="margin-top:10px; width:100%;">
+                                <video src="${post.videoUrl}" controls preload="metadata" crossorigin="anonymous" style="width:100%; border-radius:12px; display:block; background:#000; max-height:400px;" onclick="event.stopPropagation();"></video>
+                                <div style="margin-top:6px; display:flex; justify-content:flex-end;">
+                                    <a href="${post.videoUrl}" download target="_blank" style="background:var(--hover-bg); border:1px solid var(--border-color); color:var(--text-color); padding:6px 14px; border-radius:20px; text-decoration:none; font-size:12px; font-weight:bold; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:0.2s;" onmouseover="this.style.background='var(--tab-hover-bg)'" onmouseout="this.style.background='var(--hover-bg)'" onclick="event.stopPropagation();">
+                                        <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                                        直接再生 / ダウンロード
+                                    </a>
+                                </div>
+                            </div>` : ''}
                             ${post.audioData ? `<audio src="${post.audioData}" controls onclick="event.stopPropagation();"></audio>` : ''}
                             ${post.drawingData ? `<img src="${post.drawingData}" class="drawing-preview">` : ''}
                             ${post.videoInputUrl ? getVideoEmbedHTML(post.videoInputUrl) : ''}
@@ -2843,7 +2980,16 @@
 
                 let mediaHTML = "";
                 if (post.imageUrl) mediaHTML += `<div style="position:relative; display:inline-block; width:100%;"><img src="${post.imageUrl}" style="width:100%; border-radius:12px; margin-top:10px; display:block;"><a href="${post.imageUrl}" download target="_blank" style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:#fff; padding:6px 12px; border-radius:20px; text-decoration:none; font-size:12px; font-weight:bold; cursor:pointer;" onclick="event.stopPropagation();">⬇ ダウンロード</a></div>`;
-                if (post.videoUrl) mediaHTML += `<video src="${post.videoUrl}" controls style="width:100%; border-radius:12px; margin-top:10px;"></video>`;
+                if (post.videoUrl) mediaHTML += `
+                            <div style="margin-top:10px; width:100%;">
+                                <video src="${post.videoUrl}" controls preload="metadata" crossorigin="anonymous" style="width:100%; border-radius:12px; display:block; background:#000; max-height:400px;"></video>
+                                <div style="margin-top:6px; display:flex; justify-content:flex-end;">
+                                    <a href="${post.videoUrl}" download target="_blank" style="background:var(--hover-bg); border:1px solid var(--border-color); color:var(--text-color); padding:6px 14px; border-radius:20px; text-decoration:none; font-size:12px; font-weight:bold; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:0.2s;" onmouseover="this.style.background='var(--tab-hover-bg)'" onmouseout="this.style.background='var(--hover-bg)'" onclick="event.stopPropagation();">
+                                        <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                                        直接再生 / ダウンロード
+                                    </a>
+                                </div>
+                            </div>`;
                 if (post.audioData) mediaHTML += `<audio src="${post.audioData}" controls></audio>`;
                 if (post.drawingData) mediaHTML += `<img src="${post.drawingData}" class="drawing-preview">`;
                 if (post.videoInputUrl) {
