@@ -1,14 +1,10 @@
 
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>簡易SNS - 統合完全版</title>
-
-    <link rel="icon" href="https://i0.wp.com/goworkship.com/magazine/app/uploads/2021/12/image8-1.png" type="image/png">
-    <link rel="apple-touch-icon" href="https://i0.wp.com/goworkship.com/magazine/app/uploads/2021/12/image8-1.png">
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,7 +53,7 @@
         .layout-wrapper { display: flex; justify-content: center; max-width: 950px; margin: 0 auto; gap: 30px; }
         .container { width: 100%; max-width: 600px; background: var(--container-bg); min-height: 100vh; border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); position: relative; display: flex; flex-direction: column; }
         .view-section { display: none; }
-        #chatView { height: 100vh; max-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        #chatView { height: 100vh; max-height: 100vh; flex-direction: column; overflow: hidden; }
         .sidebar { width: 320px; padding-top: 15px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: none; }
         @media (min-width: 950px) { .sidebar { display: block; } }
         .sidebar-box { background-color: var(--sidebar-bg); border-radius: 16px; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 20px; }
@@ -144,7 +140,7 @@
         .dm-message-wrapper.mine { flex-direction: row-reverse; }
         .dm-bubble { max-width: 75%; padding: 10px 14px; border-radius: 20px; font-size: 15px; line-height: 1.4; word-break: break-all; }
         .dm-bubble.mine { background-color: var(--accent-color); color: #ffffff; border: none; border-bottom-right-radius: 4px; }
-        .dm-bubble.other { background-color: #f1f1f1; color: #000000; border: none; border-bottom-left-radius: 4px; }
+        .dm-bubble.other { background-color: var(--hover-bg); color: var(--text-color); border: 1px solid var(--border-color); border-bottom-left-radius: 4px; }
         .dm-sender-name { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; margin-left: 48px; }
         .emoji-picker-custom { display: none; position: absolute; z-index: 10000; background: var(--sidebar-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; width: 280px; box-shadow: 0 4px 15px var(--shadow-color); }
         .emoji-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
@@ -189,6 +185,121 @@
         body.embed-mode .container { border: none; max-width: none; min-height: auto; width: 100%; margin: 0; padding: 0; }
         body.embed-mode .header-bar, body.embed-mode .sidebar, body.embed-mode .tabs, body.embed-mode .detail-reply-box { display: none !important; }
 
+        /* ===== 新規追加スタイル ===== */
+
+        /* ポスト追加アニメーション */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .post { animation: fadeInUp 0.25s ease; }
+
+        /* DM削除ボタン */
+        .dm-delete-btn {
+            background: none;
+            border: none;
+            color: #f91880;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .dm-message-wrapper:hover .dm-delete-btn { opacity: 1; }
+
+        /* 会話削除ボタン */
+        .convo-delete-btn {
+            background: none;
+            border: none;
+            color: #f91880;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .reply-item:hover .convo-delete-btn { opacity: 1; }
+
+        /* ブックマークビュー */
+        #bookmarkView .header-bar { justify-content: space-between; }
+
+        /* フローティングポストボタン（モバイル） */
+        .fab-post-btn {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            right: 18px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(29,155,240,0.45);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .fab-post-btn:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(29,155,240,0.6); }
+        .fab-post-btn:active { transform: scale(0.95); }
+
+        /* ボトムナビゲーション（モバイル） */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--header-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            z-index: 40;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .bottom-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px 0;
+            transition: color 0.2s;
+            font-size: 10px;
+            gap: 3px;
+            position: relative;
+        }
+        .bottom-nav-item.active { color: var(--accent-color); }
+        .bottom-nav-item svg { width: 22px; height: 22px; fill: currentColor; }
+        .bottom-nav-badge {
+            position: absolute;
+            top: 2px;
+            right: calc(50% - 16px);
+            background: #f91880;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 9px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
         @media (max-width: 600px) {
             .container { border-left: none; border-right: none; }
             .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -202,11 +313,19 @@
             .toolbar-btn { padding: 5px 8px; font-size: 12px; }
             .modal-content { width: 95%; padding: 15px; }
             .header-bar { font-size: 16px; padding: 10px 15px; }
+            /* モバイル: トップタブ非表示、ボトムナビ・FABを表示 */
+            #navContainer { display: none !important; }
+            .fab-post-btn { display: flex; }
+            .bottom-nav { display: flex; }
+            .container { padding-bottom: 60px; }
+            #chatView { padding-bottom: 0 !important; }
+            .dm-delete-btn { opacity: 1; }
+            .convo-delete-btn { opacity: 1; }
         }
         /* ツールバーボタンやヘッダーのアイコンをCSSのSVGデータで定義 (絵文字を完全廃止) */
         .toolbar-btn::before, .hashtag-header::before, .admin-header-icon::before, .admin-panel-title::before, .btn-chat-paint::before,
         .title-ai-text::before, .title-ai-img::before, .title-schedule::before, .title-poll::before, .title-map::before, .title-paint::before,
-        .btn-mail::before {
+        .btn-mail::before, .btn-video-search::before {
             content: "";
             display: inline-block;
             vertical-align: middle;
@@ -231,6 +350,11 @@
             width: 16px; height: 16px;
             -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M23 7l-7 5 7 5V7z'/%3E%3Crect x='1' y='5' width='15' height='14' rx='2' ry='2'/%3E%3C/svg%3E") no-repeat center / contain;
             mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M23 7l-7 5 7 5V7z'/%3E%3Crect x='1' y='5' width='15' height='14' rx='2' ry='2'/%3E%3C/svg%3E") no-repeat center / contain;
+        }
+        .btn-video-search::before {
+            width: 16px; height: 16px;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat center / contain;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat center / contain;
         }
         .btn-paint::before {
             width: 16px; height: 16px;
@@ -340,6 +464,7 @@
                 <div class="tab" id="tab-search" onclick="showSearch()">検索</div>
                 <div class="tab" id="tab-dm" onclick="showDMs()">DM <span id="badge-dm" style="display:none; background:var(--accent-color); color:#fff; border-radius:50%; padding:2px 6px; font-size:10px; margin-left:4px;">0</span></div>
                 <div class="tab" id="tab-notif" onclick="showNotifications()">通知 <span id="badge-notif" style="display:none; background:var(--accent-color); color:#fff; border-radius:50%; padding:2px 6px; font-size:10px; margin-left:4px;">0</span></div>
+                <div class="tab" id="tab-bookmark" onclick="showBookmarks()">保存</div>
                 <div class="tab" id="tab-setting" onclick="showSettings()">設定</div>
             </div>
 
@@ -356,7 +481,7 @@
                         
                         <!-- 添付ファイル各種プレビュー -->
                         <input type="text" id="postVideoUrl" class="video-input-field" placeholder="動画や音楽のURLを貼り付け (YouTube, Apple Music, Spotify等)...">
-                        <input type="file" id="postFileInput" accept="image/*" style="display:none;" onchange="handlePostFileSelect(event)">
+                        <input type="file" id="postFileInput" accept="image/*,video/*,audio/*" style="display:none;" onchange="handlePostFileSelect(event)">
                         
                         <!-- アップロード画像/動画プレビュー -->
                         <div id="postFilePreview" style="display:none; margin-bottom: 10px; position: relative; max-width: max-content;">
@@ -384,6 +509,7 @@
                                 <button class="toolbar-btn btn-emoji" onclick="openEmojiPicker('postText', event)" title="絵文字" style="font-size: 16px;"></button>
                                 <button class="toolbar-btn btn-file" onclick="document.getElementById('postFileInput').click()" id="btn-file">添付</button>
                                 <button class="toolbar-btn btn-video" onclick="toggleVideoInput('postVideoUrl', event)" title="動画追加 URL入力" id="btn-video">動画URL</button>
+                                <button class="toolbar-btn btn-video-search" onclick="openVideoSearchModal(event)" title="ニコニコ動画検索" id="btn-video-search">ニコニコ検索</button>
                                 <button class="toolbar-btn btn-paint" onclick="openPaintModal('post')" title="お絵描き">お絵描き</button>
                                 <button class="toolbar-btn btn-voice" onclick="toggleVoiceRecord('post')" id="btn-voice-post" title="音声メッセージ">音声</button>
                                 <button class="toolbar-btn btn-ai-text" onclick="openAITextModal('postText')" id="btn-ai-text">AI文章</button>
@@ -545,6 +671,12 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ブックマークビュー -->
+            <div id="bookmarkView" class="view-section">
+                <div class="header-bar">保存済みポスト</div>
+                <div id="bookmarkList"></div>
+            </div>
         </div>
         
         <!-- トレンドサイドバー -->
@@ -557,6 +689,37 @@
             </div>
         </div>
     </div>
+
+    <!-- モバイル: フローティングポストボタン -->
+    <button class="fab-post-btn" id="fabPostBtn" onclick="fabScrollToPost()" title="ポストを作成">
+        <svg style="width:26px;height:26px;fill:white;" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+    </button>
+
+    <!-- モバイル: ボトムナビゲーション -->
+    <nav class="bottom-nav" id="bottomNav">
+        <div class="bottom-nav-item active" id="bnav-home" onclick="showHome()">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>ホーム</span>
+        </div>
+        <div class="bottom-nav-item" id="bnav-search" onclick="showSearch()">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <span>検索</span>
+        </div>
+        <div class="bottom-nav-item" id="bnav-dm" onclick="showDMs()" style="position:relative;">
+            <span class="bottom-nav-badge" id="bnav-badge-dm">0</span>
+            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+            <span>DM</span>
+        </div>
+        <div class="bottom-nav-item" id="bnav-notif" onclick="showNotifications()" style="position:relative;">
+            <span class="bottom-nav-badge" id="bnav-badge-notif">0</span>
+            <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+            <span>通知</span>
+        </div>
+        <div class="bottom-nav-item" id="bnav-setting" onclick="showSettings()">
+            <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.92c.04-.36.07-.74.07-1.08s-.03-.73-.07-1.08l2.35-1.84c.21-.16.27-.45.13-.69l-2.23-3.86c-.14-.24-.43-.32-.67-.24l-2.77 1.11c-.58-.44-1.21-.82-1.9-1.08L14.9 2.5c-.04-.26-.27-.45-.53-.45h-4.74c-.26 0-.49.19-.53.45L8.86 5.25c-.69.26-1.32.64-1.9 1.08L4.19 5.22c-.24-.09-.53 0-.67.24L1.29 9.32c-.14.24-.08.53.13.69l2.35 1.84c-.04.35-.07.73-.07 1.08s.03.73.07 1.08L1.42 15.85c-.21.16-.27.45-.13.69l2.23 3.86c.14.24.43.32.67.24l2.77-1.11c.58.44 1.21.82 1.9 1.08l.44 2.74c.04.27.27.46.53.46h4.74c.26 0 .49-.19.53-.45l.44-2.74c.69-.26 1.32-.64 1.9-1.08l2.77 1.11c.24.09.53 0 .67-.24l2.23-3.86c.14-.24.08-.53-.13-.69l-2.35-1.84z"/></svg>
+            <span>設定</span>
+        </div>
+    </nav>
 
     <!-- 各種モーダル -->
     <div id="emojiPickerContainer" class="emoji-picker-custom" onclick="event.stopPropagation()" style="padding:0; border:none; background:transparent; box-shadow:none; width:auto;">
@@ -571,6 +734,43 @@
     
     <!-- 予約投稿モーダル -->
     <div id="scheduleModal" class="modal-overlay"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span class="title-schedule">予約投稿設定</span><button class="close-modal" onclick="document.getElementById('scheduleModal').style.display='none'">×</button></div><input type="datetime-local" id="scheduleInput" style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; font-size:16px; outline:none; background:var(--bg-color); color:var(--text-color); box-sizing:border-box; color-scheme:dark;"><button class="post-btn" onclick="attachSchedule()" style="width:100%; margin-top:15px;">時間を設定する</button></div></div>
+
+    <!-- 動画検索モーダル -->
+    <div id="videoSearchModal" class="modal-overlay">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span>ニコニコ動画を検索・添付</span>
+                <button class="close-modal" onclick="closeVideoSearchModal()">×</button>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="videoSearchKeyword" placeholder="検索キーワードを入力..." style="flex:1; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color); outline:none;" onkeydown="if(event.key==='Enter') executeVideoSearch()">
+                <button class="post-btn" onclick="executeVideoSearch()">検索</button>
+            </div>
+            <div style="display:flex; gap:10px; font-size:13px; color:var(--text-muted);">
+                <label>ソート:
+                    <select id="videoSearchSort" style="background:var(--container-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px; padding:2px 4px;">
+                        <option value="-viewCounter">再生数が多い順</option>
+                        <option value="-startTime">投稿日時が新しい順</option>
+                        <option value="-commentCounter">コメント数が多い順</option>
+                        <option value="-likeCounter">いいね数が多い順</option>
+                    </select>
+                </label>
+            </div>
+            <div id="videoSearchResults" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top:5px;">
+                <div style="text-align:center; padding:20px; color:var(--text-muted);">キーワードを入力して検索してください。</div>
+            </div>
+            <!-- フォールバック用手動貼り付け入力欄 -->
+            <div id="videoSearchFallbackArea" style="display:none; border-top:1px solid var(--border-color); padding-top:10px; margin-top:10px; flex-direction:column; gap:6px;">
+                <span style="font-size:12px; color:#f91880; font-weight:bold;">⚠️ 検索がタイムアウトしたかエラーになりました。以下に動画URLを直接入力して添付できます：</span>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="videoSearchManualUrl" placeholder="例: https://www.nicovideo.jp/watch/sm..." style="flex:1; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color); outline:none;">
+                    <button class="post-btn" onclick="attachManualVideoUrl()" style="background-color:var(--accent-color);">添付</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     
     <!-- 投票作成モーダル -->
     <div id="pollModal" class="modal-overlay">
@@ -814,6 +1014,8 @@
         const svgTiktok   = `<svg class="icon" style="width:16px; height:16px;" viewBox="0 0 24 24"><path fill="currentColor" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.94-1.74-.22-.21-.42-.45-.61-.7-.02 3.68-.01 7.36-.02 11.04-.1 2.44-1.57 4.75-3.86 5.61-2.28.89-5.01.55-6.95-.94-2.07-1.56-3.07-4.39-2.43-6.92.54-2.27 2.47-4.08 4.77-4.43.14-.02.28-.02.43-.03v4.17c-.96.22-1.84.88-2.26 1.78-.49 1.01-.32 2.31.42 3.14.77.89 2.11 1.18 3.18.71 1.15-.47 1.83-1.68 1.83-2.92.02-6.52.01-13.04.01-19.56z"/></svg>`;
         const svgTwitch   = `<svg class="icon" style="color:#9146ff; width:16px; height:16px;" viewBox="0 0 24 24"><path fill="currentColor" d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>`;
         const svgTwitcasting = `<svg class="icon" style="color:#00a2e8; width:16px; height:16px;" viewBox="0 0 24 24"><path fill="currentColor" d="M21 11.5a8.38 8.38 0 0 1-.9 3.8L15 12l5.1-3.3a8.38 8.38 0 0 1 .9 2.8zM3 9h4l5-4v14l-5-4H3V9zm11 3c0-1.8-1.2-3.3-2.8-3.8v7.6C12.8 15.3 14 13.8 14 12z"/></svg>`;
+        const svgBookmark  = `<svg class="icon" viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>`;
+        const svgDelete    = `<svg class="icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
 
         // Firebase Setup
         const firebaseConfig = { 
@@ -944,6 +1146,17 @@
             if (!url) return "";
             const parentDomain = window.location.hostname || "localhost";
             
+            // Niconico Video
+            const nicoMatch = url.match(/(?:nicovideo\.jp\/watch\/|nico\.ms\/|embed\.nicovideo\.jp\/watch\/)(sm\d+|nm\d+|so\d+|\d+)/);
+            if (nicoMatch) {
+                const videoId = nicoMatch[1];
+                return `
+                    <div class="map-card" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:12px; margin-top:10px;">
+                        <iframe src="https://embed.nicovideo.jp/watch/${videoId}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                    </div>
+                `;
+            }
+
             // YouTube (Shorts & Standard) - Use youtube-nocookie.com and add direct link to fallback for Error 153
             const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/);
             if (ytMatch) {
@@ -1051,11 +1264,8 @@
             }
             
             // Apple Music
-            const amMatch = url.match(/music\.apple\.com\/([a-zA-Z]{2})\/(album|playlist|song|station)\/(?:[^\/]+\/)?([0-9a-zA-Z\.\-]+)/);
-            if (amMatch) {
-                const type = amMatch[2];
-                const hasIParam = url.includes('?i=');
-                const height = (type === 'song' || hasIParam) ? 150 : 450;
+            if (url.includes("music.apple.com")) {
+                const height = (url.includes("/song/") || url.includes("?i=")) ? 150 : 450;
                 const embedUrl = url.replace("music.apple.com", "embed.music.apple.com");
                 return `
                     <div style="margin-top:10px; width:100%;">
@@ -1065,20 +1275,212 @@
             }
 
             // Spotify
-            const spMatch = url.match(/open\.spotify\.com\/(track|album|playlist|episode|show)\/([a-zA-Z0-9]+)/);
-            if (spMatch) {
-                const type = spMatch[1];
-                const id = spMatch[2];
-                const height = (type === 'track' || type === 'episode') ? 152 : 352;
+            if (url.includes("open.spotify.com")) {
+                const height = (url.includes("/track/") || url.includes("/episode/")) ? 152 : 352;
+                const embedUrl = url.replace("open.spotify.com", "open.spotify.com/embed");
                 return `
                     <div style="margin-top:10px; width:100%;">
-                        <iframe style="border-radius:12px" src="https://open.spotify.com/embed/${type}/${id}?utm_source=generator" width="100%" height="${height}" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        <iframe style="border-radius:12px" src="${embedUrl}?utm_source=generator" width="100%" height="${height}" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
                     </div>
                 `;
             }
             
             // Fallback link
             return `<div style="margin-top:10px;"><a href="${url}" target="_blank" style="color:var(--accent-color);word-break:break-all;display:inline-flex;align-items:center;gap:6px;">${svgVideo} 外部動画リンク: ${url}</a></div>`;
+        };
+
+        // Video Search (Niconico via CORS Proxies with Fallback)
+        // Video Search (Niconico via CORS Proxies with Fallback)
+        async function fetchWithTimeout(url, options = {}, timeout = 4000) {
+            const hasAbort = typeof window.AbortController !== 'undefined';
+            const controller = hasAbort ? new AbortController() : null;
+            const signal = controller ? controller.signal : null;
+            
+            const fetchPromise = fetch(url, { ...options, signal });
+            
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    if (controller) {
+                        try { controller.abort(); } catch(e){}
+                    }
+                    reject(new Error("Timeout"));
+                }, timeout);
+            });
+            
+            return Promise.race([fetchPromise, timeoutPromise]);
+        }
+
+        async function fetchNicoSearch(queryVal, sortVal) {
+            // Niconico Snapshot Search API v2
+            const apiTarget = `https://api.search.nicovideo.jp/api/v2/snapshot/video/contents/search?q=${encodeURIComponent(queryVal)}&targets=title&fields=contentId,title,viewCounter,thumbnailUrl&_sort=${sortVal}&_context=snsapp&_limit=15`;
+            
+            const proxies = [
+                // 1. AllOrigins (get wrapper) - contents property wrapping (Very high CORS bypass capability)
+                {
+                    name: "AllOrigins Wrapper",
+                    getUrl: (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+                    parse: (text) => {
+                        const parsed = JSON.parse(text);
+                        if (parsed.contents) {
+                            return typeof parsed.contents === 'string' ? JSON.parse(parsed.contents) : parsed.contents;
+                        }
+                        return parsed;
+                    }
+                },
+                // 2. AllOrigins Raw
+                {
+                    name: "AllOrigins Raw",
+                    getUrl: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                    parse: (text) => JSON.parse(text)
+                },
+                // 3. CORS Proxy IO
+                {
+                    name: "CORS Proxy IO",
+                    getUrl: (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                    parse: (text) => JSON.parse(text)
+                },
+                // 4. CodeTabs Proxy
+                {
+                    name: "CodeTabs",
+                    getUrl: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+                    parse: (text) => JSON.parse(text)
+                },
+                // 5. ThingProxy
+                {
+                    name: "ThingProxy",
+                    getUrl: (url) => `https://thingproxy.freeboard.io/fetch/${url}`,
+                    parse: (text) => JSON.parse(text)
+                }
+            ];
+
+            // Trigger all requests in parallel
+            const tasks = proxies.map(async (proxy) => {
+                const proxyUrl = proxy.getUrl(apiTarget);
+                try {
+                    console.log(`Sending parallel request to [${proxy.name}]:`, proxyUrl);
+                    const res = await fetchWithTimeout(proxyUrl, { cache: 'no-store' }, 4000);
+                    if (res.ok) {
+                        const rawText = await res.text();
+                        const data = proxy.parse(rawText);
+                        if (data && data.data) {
+                            console.log(`Received success from [${proxy.name}]`);
+                            return data.data;
+                        } else if (data && data.meta && data.meta.status === 400) {
+                            throw new Error(`API Error 400: ${data.meta.errorCode || 'Bad Request'}`);
+                        }
+                    }
+                    throw new Error(`HTTP ${res.status}`);
+                } catch (e) {
+                    console.warn(`[${proxy.name}] failed:`, e);
+                    throw new Error(`[${proxy.name}]: ${e.message || e}`);
+                }
+            });
+
+            // Return the first successful promise, reject only if all fail
+            return new Promise((resolve, reject) => {
+                let resolved = false;
+                let rejectedCount = 0;
+                const errors = [];
+
+                tasks.forEach((task) => {
+                    task.then(data => {
+                        if (!resolved) {
+                            resolved = true;
+                            resolve(data);
+                        }
+                    }).catch(err => {
+                        errors.push(err.message || err);
+                        rejectedCount++;
+                        if (rejectedCount === tasks.length && !resolved) {
+                            reject(new Error("すべてのプロキシが失敗しました:\n" + errors.join("\n")));
+                        }
+                    });
+                });
+            });
+        }
+
+        window.openVideoSearchModal = function(event) {
+            if (event) event.stopPropagation();
+            closeAllMenus();
+            document.getElementById('videoSearchModal').style.display = 'flex';
+            document.getElementById('videoSearchKeyword').focus();
+            document.getElementById('videoSearchFallbackArea').style.display = 'none';
+        };
+
+        window.closeVideoSearchModal = function() {
+            document.getElementById('videoSearchModal').style.display = 'none';
+        };
+
+        window.executeVideoSearch = async function() {
+            const keyword = document.getElementById('videoSearchKeyword').value.trim();
+            if (!keyword) return;
+            
+            const sort = document.getElementById('videoSearchSort').value;
+            const resultsDiv = document.getElementById('videoSearchResults');
+            resultsDiv.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">検索中...</div>';
+            document.getElementById('videoSearchFallbackArea').style.display = 'none';
+
+            try {
+                const items = await fetchNicoSearch(keyword, sort);
+                resultsDiv.innerHTML = '';
+                if (!items || items.length === 0) {
+                    resultsDiv.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">動画が見つかりませんでした。</div>';
+                    return;
+                }
+                
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'reply-item';
+                    div.style.cursor = 'pointer';
+                    div.style.display = 'flex';
+                    div.style.gap = '10px';
+                    div.style.padding = '8px';
+                    div.style.borderBottom = '1px solid var(--border-color)';
+                    div.onclick = () => attachSearchedVideo(item.contentId);
+                    
+                    const views = item.viewCounter ? item.viewCounter.toLocaleString() : '0';
+                    
+                    div.innerHTML = `
+                        <img src="${item.thumbnailUrl}" style="width:80px; height:60px; object-fit:cover; border-radius:4px; flex-shrink:0;">
+                        <div style="flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between;">
+                            <div style="font-size:13px; font-weight:bold; color:var(--text-color); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all;">${item.title}</div>
+                            <div style="font-size:11px; color:var(--text-muted); display:flex; justify-content:space-between; margin-top:4px;">
+                                <span>ID: ${item.contentId}</span>
+                                <span>👁️ ${views}</span>
+                            </div>
+                        </div>
+                    `;
+                    resultsDiv.appendChild(div);
+                });
+            } catch (e) {
+                console.error(e);
+                resultsDiv.innerHTML = `
+                    <div style="padding:15px; color:#f91880; font-size:13px; background:rgba(249, 24, 128, 0.05); border:1px solid #f91880; border-radius:8px; margin-bottom:10px; text-align:left;">
+                        <strong>⚠️ 検索エラーが発生しました:</strong><br>
+                        <span style="font-family:monospace; white-space:pre-wrap; display:block; margin-top:5px; max-height:100px; overflow-y:auto;">${e.message || e}</span>
+                    </div>
+                `;
+                document.getElementById('videoSearchFallbackArea').style.display = 'flex';
+            }
+        };
+
+        window.attachSearchedVideo = function(contentId) {
+            const videoUrl = `https://www.nicovideo.jp/watch/${contentId}`;
+            const inputEl = document.getElementById('postVideoUrl');
+            inputEl.value = videoUrl;
+            inputEl.style.display = 'block';
+            closeVideoSearchModal();
+            showToast("動画をポストに添付しました！");
+        };
+
+        window.attachManualVideoUrl = function() {
+            const url = document.getElementById('videoSearchManualUrl').value.trim();
+            if (!url) return;
+            const inputEl = document.getElementById('postVideoUrl');
+            inputEl.value = url;
+            inputEl.style.display = 'block';
+            closeVideoSearchModal();
+            showToast("動画URLをポストに添付しました！");
         };
 
         window.getDateObj = function(t) {
@@ -1150,11 +1552,11 @@
             }
 
             try {
-                // Try Firebase Storage first
-                const ext = file.type.startsWith('image/') ? '.jpg' : file.type.startsWith('audio/') ? '.webm' : '.bin';
+                // Try Firebase Storage first with timeout
+                const ext = file.type.startsWith('image/') ? '.jpg' : file.type.startsWith('audio/') ? '.webm' : file.type.startsWith('video/') ? '.mp4' : '.bin';
                 const filename = "uploads/" + Date.now() + "_" + Math.random().toString(36).substring(7) + ext;
                 const storageRef = ref(storage, filename);
-                await uploadBytes(storageRef, file);
+                await uploadBytesWithTimeout(storageRef, file, 4000);
                 const url = await getDownloadURL(storageRef);
                 return url;
             } catch (storageError) {
@@ -1165,58 +1567,59 @@
                         const reader = new FileReader();
                         reader.onload = function(e) {
                             const img = new Image();
-                        img.onload = function() {
-                            const canvas = document.createElement('canvas');
-                            let width = img.width;
-                            let height = img.height;
-                            const max_size = 1200;
+                            img.onload = function() {
+                                const canvas = document.createElement('canvas');
+                                let width = img.width;
+                                let height = img.height;
+                                const max_size = 1200;
 
-                            if (width > height) {
-                                if (width > max_size) {
-                                    height *= max_size / width;
-                                    width = max_size;
+                                if (width > height) {
+                                    if (width > max_size) {
+                                        height *= max_size / width;
+                                        width = max_size;
+                                    }
+                                } else {
+                                    if (height > max_size) {
+                                        width *= max_size / height;
+                                        height = max_size;
+                                    }
                                 }
-                            } else {
-                                if (height > max_size) {
-                                    width *= max_size / height;
-                                    height = max_size;
+
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, width, height);
+
+                                const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                                if (dataUrl.length > 1000000) {
+                                    reject(new Error("画像が複雑すぎて縮小後も容量オーバーです。"));
+                                    return;
                                 }
-                            }
-
-                            canvas.width = width;
-                            canvas.height = height;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, width, height);
-
-                            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                                resolve(dataUrl);
+                            };
+                            img.onerror = () => reject(new Error("画像の読み込みに失敗しました。"));
+                            img.src = e.target.result;
+                        };
+                        reader.onerror = () => reject(new Error("ファイルの読み取りに失敗しました。"));
+                        reader.readAsDataURL(file);
+                    } 
+                    else if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
+                        const fileTypeName = file.type.startsWith('audio/') ? '音声' : '動画';
+                        showToast(`${fileTypeName}を処理中...`);
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const dataUrl = e.target.result;
                             if (dataUrl.length > 1000000) {
-                                reject(new Error("画像が複雑すぎて縮小後も容量オーバーです。"));
+                                reject(new Error(`${fileTypeName}のファイルサイズが大きすぎます。1MB以下のファイルを選択してください。`));
                                 return;
                             }
                             resolve(dataUrl);
                         };
-                        img.onerror = () => reject(new Error("画像の読み込みに失敗しました。"));
-                        img.src = e.target.result;
-                    };
-                    reader.onerror = () => reject(new Error("ファイルの読み取りに失敗しました。"));
-                    reader.readAsDataURL(file);
-                } 
-                else if (file.type.startsWith('audio/')) {
-                    showToast('音声を処理中...');
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const dataUrl = e.target.result;
-                        if (dataUrl.length > 1000000) {
-                            reject(new Error("音声が長すぎます。もっと短く録音してください。"));
-                            return;
-                        }
-                        resolve(dataUrl);
-                    };
-                    reader.onerror = () => reject(new Error("音声の読み取りに失敗しました。"));
-                    reader.readAsDataURL(file);
-                } 
+                        reader.onerror = () => reject(new Error(`${fileTypeName}の読み取りに失敗しました。`));
+                        reader.readAsDataURL(file);
+                    } 
                     else {
-                        reject(new Error("画像または音声のみ対応しています"));
+                        reject(new Error("画像、動画、または音声のみ対応しています"));
                     }
                 });
             }
@@ -1264,6 +1667,10 @@
                 const img = document.createElement('img'); img.src = URL.createObjectURL(file); img.style.maxWidth = '100%'; img.style.maxHeight = '200px'; img.style.borderRadius = '12px'; previewContent.appendChild(img); 
             } else if (file.type.startsWith('video/')) { 
                 const video = document.createElement('video'); video.src = URL.createObjectURL(file); video.controls = true; video.style.maxWidth = '100%'; video.style.maxHeight = '200px'; video.style.borderRadius = '12px'; previewContent.appendChild(video); 
+            } else if (file.type.startsWith('audio/')) {
+                const audio = document.createElement('audio'); audio.src = URL.createObjectURL(file); audio.controls = true; audio.style.width = '100%'; audio.style.marginTop = '10px'; previewContent.appendChild(audio);
+            } else {
+                const div = document.createElement('div'); div.innerText = `📎 ${file.name}`; div.style.padding = '10px'; div.style.background = 'var(--hover-bg)'; div.style.borderRadius = '8px'; div.style.color = 'var(--text-color)'; previewContent.appendChild(div);
             }
             document.getElementById('postFilePreview').style.display = 'block';
         };
@@ -1394,13 +1801,18 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     audioChunks = [];
-                    // Use safest default MediaRecorder to avoid unsupported option crashes
                     mediaRecorder = new MediaRecorder(stream);
-                    mediaRecorder.ondataavailable = (e) => { audioChunks.push(e.data); };
+                    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
                     mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Use native-like type
+                        // Stop all tracks to release microphone
+                        stream.getTracks().forEach(t => t.stop());
+
+                        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+                        const audioBlob = new Blob(audioChunks, { type: mimeType });
+                        showToast('音声をアップロード中...');
+
                         try {
-                            const url = await uploadFileToAPI(audioBlob);
+                            const url = await uploadAudioBlob(audioBlob);
                             if (target === 'post') {
                                 window.postAudioUrl = url;
                                 document.getElementById('postAudioPreview').src = url;
@@ -1410,9 +1822,9 @@
                                 document.getElementById('chatAudioPreview').src = url;
                                 document.getElementById('chatAudioPreviewContainer').style.display = 'flex';
                             }
-                            showToast("音声を追加しました");
-                        } catch(e) { 
-                            alert("アップロード失敗: " + (e.message || "不明なエラー")); 
+                            showToast('音声を追加しました！');
+                        } catch(e) {
+                            alert('音声アップロード失敗: ' + (e.message || '不明なエラー'));
                         }
                     };
                     mediaRecorder.start();
@@ -1420,10 +1832,59 @@
                     document.getElementById(`btn-voice-${target}`).innerText = '停止';
                     document.getElementById(`btn-voice-${target}`).style.backgroundColor = '#f91880';
                 } catch (err) {
-                    alert("マイクへのアクセスに失敗しました: " + (err.message || err));
+                    alert('マイクへのアクセスに失敗しました: ' + (err.message || err));
                 }
             }
         };
+
+        // Timeout wrapper for Firebase Storage upload to prevent hanging (default 4 seconds)
+        async function uploadBytesWithTimeout(storageRef, blobOrFile, timeoutMs = 4000) {
+            return new Promise((resolve, reject) => {
+                const timer = setTimeout(() => {
+                    reject(new Error("Firebase Storage upload timed out"));
+                }, timeoutMs);
+
+                uploadBytes(storageRef, blobOrFile).then((snapshot) => {
+                    clearTimeout(timer);
+                    resolve(snapshot);
+                }).catch((err) => {
+                    clearTimeout(timer);
+                    reject(err);
+                });
+            });
+        }
+
+        // Dedicated audio upload: Firebase Storage → DataURL fallback
+        async function uploadAudioBlob(blob) {
+            // 1. Try Firebase Storage (most reliable) with 4s timeout
+            try {
+                const ext = blob.type.includes('ogg') ? '.ogg' : blob.type.includes('mp4') ? '.mp4' : '.webm';
+                const filename = 'audio/' + Date.now() + '_' + Math.random().toString(36).substring(7) + ext;
+                const storageRef = ref(storage, filename);
+                await uploadBytesWithTimeout(storageRef, blob, 4000);
+                const url = await getDownloadURL(storageRef);
+                return url;
+            } catch (storageErr) {
+                console.warn('Firebase Storage failed or timed out, falling back to DataURL:', storageErr);
+            }
+            // 2. DataURL fallback (works offline, limited size to prevent Firestore crash)
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const dataUrl = e.target.result;
+                    // Limit to 1MB to prevent Firestore size limit errors
+                    if (dataUrl.length > 1000000) {
+                        reject(new Error('録音サイズが大きすぎます。もっと短く録音してください（目安: 5秒以内）'));
+                        return;
+                    }
+                    resolve(dataUrl);
+                };
+                reader.onerror = () => reject(new Error('音声の読み取りに失敗しました'));
+                reader.readAsDataURL(blob);
+            });
+        }
+
+
         window.removeAudioPreview = function(target) {
             if (target === 'post') {
                 window.postAudioUrl = null;
@@ -1509,6 +1970,9 @@
             updateAttachmentsUI();
             document.getElementById('scheduleModal').style.display = 'none';
         };
+
+
+
 
         window.previewPollOptImg = function(index, input) {
             const file = input.files[0];
@@ -1941,11 +2405,14 @@
                                 <button class="menu-trigger" onclick="togglePostMenu('${post.id}', false, event)">${svgMenu}</button>
                                 <div id="postMenu-${post.id}" class="dropdown-menu">
                                     <div class="menu-item" onclick="sharePost('${post.id}', '${encodeURIComponent(post.content || '')}', event)">${svgLink} リンクコピー</div>
-                                    <div class="menu-item" onclick="handleMenuAction('${post.id}', '${post.userId}', '${post.userName}', '興味なし', event)">${svgDislike} 興味なし</div>
-                                    <div class="menu-item" onclick="handleMenuAction('${post.id}', '${post.userId}', '${post.userName}', 'ミュート', event)">${svgMute} ミュート</div>
-                                    <div class="menu-item" onclick="handleMenuAction('${post.id}', '${post.userId}', '${post.userName}', '制限', event)">${svgBlock} 制限する</div>
-                                    <div class="menu-item" onclick="handleMenuAction('${post.id}', '${post.userId}', '${post.userName}', 'ブロック', event)">${svgBlock} ブロック</div>
-                                    <div class="menu-item danger" onclick="handleMenuAction('${post.id}', '${post.userId}', '${post.userName}', '報告', event)">${svgWarning} 報告する</div>
+                                    <div class="menu-item" onclick="toggleBookmark('${post.id}', event)">${svgBookmark} 保存</div>
+                                    ${post.userId === myProfile.id 
+                                        ? '<div class="menu-item danger" onclick="deleteMyPost(\'' + post.id + '\', event)">' + svgDelete + ' ポストを削除</div>'
+                                        : '<div class="menu-item" onclick="handleMenuAction(\'' + post.id + '\', \'' + post.userId + '\', \'' + post.userName + '\', \'興味なし\', event)">' + svgDislike + ' 興味なし</div>' +
+                                          '<div class="menu-item" onclick="handleMenuAction(\'' + post.id + '\', \'' + post.userId + '\', \'' + post.userName + '\', \'ミュート\', event)">' + svgMute + ' ミュート</div>' +
+                                          '<div class="menu-item" onclick="handleMenuAction(\'' + post.id + '\', \'' + post.userId + '\', \'' + post.userName + '\', \'制限\', event)">' + svgBlock + ' 制限する</div>' +
+                                          '<div class="menu-item" onclick="handleMenuAction(\'' + post.id + '\', \'' + post.userId + '\', \'' + post.userName + '\', \'ブロック\', event)">' + svgBlock + ' ブロック</div>' +
+                                          '<div class="menu-item danger" onclick="handleMenuAction(\'' + post.id + '\', \'' + post.userId + '\', \'' + post.userName + '\', \'報告\', event)">' + svgWarning + ' 報告する</div>'}
                                 </div>
                             </div>
                             <div class="post-content">${safeContent}</div>
@@ -1963,6 +2430,7 @@
                                 <button class="action-btn like ${isLiked ? 'liked' : ''}" onclick="likePost('${post.id}', '${post.userId}', event)">${svgLike} <span class="count-span" id="like-count-${post.id}">${post.likes || ''}</span></button>
                                 <div class="action-btn view" style="cursor:default;">${svgView} <span class="count-span">${post.views || ''}</span></div>
                                 <button class="action-btn share" onclick="sharePost('${post.id}', '${encodeURIComponent(post.content || '')}', event)">${svgShare}</button>
+                                <button class="action-btn" onclick="toggleBookmark('${post.id}', event)" style="${(JSON.parse(localStorage.getItem('mySNS_bookmarks')||'[]')).includes(post.id) ? 'color:var(--accent-color);' : ''}">${svgBookmark}</button>
                             </div>
                         </div>
                     `;
@@ -2032,7 +2500,7 @@
                     content: text,
                     imageUrl: ((selectedPostFile && selectedPostFile.type.startsWith('image/')) || window.postAIImageUrl) ? uploadedUrl : "",
                     videoUrl: selectedPostFile && selectedPostFile.type.startsWith('video/') ? uploadedUrl : "",
-                    audioData: window.postAudioUrl || "",
+                    audioData: (selectedPostFile && selectedPostFile.type.startsWith('audio/')) ? uploadedUrl : (window.postAudioUrl || ""),
                     drawingData: window.postDrawingData || "",
                     videoInputUrl: videoUrl,
                     poll: pollObj,
@@ -2294,24 +2762,29 @@
                 await openChatRoom(chatUserId);
             } else if (view === 'search') {
                 document.getElementById('searchView').style.display = 'block';
-                document.querySelector('#navContainer .tab:nth-child(2)').classList.add('active');
+                const searchTab = document.getElementById('tab-search');
+                if (searchTab) searchTab.classList.add('active');
                 await loadPopularHashtags();
             } else if (view === 'dms') {
                 document.getElementById('dmView').style.display = 'block';
-                document.querySelector('#navContainer .tab:nth-child(3)').classList.add('active');
+                const dmTab = document.getElementById('tab-dm');
+                if (dmTab) dmTab.classList.add('active');
                 await renderDMsList();
             } else if (view === 'notifications') {
                 document.getElementById('notificationView').style.display = 'block';
-                document.querySelector('#navContainer .tab:nth-child(4)').classList.add('active');
+                const notifTab = document.getElementById('tab-notif');
+                if (notifTab) notifTab.classList.add('active');
                 await renderNotifications();
             } else if (view === 'settings') {
                 document.getElementById('settingsView').style.display = 'block';
-                document.querySelector('#navContainer .tab:nth-child(5)').classList.add('active');
+                const settingTab = document.getElementById('tab-setting');
+                if (settingTab) settingTab.classList.add('active');
                 renderSettings();
             } else {
                 // Home
                 document.getElementById('homeView').style.display = 'block';
-                document.querySelector('#navContainer .tab:nth-child(1)').classList.add('active');
+                const homeTab = document.getElementById('tab-home');
+                if (homeTab) homeTab.classList.add('active');
                 updateMyIconDisplays();
                 await renderPosts();
             }
@@ -2654,7 +3127,7 @@
                 
                 let notifs = [];
                 snap.forEach(docSnap => notifs.push(docSnap.data()));
-                notifs.sort((a, b) => b.createdAt - a.createdAt);
+                notifs.sort((a, b) => getDateObj(b.createdAt) - getDateObj(a.createdAt));
                 
                 if (notifs.length === 0) {
                     list.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-muted);">通知はありません</div>';
@@ -2726,21 +3199,26 @@
                     const div = document.createElement('div');
                     div.className = 'reply-item';
                     div.style.cursor = 'pointer';
-                    div.onclick = () => openChat(otherId);
+                    div.style.display = 'flex';
+                    div.style.alignItems = 'center';
+                    div.style.gap = '0';
+                    div.onclick = (e) => { if (!e.target.classList.contains('convo-delete-btn')) openChat(otherId); };
                     div.innerHTML = `
                         <img src="${profile.icon || defaultIcon}" class="user-icon">
-                        <div class="post-right">
+                        <div class="post-right" style="flex:1; min-width:0;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <span class="user-name">${profile.name}</span>
                                 <span class="post-time">${date}</span>
                             </div>
-                            <div style="font-size:13px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:400px;">${textSnippet}</div>
+                            <div style="font-size:13px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${textSnippet}</div>
                         </div>
+                        <button class="convo-delete-btn" onclick="deleteDMConversation('${otherId}', event)" title="会話を削除">🗑</button>
                     `;
                     list.appendChild(div);
                 }
             } catch(e) { list.innerHTML = '<div class="error-box">DM一覧読込失敗</div>'; }
         };
+
 
         // CHAT ROOM (DM DIALOGUE)
         let currentConversationUserId = "";
@@ -2796,20 +3274,36 @@
                     const isMe = msg.senderId === myProfile.id;
                     const wrapper = document.createElement('div');
                     wrapper.className = `dm-message-wrapper ${isMe ? 'mine' : 'other'}`;
+                    wrapper.style.display = 'flex';
+                    wrapper.style.alignItems = 'flex-end';
+                    wrapper.style.gap = '6px';
                     
                     let contentHTML = "";
                     if (msg.content) contentHTML += `<div style="white-space:pre-wrap;">${msg.content}</div>`;
                     if (msg.audioData) contentHTML += `<audio src="${msg.audioData}" controls style="max-height:36px; filter:invert(${isMe ? 0 : 'var(--audio-invert)'});"></audio>`;
                     if (msg.drawingData) contentHTML += `<img src="${msg.drawingData}" style="max-width:100%; max-height:180px; border-radius:8px; background:#fff; object-fit:contain; display:block; margin-top:5px;">`;
 
-                    wrapper.innerHTML = `
-                        <div class="dm-bubble ${isMe ? 'mine' : 'other'}">
-                            ${contentHTML}
-                            <div style="font-size:10px; opacity:0.7; text-align:right; margin-top:4px;">${msg.createdAt ? getDateObj(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</div>
-                        </div>
-                    `;
+                    const deleteBtn = isMe ? `<button class="dm-delete-btn" onclick="deleteDMMessage('${msg.id}', event)" title="削除">🗑</button>` : '';
+
+                    if (isMe) {
+                        wrapper.innerHTML = `
+                            ${deleteBtn}
+                            <div class="dm-bubble mine">
+                                ${contentHTML}
+                                <div style="font-size:10px; opacity:0.7; text-align:right; margin-top:4px;">${msg.createdAt ? getDateObj(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</div>
+                            </div>
+                        `;
+                    } else {
+                        wrapper.innerHTML = `
+                            <div class="dm-bubble other">
+                                ${contentHTML}
+                                <div style="font-size:10px; opacity:0.7; text-align:right; margin-top:4px;">${msg.createdAt ? getDateObj(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</div>
+                            </div>
+                        `;
+                    }
                     list.appendChild(wrapper);
                 });
+
                 
                 // Scroll to bottom
                 list.scrollTop = list.scrollHeight;
@@ -3169,6 +3663,204 @@
             showHome();
         };
 
+        // ========== NEW FUNCTIONS ==========
+
+        // Delete own post
+        window.deleteMyPost = async function(postId, event) {
+            if (event) event.stopPropagation();
+            closeAllMenus();
+            if (!confirm("このポストを削除しますか？")) return;
+            try {
+                await deleteDoc(doc(db, "posts", postId));
+                // Also remove from bookmarks
+                let bookmarks = JSON.parse(localStorage.getItem('mySNS_bookmarks')) || [];
+                bookmarks = bookmarks.filter(id => id !== postId);
+                localStorage.setItem('mySNS_bookmarks', JSON.stringify(bookmarks));
+                animateRemovePost(postId);
+                showToast("ポストを削除しました");
+            } catch(e) { alert("削除に失敗しました"); }
+        };
+
+        // Delete single DM message
+        window.deleteDMMessage = async function(msgId, event) {
+            if (event) event.stopPropagation();
+            if (!confirm("このメッセージを削除しますか？")) return;
+            try {
+                await deleteDoc(doc(db, "direct_messages", msgId));
+                showToast("メッセージを削除しました");
+                loadChatMessages(currentConversationUserId);
+            } catch(e) { alert("削除に失敗しました"); }
+        };
+
+        // Delete entire DM conversation with a user
+        window.deleteDMConversation = async function(otherId, event) {
+            if (event) event.stopPropagation();
+            if (!confirm(`この会話を全て削除しますか？\n（自分が送信したメッセージのみ削除されます）`)) return;
+            try {
+                const q = query(collection(db, "direct_messages"), where("participants", "array-contains", myProfile.id));
+                const snap = await getDocs(q);
+                const toDelete = [];
+                snap.forEach(docSnap => {
+                    const m = docSnap.data();
+                    if ((m.senderId === myProfile.id && m.receiverId === otherId) ||
+                        (m.senderId === otherId && m.receiverId === myProfile.id)) {
+                        if (m.senderId === myProfile.id) {
+                            toDelete.push(docSnap.id);
+                        }
+                    }
+                });
+                await Promise.all(toDelete.map(id => deleteDoc(doc(db, "direct_messages", id))));
+                showToast("会話を削除しました");
+                renderDMsList();
+            } catch(e) { alert("削除に失敗しました"); }
+        };
+
+        // Toggle bookmark
+        window.toggleBookmark = function(postId, event) {
+            if (event) event.stopPropagation();
+            closeAllMenus();
+            let bookmarks = JSON.parse(localStorage.getItem('mySNS_bookmarks')) || [];
+            const idx = bookmarks.indexOf(postId);
+            if (idx > -1) {
+                bookmarks.splice(idx, 1);
+                showToast("保存を解除しました");
+            } else {
+                bookmarks.push(postId);
+                showToast("保存しました！");
+            }
+            localStorage.setItem('mySNS_bookmarks', JSON.stringify(bookmarks));
+            renderPosts(); // refresh to update bookmark icon color
+        };
+
+        // Show bookmarks view
+        window.showBookmarks = function() {
+            window.history.pushState({}, '', '?view=bookmarks');
+            checkRouting();
+        };
+
+        // Render bookmark list
+        window.renderBookmarks = async function() {
+            const list = document.getElementById('bookmarkList');
+            list.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">読み込み中...</div>';
+            const bookmarks = JSON.parse(localStorage.getItem('mySNS_bookmarks')) || [];
+            if (bookmarks.length === 0) {
+                list.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-muted);">保存済みポストはありません</div>';
+                return;
+            }
+            try {
+                list.innerHTML = '';
+                for (const postId of bookmarks) {
+                    const postRef = doc(db, "posts", postId);
+                    const postSnap = await getDoc(postRef);
+                    if (!postSnap.exists()) continue;
+                    const post = postSnap.data();
+                    post.id = postSnap.id;
+                    const div = document.createElement('div');
+                    div.className = 'post';
+                    div.onclick = () => showPostDetail(post.id);
+                    div.innerHTML = `
+                        <div class="post-left"><img src="${post.userIcon || defaultIcon}" class="user-icon"></div>
+                        <div class="post-right">
+                            <div class="post-header">
+                                <span class="user-name">${post.userName || '名無し'}</span>
+                                <span class="post-time">· ${formatTimeAgo(post.createdAt)}</span>
+                            </div>
+                            <div class="post-content">${(post.content || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                            <div style="margin-top:8px;">
+                                <button class="action-btn" onclick="toggleBookmark('${post.id}', event)" style="color:#f91880; font-size:12px; background:none; border:1px solid var(--border-color); border-radius:20px; padding:4px 10px; cursor:pointer;">保存解除</button>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                }
+            } catch(e) { list.innerHTML = '<div class="error-box">読み込みエラー</div>'; }
+        };
+
+        // FAB: scroll to post box or show post box
+        window.fabScrollToPost = function() {
+            // Navigate home first if not there
+            const homeView = document.getElementById('homeView');
+            if (homeView.style.display === 'none' || homeView.style.display === '') {
+                showHome();
+                setTimeout(() => {
+                    const postBox = document.getElementById('postBoxArea');
+                    if (postBox) postBox.scrollIntoView({ behavior: 'smooth' });
+                }, 300);
+            } else {
+                const postBox = document.getElementById('postBoxArea');
+                if (postBox) postBox.scrollIntoView({ behavior: 'smooth' });
+            }
+        };
+
+        // Update bottom nav active state
+        function updateBottomNav(view) {
+            document.querySelectorAll('.bottom-nav-item').forEach(el => el.classList.remove('active'));
+            const map = {
+                'home': 'bnav-home',
+                'search': 'bnav-search',
+                'dms': 'bnav-dm',
+                'notifications': 'bnav-notif',
+                'settings': 'bnav-setting'
+            };
+            if (map[view]) {
+                const el = document.getElementById(map[view]);
+                if (el) el.classList.add('active');
+            }
+        }
+
+        // ========== PATCHED checkRouting ==========
+        const _origCheckRouting = window.checkRouting;
+        window.checkRouting = async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view');
+            const postId = urlParams.get('id');
+            const userId = urlParams.get('user');
+            const chatUserId = urlParams.get('chat');
+
+            // Call original routing
+            await _origCheckRouting();
+
+            // Handle bookmark view (not in original)
+            if (view === 'bookmarks') {
+                document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+                document.getElementById('bookmarkView').style.display = 'block';
+                // Update nav active
+                document.querySelectorAll('#navContainer .tab').forEach(t => t.classList.remove('active'));
+                const bmTab = document.getElementById('tab-bookmark');
+                if (bmTab) bmTab.classList.add('active');
+                await renderBookmarks();
+            }
+
+            // Update bottom nav
+            if (postId || userId || chatUserId) {
+                updateBottomNav('');
+            } else if (view === 'search') {
+                updateBottomNav('search');
+            } else if (view === 'dms') {
+                updateBottomNav('dms');
+            } else if (view === 'notifications') {
+                updateBottomNav('notifications');
+            } else if (view === 'settings') {
+                updateBottomNav('settings');
+            } else {
+                updateBottomNav('home');
+            }
+
+            // Sync bottom nav badges
+            const dmBadge = document.getElementById('badge-dm');
+            const bnavDmBadge = document.getElementById('bnav-badge-dm');
+            if (dmBadge && bnavDmBadge) {
+                bnavDmBadge.style.display = dmBadge.style.display;
+                bnavDmBadge.innerText = dmBadge.innerText;
+            }
+            const notifBadge = document.getElementById('badge-notif');
+            const bnavNotifBadge = document.getElementById('bnav-badge-notif');
+            if (notifBadge && bnavNotifBadge) {
+                bnavNotifBadge.style.display = notifBadge.style.display;
+                bnavNotifBadge.innerText = notifBadge.innerText;
+            }
+        };
+
         window.setTheme = function(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('mySNS_theme', theme);
@@ -3277,6 +3969,8 @@
             const diffDay = Math.floor(diffHour / 24); if (diffDay < 7) return `${diffDay}日前`;
             return date.toLocaleDateString();
         }
+
+
 
         // INIT SYSTEM
         async function init() {
