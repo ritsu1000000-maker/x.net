@@ -1595,10 +1595,7 @@
                     showToast('ファイルをアップロード中 (Pixeldrain)...');
                     const res = await fetch(`https://pixeldrain.com/api/file/${encodeURIComponent(f.name)}`, {
                         method: "PUT",
-                        body: arrayBuffer,
-                        headers: {
-                            "Content-Type": f.type || "application/octet-stream"
-                        }
+                        body: arrayBuffer
                     });
                     if (res.ok) {
                         const data = await res.json();
@@ -1618,10 +1615,7 @@
                     showToast('バックアップサーバーへアップロード中 (Transfer)...');
                     const res = await fetch(`https://transfer.sh/${encodeURIComponent(f.name)}`, {
                         method: "PUT",
-                        body: arrayBuffer,
-                        headers: {
-                            "Content-Type": f.type || "application/octet-stream"
-                        }
+                        body: arrayBuffer
                     });
                     if (res.ok) {
                         const text = await res.text();
@@ -1677,10 +1671,7 @@
                     const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
                     const res = await fetch(proxyUrl, {
                         method: "PUT",
-                        body: arrayBuffer,
-                        headers: {
-                            "Content-Type": f.type || "application/octet-stream"
-                        }
+                        body: arrayBuffer
                     });
                     if (res.ok) {
                         const data = await res.json();
@@ -1803,7 +1794,7 @@
             if (file.type.startsWith('image/')) { 
                 const img = document.createElement('img'); img.src = URL.createObjectURL(file); img.style.maxWidth = '100%'; img.style.maxHeight = '200px'; img.style.borderRadius = '12px'; previewContent.appendChild(img); 
             } else if (file.type.startsWith('video/')) { 
-                const video = document.createElement('video'); video.src = URL.createObjectURL(file); video.controls = true; video.preload = 'metadata'; video.style.maxWidth = '100%'; video.style.maxHeight = '200px'; video.style.borderRadius = '12px'; video.style.background = '#000'; previewContent.appendChild(video); 
+                const video = document.createElement('video'); video.src = URL.createObjectURL(file); video.controls = true; video.preload = 'auto'; video.style.maxWidth = '100%'; video.style.maxHeight = '200px'; video.style.borderRadius = '12px'; video.style.background = '#000'; previewContent.appendChild(video); 
             } else if (file.type.startsWith('audio/')) {
                 const audio = document.createElement('audio'); audio.src = URL.createObjectURL(file); audio.controls = true; audio.style.width = '100%'; audio.style.marginTop = '10px'; previewContent.appendChild(audio);
             } else {
@@ -2556,7 +2547,7 @@
                             ${post.imageUrl ? `<div style="position:relative; display:inline-block; width:100%;"><img src="${post.imageUrl}" style="width:100%; border-radius:12px; margin-top:10px; display:block;"><a href="${post.imageUrl}" download target="_blank" style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:#fff; padding:6px 12px; border-radius:20px; text-decoration:none; font-size:12px; font-weight:bold; cursor:pointer;" onclick="event.stopPropagation();">⬇ ダウンロード</a></div>` : ''}
                             ${post.videoUrl ? `
                             <div style="margin-top:10px; width:100%;">
-                                <video src="${post.videoUrl}" controls preload="metadata" style="width:100%; border-radius:12px; display:block; background:#000; max-height:400px;" onclick="event.stopPropagation();"></video>
+                                <video src="${post.videoUrl}" controls preload="auto" style="width:100%; border-radius:12px; display:block; background:#000; max-height:400px;" onclick="event.stopPropagation();"></video>
                                 <div style="margin-top:6px; display:flex; justify-content:flex-end;">
                                     <a href="${post.videoUrl}" download target="_blank" style="background:var(--hover-bg); border:1px solid var(--border-color); color:var(--text-color); padding:6px 14px; border-radius:20px; text-decoration:none; font-size:12px; font-weight:bold; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:0.2s;" onmouseover="this.style.background='var(--tab-hover-bg)'" onmouseout="this.style.background='var(--hover-bg)'" onclick="event.stopPropagation();">
                                         <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
@@ -2991,7 +2982,7 @@
                 if (post.imageUrl) mediaHTML += `<div style="position:relative; display:inline-block; width:100%;"><img src="${post.imageUrl}" style="width:100%; border-radius:12px; margin-top:10px; display:block;"><a href="${post.imageUrl}" download target="_blank" style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:#fff; padding:6px 12px; border-radius:20px; text-decoration:none; font-size:12px; font-weight:bold; cursor:pointer;" onclick="event.stopPropagation();">⬇ ダウンロード</a></div>`;
                 if (post.videoUrl) mediaHTML += `
                             <div style="margin-top:10px; width:100%;">
-                                <video src="${post.videoUrl}" controls preload="metadata" style="width:100%; border-radius:12px; display:block; background:#000; max-height:400px;"></video>
+                                <video src="${post.videoUrl}" controls preload="auto" style="width:100%; border-radius:12px; display:block; background:#000; max-height:400px;"></video>
                                 <div style="margin-top:6px; display:flex; justify-content:flex-end;">
                                     <a href="${post.videoUrl}" download target="_blank" style="background:var(--hover-bg); border:1px solid var(--border-color); color:var(--text-color); padding:6px 14px; border-radius:20px; text-decoration:none; font-size:12px; font-weight:bold; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:0.2s;" onmouseover="this.style.background='var(--tab-hover-bg)'" onmouseout="this.style.background='var(--hover-bg)'" onclick="event.stopPropagation();">
                                         <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
