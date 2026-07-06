@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -668,6 +667,30 @@
                     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
                         <h3 style="margin-top: 0; color: var(--text-color); font-size: 18px;">ミュート・ブロック管理</h3>
                         <div id="muteBlockManageArea" style="color: var(--text-color);"></div>
+                    </div>
+
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                        <h3 style="margin-top: 0; color: var(--text-color); font-size: 18px;">データのバックアップ (JSON)</h3>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="post-btn" onclick="exportDataAsJSON()">JSONでエクスポート</button>
+                            <label class="post-btn" style="background-color: var(--sidebar-bg); color: var(--text-color); border:1px solid var(--border-color); cursor:pointer; display:inline-flex; align-items:center;">
+                                JSONをインポート
+                                <input type="file" id="jsonImportInput" accept="application/json" style="display:none;" onchange="importDataFromJSON(event)">
+                            </label>
+                        </div>
+                        <p style="font-size:12px; color:var(--text-muted); margin-top:8px;">
+                            プロフィール・いいね・保存済み・ミュート・ブロック・投票履歴などのローカル設定をJSONファイルとして保存/復元できます（投稿本文などクラウド上のデータは含まれません）。
+                        </p>
+                    </div>
+
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                        <h3 style="margin-top: 0; color: var(--text-color); font-size: 18px;">投稿データのJSONエクスポート</h3>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="post-btn" onclick="exportPostsAsJSON()">全ポストをJSON出力</button>
+                        </div>
+                        <p style="font-size:12px; color:var(--text-muted); margin-top:8px;">
+                            現在Firestoreに保存されている全ポストをJSON形式でダウンロードします。
+                        </p>
                     </div>
                 </div>
             </div>
@@ -3807,6 +3830,133 @@
             await syncMyProfile();
             showToast("プロフィールを保存しました");
             showHome();
+        };
+
+        // ========== JSON エクスポート / インポート ==========
+
+        // ローカル設定一式をJSONファイルとしてダウンロード
+        window.exportDataAsJSON = function() {
+            try {
+                const data = {
+                    type: "mySNS_backup",
+                    version: 1,
+                    exportedAt: new Date().toISOString(),
+                    profile: JSON.parse(localStorage.getItem('mySNS_profile')) || {},
+                    likedPosts: JSON.parse(localStorage.getItem('mySNS_likedPosts')) || [],
+                    bookmarks: JSON.parse(localStorage.getItem('mySNS_bookmarks')) || [],
+                    mutedUsers: JSON.parse(localStorage.getItem('mySNS_mutedUsers')) || [],
+                    blockedUsers: JSON.parse(localStorage.getItem('mySNS_blockedUsers')) || [],
+                    notInterestedPosts: JSON.parse(localStorage.getItem('mySNS_notInterestedPosts')) || [],
+                    votedPolls: JSON.parse(localStorage.getItem('mySNS_votedPolls')) || {},
+                    theme: localStorage.getItem('mySNS_theme') || 'light',
+                    geminiKey: localStorage.getItem('mySNS_gemini_key') || ''
+                };
+
+                const jsonStr = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `mysns_backup_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                showToast("JSONファイルをエクスポートしました");
+            } catch (e) {
+                alert("エクスポートに失敗しました: " + e.message);
+            }
+        };
+
+        // JSONファイルからローカル設定を復元
+        window.importDataFromJSON = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    if (data.type !== "mySNS_backup") {
+                        if (!confirm("このファイルは通常のバックアップ形式ではないようです。それでもインポートを試みますか？")) {
+                            return;
+                        }
+                    }
+
+                    if (data.profile && data.profile.id) {
+                        myProfile = data.profile;
+                        localStorage.setItem('mySNS_profile', JSON.stringify(myProfile));
+                    }
+                    if (Array.isArray(data.likedPosts)) localStorage.setItem('mySNS_likedPosts', JSON.stringify(data.likedPosts));
+                    if (Array.isArray(data.bookmarks)) localStorage.setItem('mySNS_bookmarks', JSON.stringify(data.bookmarks));
+                    if (Array.isArray(data.mutedUsers)) localStorage.setItem('mySNS_mutedUsers', JSON.stringify(data.mutedUsers));
+                    if (Array.isArray(data.blockedUsers)) localStorage.setItem('mySNS_blockedUsers', JSON.stringify(data.blockedUsers));
+                    if (Array.isArray(data.notInterestedPosts)) localStorage.setItem('mySNS_notInterestedPosts', JSON.stringify(data.notInterestedPosts));
+                    if (data.votedPolls && typeof data.votedPolls === 'object') localStorage.setItem('mySNS_votedPolls', JSON.stringify(data.votedPolls));
+                    if (data.theme) { localStorage.setItem('mySNS_theme', data.theme); setTheme(data.theme); }
+                    if (data.geminiKey) localStorage.setItem('mySNS_gemini_key', data.geminiKey);
+
+                    if (myProfile.id) {
+                        await syncMyProfile();
+                    }
+
+                    showToast("JSONデータを復元しました。設定画面を更新します");
+                    renderSettings();
+                    document.getElementById('jsonImportInput').value = '';
+                } catch (err) {
+                    alert("インポートに失敗しました。正しいJSONファイルか確認してください: " + err.message);
+                }
+            };
+            reader.onerror = function() {
+                alert("ファイルの読み込みに失敗しました");
+            };
+            reader.readAsText(file);
+        };
+
+        // Firestore上の全ポストをJSONとしてエクスポート
+        window.exportPostsAsJSON = async function() {
+            showToast("投稿データを取得中...");
+            try {
+                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+                const snap = await getDocs(q);
+                let posts = [];
+                snap.forEach(docSnap => {
+                    const p = docSnap.data();
+                    posts.push({
+                        id: docSnap.id,
+                        content: p.content || "",
+                        userId: p.userId || "",
+                        userName: p.userName || "",
+                        userIcon: p.userIcon || "",
+                        imageUrl: p.imageUrl || "",
+                        videoUrl: p.videoUrl || "",
+                        videoInputUrl: p.videoInputUrl || "",
+                        audioData: p.audioData ? "[audio omitted]" : "",
+                        drawingData: p.drawingData ? "[drawing omitted]" : "",
+                        poll: p.poll || null,
+                        mapLink: p.mapLink || null,
+                        likes: p.likes || 0,
+                        reposts: p.reposts || 0,
+                        views: p.views || 0,
+                        isRepost: !!p.isRepost,
+                        isQuoteRepost: !!p.isQuoteRepost,
+                        createdAt: p.createdAt ? getDateObj(p.createdAt).toISOString() : null
+                    });
+                });
+
+                const jsonStr = JSON.stringify({ exportedAt: new Date().toISOString(), count: posts.length, posts: posts }, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `mysns_posts_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                showToast(`ポストデータ(${posts.length}件)をエクスポートしました`);
+            } catch (e) {
+                alert("投稿データのエクスポートに失敗しました: " + e.message);
+            }
         };
 
         // ========== NEW FUNCTIONS ==========
