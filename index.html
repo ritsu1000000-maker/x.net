@@ -53,6 +53,9 @@
         .container { width: 100%; max-width: 600px; background: var(--container-bg); min-height: 100vh; border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); position: relative; display: flex; flex-direction: column; }
         .view-section { display: none; }
         #chatView { height: 100vh; max-height: 100vh; flex-direction: column; overflow: hidden; }
+        #homeView { flex-direction: column; height: 100vh; max-height: 100vh; overflow: hidden; }
+        #homeView #timeline { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .post-box-bottom { flex-shrink: 0; border-top: 1px solid var(--border-color); border-bottom: none; background: var(--container-bg); }
         .sidebar { width: 320px; padding-top: 15px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: none; }
         @media (min-width: 950px) { .sidebar { display: block; } }
         .sidebar-box { background-color: var(--sidebar-bg); border-radius: 16px; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 20px; }
@@ -318,6 +321,7 @@
             .bottom-nav { display: flex; }
             .container { padding-bottom: 60px; }
             #chatView { padding-bottom: 0 !important; }
+            #homeView { padding-bottom: 0 !important; height: calc(100vh - 60px) !important; max-height: calc(100vh - 60px) !important; }
             .dm-delete-btn { opacity: 1; }
             .convo-delete-btn { opacity: 1; }
         }
@@ -473,7 +477,10 @@
                     <div class="sub-tab active" id="tab-timeline-latest" onclick="setTimelineMode('latest')">新着ポスト</div>
                     <div class="sub-tab" id="tab-timeline-popular" onclick="setTimelineMode('popular')">人気ポスト</div>
                 </div>
-                <div class="post-box" id="postBoxArea">
+
+                <div id="timeline"></div>
+
+                <div class="post-box post-box-bottom" id="postBoxArea">
                     <div onclick="showUserProfile(myProfile.id, event)" style="cursor:pointer;"><img src="" class="user-icon my-current-icon"></div>
                     <div class="post-box-right">
                         <textarea id="postText" rows="3" placeholder="いまどうしてる？ (@ユーザー名 または @AI でメンション)"></textarea>
@@ -521,8 +528,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div id="timeline"></div>
             </div>
 
             <!-- 検索ビュー -->
@@ -1371,8 +1376,8 @@
                 return items.map(v => ({
                     contentId: v.id || v.contentId || (v.video && v.video.id) || "",
                     title: v.title || (v.video && v.video.title) || "",
-                    thumbnailUrl: (v.thumbnail && (v.thumbnail.url || v.thumbnail.middleUrl || v.thumbnail.listingUrl))
-                        || (v.video && v.video.thumbnail && v.video.thumbnail.url) || "",
+                    thumbnailUrl: ((v.thumbnail && (v.thumbnail.url || v.thumbnail.middleUrl || v.thumbnail.listingUrl))
+                        || (v.video && v.video.thumbnail && v.video.thumbnail.url) || "").replace(/^http:/i, 'https:'),
                     viewCounter: (v.count && v.count.view) || v.viewCounter || 0,
                     commentCounter: (v.count && v.count.comment) || v.commentCounter || 0,
                     likeCounter: (v.count && v.count.like) || v.likeCounter || 0,
@@ -1481,8 +1486,8 @@
                 return items.map(v => ({
                     contentId: v.id || v.contentId || (v.video && v.video.id) || "",
                     title: v.title || (v.video && v.video.title) || "",
-                    thumbnailUrl: (v.thumbnail && (v.thumbnail.url || v.thumbnail.middleUrl || v.thumbnail.listingUrl))
-                        || (v.video && v.video.thumbnail && v.video.thumbnail.url) || "",
+                    thumbnailUrl: ((v.thumbnail && (v.thumbnail.url || v.thumbnail.middleUrl || v.thumbnail.listingUrl))
+                        || (v.video && v.video.thumbnail && v.video.thumbnail.url) || "").replace(/^http:/i, 'https:'),
                     viewCounter: (v.count && v.count.view) || v.viewCounter || 0,
                     commentCounter: (v.count && v.count.comment) || v.commentCounter || 0,
                     likeCounter: (v.count && v.count.like) || v.likeCounter || 0,
@@ -3206,7 +3211,7 @@
                 renderSettings();
             } else {
                 // Home
-                document.getElementById('homeView').style.display = 'block';
+                document.getElementById('homeView').style.display = 'flex';
                 const homeTab = document.getElementById('tab-home');
                 if (homeTab) homeTab.classList.add('active');
                 updateMyIconDisplays();
@@ -4343,12 +4348,12 @@
             if (homeView.style.display === 'none' || homeView.style.display === '') {
                 showHome();
                 setTimeout(() => {
-                    const postBox = document.getElementById('postBoxArea');
-                    if (postBox) postBox.scrollIntoView({ behavior: 'smooth' });
+                    const postText = document.getElementById('postText');
+                    if (postText) postText.focus();
                 }, 300);
             } else {
-                const postBox = document.getElementById('postBoxArea');
-                if (postBox) postBox.scrollIntoView({ behavior: 'smooth' });
+                const postText = document.getElementById('postText');
+                if (postText) postText.focus();
             }
         };
 
