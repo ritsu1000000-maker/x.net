@@ -770,6 +770,9 @@
                 <input type="text" id="videoSearchKeyword" placeholder="検索キーワードを入力..." style="flex:1; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-color); outline:none;" onkeydown="if(event.key==='Enter') executeVideoSearch()">
                 <button class="post-btn" onclick="executeVideoSearch()">検索</button>
             </div>
+            <div style="display:flex; gap:8px;">
+                <button class="post-btn" style="background-color:var(--sidebar-bg); color:var(--text-color); border:1px solid var(--border-color); flex:1;" onclick="loadNewArrivalVideos()">🆕 新着動画を見る(キーワード不要)</button>
+            </div>
             <div style="display:flex; gap:10px; font-size:13px; color:var(--text-muted);">
                 <label>ソート:
                     <select id="videoSearchSort" style="background:var(--container-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px; padding:2px 4px;">
@@ -1340,7 +1343,258 @@
         let currentVideoQuery = "";
         let currentVideoSort = "";
 
+        // ===== nvapi.nicovideo.jp を使った検索(ニコニコ公式サイトが実際に使っている非公開API) =====
+        // 参考: https://niconicolibs.github.io/api/nvapi/#tag/Search/operation/get-v2-search-video
+        // nvapiはX-Frontend-Id/X-Frontend-Versionヘッダーが必須だが、CORSプロキシ経由だと
+        // カスタムヘッダーを転送できないことが多いため、クエリパラメータ版(_frontendId/_frontendVersion)
+        // でも受け付けられることを利用してヘッダー無しでアクセスを試みる。
+        async function fetchNicoSearchNvapi(queryVal, sortVal, offsetVal = 0) {
+            const pageSize = 10;
+            const page = Math.floor(offsetVal / pageSize) + 1;
+
+            // sortVal は従来のSnapshot API形式 (-viewCounter 等) なので nvapi 用に変換する
+            const sortMap = {
+                '-viewCounter': { sortKey: 'viewCount', sortOrder: 'desc' },
+                '-startTime': { sortKey: 'registeredAt', sortOrder: 'desc' },
+                '-commentCounter': { sortKey: 'commentCount', sortOrder: 'desc' },
+                '-likeCounter': { sortKey: 'likeCount', sortOrder: 'desc' }
+            };
+            const sortConf = sortMap[sortVal] || { sortKey: 'hot', sortOrder: 'desc' };
+
+            const apiTarget = `https://nvapi.nicovideo.jp/v2/search/video?keyword=${encodeURIComponent(queryVal)}&sortKey=${sortConf.sortKey}&sortOrder=${sortConf.sortOrder}&pageSize=${pageSize}&page=${page}&_frontendId=6&_frontendVersion=0`;
+
+            const normalizeItems = (data) => {
+                if (data && data.meta && data.meta.status && data.meta.status !== 200) {
+                    throw new Error(`nvapi Error ${data.meta.status}: ${data.meta.errorCode || ''}`);
+                }
+                const items = data && data.data && (data.data.items || data.data);
+                if (!Array.isArray(items)) throw new Error("nvapiレスポンス形式が想定と異なります");
+                return items.map(v => ({
+                    contentId: v.id || v.contentId || (v.video && v.video.id) || "",
+                    title: v.title || (v.video && v.video.title) || "",
+                    thumbnailUrl: (v.thumbnail && (v.thumbnail.url || v.thumbnail.middleUrl || v.thumbnail.listingUrl))
+                        || (v.video && v.video.thumbnail && v.video.thumbnail.url) || "",
+                    viewCounter: (v.count && v.count.view) || v.viewCounter || 0,
+                    commentCounter: (v.count && v.count.comment) || v.commentCounter || 0,
+                    likeCounter: (v.count && v.count.like) || v.likeCounter || 0,
+                    mylistCounter: (v.count && v.count.mylist) || v.mylistCounter || 0
+                })).filter(v => v.contentId);
+            };
+
+            // 高速化1: まずプロキシ無しの直接アクセスを試す(1.5秒で見切りをつける)
+            try {
+                const res = await fetchWithTimeout(apiTarget, {
+                    cache: 'no-store',
+                    headers: { 'X-Frontend-Id': '6', 'X-Frontend-Version': '0' }
+                }, 1500);
+                if (res.ok) {
+                    const items = normalizeItems(await res.json());
+                    if (items.length > 0) {
+                        console.log("[nvapi] 直接アクセス成功(高速)");
+                        return items;
+                    }
+                }
+            } catch (e) {
+                console.log("[nvapi] 直接アクセス失敗、プロキシへ切替:", e.message || e);
+            }
+
+            // 高速化2: プロキシは応答が速い2つだけに絞り、タイムアウトも3秒に短縮
+            const proxies = [
+                {
+                    name: "nvapi CodeTabs",
+                    getUrl: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+                    parse: (text) => JSON.parse(text)
+                },
+                {
+                    name: "nvapi AllOrigins Raw",
+                    getUrl: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                    parse: (text) => JSON.parse(text)
+                }
+            ];
+
+            const tasks = proxies.map(async (proxy) => {
+                const proxyUrl = proxy.getUrl(apiTarget);
+                try {
+                    console.log(`[nvapi] Sending request to [${proxy.name}]:`, proxyUrl);
+                    const res = await fetchWithTimeout(proxyUrl, { cache: 'no-store' }, 3000);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const rawText = await res.text();
+                    const data = proxy.parse(rawText);
+                    const normalized = normalizeItems(data);
+
+                    console.log(`[nvapi] Received success from [${proxy.name}], items:`, normalized.length);
+                    return normalized;
+                } catch (e) {
+                    console.warn(`[nvapi:${proxy.name}] failed:`, e);
+                    throw new Error(`[nvapi:${proxy.name}]: ${e.message || e}`);
+                }
+            });
+
+            return new Promise((resolve, reject) => {
+                let resolved = false;
+                let rejectedCount = 0;
+                const errors = [];
+
+                tasks.forEach((task) => {
+                    task.then(data => {
+                        if (!resolved) {
+                            resolved = true;
+                            resolve(data);
+                        }
+                    }).catch(err => {
+                        errors.push(err.message || err);
+                        rejectedCount++;
+                        if (rejectedCount === tasks.length && !resolved) {
+                            reject(new Error("nvapi: すべてのプロキシが失敗しました:\n" + errors.join("\n")));
+                        }
+                    });
+                });
+            });
+        }
+
+        // まずnvapiを試し、失敗したら従来のSnapshot Search APIにフォールバックする
         async function fetchNicoSearch(queryVal, sortVal, offsetVal = 0) {
+            try {
+                const items = await fetchNicoSearchNvapi(queryVal, sortVal, offsetVal);
+                if (items && items.length > 0) return items;
+                throw new Error("nvapiで0件でした。フォールバックを試みます。");
+            } catch (nvapiErr) {
+                console.warn("nvapi検索に失敗、Snapshot Search APIにフォールバックします:", nvapiErr);
+                return await fetchNicoSearchSnapshotFallback(queryVal, sortVal, offsetVal);
+            }
+        }
+
+        // ===== 新着動画一覧 (nvapi /v1/new-arrival/videos) — 速度優先実装 =====
+        // 高速化のポイント:
+        // 1. まずプロキシ無しで直接fetch(成功すれば最速。CORSで弾かれても1〜1.5秒で判定できる)
+        // 2. プロキシは応答が速い2つだけに絞り、タイムアウトも3秒に短縮
+        // 3. 取得件数を10件に抑えてペイロードを軽量化
+        // 4. 60秒間は結果をキャッシュして再オープン時に再取得しない
+        let newArrivalCache = { data: null, ts: 0 };
+
+        async function fetchNicoNewArrival(page = 1) {
+            const pageSize = 10;
+            const apiTarget = `https://nvapi.nicovideo.jp/v1/new-arrival/videos?page=${page}&pageSize=${pageSize}&_frontendId=6&_frontendVersion=0`;
+
+            const normalize = (data) => {
+                const items = data && data.data && (data.data.items || data.data);
+                if (!Array.isArray(items)) throw new Error("レスポンス形式が想定と異なります");
+                return items.map(v => ({
+                    contentId: v.id || v.contentId || (v.video && v.video.id) || "",
+                    title: v.title || (v.video && v.video.title) || "",
+                    thumbnailUrl: (v.thumbnail && (v.thumbnail.url || v.thumbnail.middleUrl || v.thumbnail.listingUrl))
+                        || (v.video && v.video.thumbnail && v.video.thumbnail.url) || "",
+                    viewCounter: (v.count && v.count.view) || v.viewCounter || 0,
+                    commentCounter: (v.count && v.count.comment) || v.commentCounter || 0,
+                    likeCounter: (v.count && v.count.like) || v.likeCounter || 0,
+                    mylistCounter: (v.count && v.count.mylist) || v.mylistCounter || 0
+                })).filter(v => v.contentId);
+            };
+
+            // 1. プロキシ無しで直接アクセス(最速ルート。ダメなら約1.5秒で次へ)
+            try {
+                const res = await fetchWithTimeout(apiTarget, {
+                    cache: 'no-store',
+                    headers: { 'X-Frontend-Id': '6', 'X-Frontend-Version': '0' }
+                }, 1500);
+                if (res.ok) {
+                    const data = await res.json();
+                    const items = normalize(data);
+                    if (items.length > 0) {
+                        console.log("[new-arrival] 直接アクセス成功(高速)");
+                        return items;
+                    }
+                }
+            } catch (e) {
+                console.log("[new-arrival] 直接アクセス失敗、プロキシへ切替:", e.message || e);
+            }
+
+            // 2. 速いプロキシ2つだけを競争させる(3秒タイムアウト)
+            const proxies = [
+                {
+                    name: "CodeTabs",
+                    getUrl: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+                    parse: (text) => JSON.parse(text)
+                },
+                {
+                    name: "AllOrigins Raw",
+                    getUrl: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                    parse: (text) => JSON.parse(text)
+                }
+            ];
+
+            const tasks = proxies.map(async (proxy) => {
+                const proxyUrl = proxy.getUrl(apiTarget);
+                const res = await fetchWithTimeout(proxyUrl, { cache: 'no-store' }, 3000);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const rawText = await res.text();
+                const data = proxy.parse(rawText);
+                const items = normalize(data);
+                if (items.length === 0) throw new Error("0件");
+                console.log(`[new-arrival] ${proxy.name} 成功`);
+                return items;
+            });
+
+            return new Promise((resolve, reject) => {
+                let resolved = false;
+                let rejectedCount = 0;
+                const errors = [];
+                tasks.forEach(task => {
+                    task.then(items => {
+                        if (!resolved) { resolved = true; resolve(items); }
+                    }).catch(err => {
+                        errors.push(err.message || err);
+                        rejectedCount++;
+                        if (rejectedCount === tasks.length && !resolved) {
+                            reject(new Error("新着動画の取得に失敗しました:\n" + errors.join("\n")));
+                        }
+                    });
+                });
+            });
+        }
+
+        window.loadNewArrivalVideos = async function() {
+            const resultsDiv = document.getElementById('videoSearchResults');
+            document.getElementById('videoSearchFallbackArea').style.display = 'none';
+            document.getElementById('btn-video-search-more').style.display = 'none';
+
+            // 60秒キャッシュがあれば即表示(体感速度アップ)
+            if (newArrivalCache.data && (Date.now() - newArrivalCache.ts) < 60000) {
+                resultsDiv.innerHTML = '';
+                renderVideoSearchResults(newArrivalCache.data, true);
+                showToast("新着動画(キャッシュ)を表示しました");
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">新着動画を取得中...</div>';
+
+            const hardTimeout = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error("タイムアウトしました(5秒経過)")), 5000);
+            });
+
+            try {
+                const items = await Promise.race([fetchNicoNewArrival(1), hardTimeout]);
+                newArrivalCache = { data: items, ts: Date.now() };
+                resultsDiv.innerHTML = '';
+                if (!items || items.length === 0) {
+                    resultsDiv.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">新着動画が取得できませんでした。</div>';
+                    return;
+                }
+                renderVideoSearchResults(items, true);
+                showToast("新着動画を表示しました");
+            } catch (e) {
+                console.error(e);
+                resultsDiv.innerHTML = `
+                    <div style="padding:15px; color:#f91880; font-size:13px; background:rgba(249, 24, 128, 0.05); border:1px solid #f91880; border-radius:8px; margin-bottom:10px; text-align:left;">
+                        <strong>⚠️ 新着動画の取得に失敗しました:</strong><br>
+                        <span style="font-family:monospace; white-space:pre-wrap; display:block; margin-top:5px; max-height:100px; overflow-y:auto;">${e.message || e}</span>
+                    </div>
+                `;
+                document.getElementById('videoSearchFallbackArea').style.display = 'flex';
+            }
+        };
+
+        async function fetchNicoSearchSnapshotFallback(queryVal, sortVal, offsetVal = 0) {
             // Niconico Snapshot Search API v2 with comments, likes, and mylists counters
             const apiTarget = `https://api.search.nicovideo.jp/api/v2/snapshot/video/contents/search?q=${encodeURIComponent(queryVal)}&targets=title&fields=contentId,title,viewCounter,thumbnailUrl,commentCounter,mylistCounter,likeCounter&_sort=${sortVal}&_context=snsapp&_limit=15&_offset=${offsetVal}`;
             
@@ -1366,7 +1620,7 @@
                 // 3. CORS Proxy IO
                 {
                     name: "CORS Proxy IO",
-                    getUrl: (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                    getUrl: (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
                     parse: (text) => JSON.parse(text)
                 },
                 // 4. CodeTabs Proxy
@@ -1491,8 +1745,14 @@
             currentVideoQuery = keyword;
             currentVideoSort = sort;
 
+            // どのプロキシも応答しない場合でも「検索中」のまま固まらないよう、
+            // 全体に対して必ず上限時間(10秒)でタイムアウトさせる保険をかける
+            const hardTimeout = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error("検索がタイムアウトしました(10秒経過)。プロキシサーバーが応答していない可能性があります。")), 10000);
+            });
+
             try {
-                const items = await fetchNicoSearch(keyword, sort, videoSearchOffset);
+                const items = await Promise.race([fetchNicoSearch(keyword, sort, videoSearchOffset), hardTimeout]);
                 resultsDiv.innerHTML = '';
                 if (!items || items.length === 0) {
                     resultsDiv.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">動画が見つかりませんでした。</div>';
@@ -1522,9 +1782,13 @@
             moreBtn.disabled = true;
             
             videoSearchOffset += 15;
-            
+
+            const hardTimeout = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error("追加読み込みがタイムアウトしました(10秒経過)。")), 10000);
+            });
+
             try {
-                const items = await fetchNicoSearch(currentVideoQuery, currentVideoSort, videoSearchOffset);
+                const items = await Promise.race([fetchNicoSearch(currentVideoQuery, currentVideoSort, videoSearchOffset), hardTimeout]);
                 moreBtn.innerText = 'もっと見る';
                 moreBtn.disabled = false;
                 
@@ -1692,7 +1956,7 @@
                 try {
                     showToast('プロキシ経由でアップロード中...');
                     const targetUrl = `https://pixeldrain.com/api/file/${encodeURIComponent(f.name)}`;
-                    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+                    const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
                     const res = await fetch(proxyUrl, {
                         method: "PUT",
                         body: arrayBuffer
